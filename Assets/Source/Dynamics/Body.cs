@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace CrispyPhysics
 {
-    public class Body
+    public class Body : IBody
     {
         public enum Types
         {
