@@ -1,1 +1,7 @@
-﻿namespace CrispyPhysics{    public class Contact    {    }}
+namespace CrispyPhysics
+{
+    public class Contact : IContact
+    {
+
+    }
+}

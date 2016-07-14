@@ -12,13 +12,15 @@ namespace CrispyPhysics
         public bool crisped { get; private set; }
 
         private List<Entity> entities;
-        public World world { get; private set; }
+        public IWorld world { get; private set; }
 
         void Awake()
         {
             crispSize = (crispSize > 0) ? crispSize : 1;
             actionTick = (actionTick > 0) ? actionTick : 10;
+
             crisped = false;
+
             entities = new List<Entity>();
             world = new World(crispSize, actionTick);
         }

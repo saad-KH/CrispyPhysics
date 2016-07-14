@@ -4,14 +4,22 @@ using System.Collections.Generic;
 
 namespace CrispyPhysics
 {
-    public class World
+    public class World : IWorld
     {
-        public float crispSize = 1.0f;
+        public float crispSize { get; set; }
         public float tick { get; private set; }
+        public float actionTick { get; set; }
         public float tickRatio { get { return tick / actionTick; } }
 
+
+        private List<IBody> bodies;
+        private float lastInvDt = 0f;
+
+        private bool allowSleep;
+        private bool stepComplete;
+
         [Flags]
-        public enum OperationFlags
+        private enum OperationFlag
         {
             Locked = 0x0001,
             ClearForces = 0x0002,
@@ -19,41 +27,29 @@ namespace CrispyPhysics
             Crisped = 0x0008
         }
 
-        public OperationFlags opFlags;
-
-        private float _actionTick;
-        public float actionTick {
-            get { return _actionTick; }
-            set { _actionTick = Mathf.Max(value, Time.fixedDeltaTime);}
-        }
-
-        private List<Body> bodies;
-        private float lastInvDt = 0f;
-
-        private bool allowSleep;
-        private bool stepComplete;
+        private OperationFlag opFlags;
 
         public World(float crispSize = 1f, float actionTick = 0.1f)
         {
             this.crispSize = crispSize;
-            this._actionTick = actionTick;
+            this.actionTick = actionTick;
 
             lastInvDt = 0f;
-            opFlags = OperationFlags.ClearForces;
+            opFlags = OperationFlag.ClearForces;
 
             stepComplete = true;
             allowSleep = true;
 
-            bodies = new List<Body>();
+            bodies = new List<IBody>();
             tick = 0f;
         }
 
-        public void AddBody(Body body)
+        public void AddBody(IBody body)
         {
             bodies.Add(body);
         }
 
-        public void RemoveBody(Body body)
+        public void RemoveBody(IBody body)
         {
             Debug.Assert(false, "Remove Contact");
             bodies.Remove(body);
@@ -70,16 +66,13 @@ namespace CrispyPhysics
 
         public void ClearForces()
         {
-            foreach (Body body in bodies)
-            {
-                body.force = Vector2.zero;
-                body.torque = 0f;
-            }
+            foreach (IBody body in bodies)
+                body.ChangeImpulse(Vector2.zero, 0f);
         }
 
         public bool IsLocked()
         {
-            return (opFlags & OperationFlags.Locked) == OperationFlags.Locked;
+            return (opFlags & OperationFlag.Locked) == OperationFlag.Locked;
         }
 
         public Vector2 GetGravity()
@@ -90,19 +83,24 @@ namespace CrispyPhysics
         public void SetAutoClearForces(bool flag)
         {
             if (flag)
-                opFlags |= OperationFlags.ClearForces;
+                opFlags |= OperationFlag.ClearForces;
             else
-                opFlags &= ~OperationFlags.ClearForces;
+                opFlags &= ~OperationFlag.ClearForces;
         }
 
         public bool GetAutoClearForces()
         {
-            return (opFlags & OperationFlags.ClearForces) == OperationFlags.ClearForces;
+            return (opFlags & OperationFlag.ClearForces) == OperationFlag.ClearForces;
         }
 
         public bool IsCrisped()
         {
-            return (opFlags & OperationFlags.Crisped) == OperationFlags.Crisped;
+            return (opFlags & OperationFlag.Crisped) == OperationFlag.Crisped;
+        }
+
+        public void NotifyShapeAdded()
+        {
+            opFlags |= World.OperationFlag.NewShape;
         }
 
         public void Step(float dt, int velocityIterations, int positionIterations)
@@ -110,14 +108,14 @@ namespace CrispyPhysics
             TimeStep step;
             tick += dt;
 
-            if ((opFlags & OperationFlags.NewShape) == OperationFlags.NewShape)
+            if ((opFlags & OperationFlag.NewShape) == OperationFlag.NewShape)
             {
                 //Debug.Assert(false, "Find New Contacts");
-                opFlags &= ~OperationFlags.NewShape;
+                opFlags &= ~OperationFlag.NewShape;
             }
 
-            opFlags |= OperationFlags.Locked;
-            opFlags &= ~OperationFlags.Crisped;
+            opFlags |= OperationFlag.Locked;
+            opFlags &= ~OperationFlag.Crisped;
 
             
             step.dt = dt;
@@ -135,13 +133,13 @@ namespace CrispyPhysics
 
             if (step.dt > 0f) lastInvDt = step.invDt;
 
-            if ((opFlags & OperationFlags.ClearForces) == OperationFlags.ClearForces)
+            if ((opFlags & OperationFlag.ClearForces) == OperationFlag.ClearForces)
                 ClearForces();
 
 
             Crisp();
 
-            opFlags &= ~OperationFlags.Locked;
+            opFlags &= ~OperationFlag.Locked;
 
         }
 
@@ -149,15 +147,15 @@ namespace CrispyPhysics
         {
             Island island = new Island(bodies.Count);
 
-            foreach(Body body in bodies)
-                body.opFlags &= ~Body.OperationFlags.Island;
+            foreach (IBody body in bodies)
+                body.SetIslandBound(false);
 
             //Debug.Assert(false, "Clear Contacts Island Flags");
 
-            Stack<Body> stack = new Stack<Body>(bodies.Count);
-            foreach (Body seed in bodies)
+            Stack<IBody> stack = new Stack<IBody>(bodies.Count);
+            foreach (IBody seed in bodies)
             {
-                if ((seed.opFlags & Body.OperationFlags.Island) == Body.OperationFlags.Island)
+                if (seed.IsIslandBound())
                     continue;
 
                 if (!seed.IsAwake() || !seed.IsActive())
@@ -165,10 +163,10 @@ namespace CrispyPhysics
 
                 island.Clear();
                 stack.Push(seed);
-                seed.opFlags |= Body.OperationFlags.Island;
+                seed.SetIslandBound(true);
                 while (stack.Count > 0)
                 {
-                    Body body = stack.Pop();
+                    IBody body = stack.Pop();
                     Debug.Assert(body.IsActive() == true);
                     island.Add(body);
 
@@ -193,8 +191,8 @@ namespace CrispyPhysics
             if(tick >= actionTick)
             {
                 tick = tick - actionTick;
-                opFlags |= OperationFlags.Crisped;
-                foreach (Body body in bodies)
+                opFlags |= OperationFlag.Crisped;
+                foreach (IBody body in bodies)
                 {
                     Vector2 crispedPosition;
 
@@ -245,11 +243,8 @@ namespace CrispyPhysics
 
                     float crispedAngle = body.angle + crispedAngularVelocity * timeLaps;
 
-                    body.sweep.center = crispedPosition;
-                    body.sweep.angle = crispedAngle;
-                    body.linearVelocity = crispedLinearVelocity;
-                    body.angularVelocity = crispedAngularVelocity;
-                    body.SynchronizeTransform();
+                    body.ChangeSituation(crispedPosition, crispedAngle);
+                    body.ChangeVelocity(crispedLinearVelocity, crispedAngularVelocity);
                 }
             }
         }
