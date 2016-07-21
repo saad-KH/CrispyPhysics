@@ -49,14 +49,6 @@ namespace CrispyPhysics
 
         bool IsActive();
 
-        void SetFixedRotation(bool flag);
-
-        bool IsFixedRotation();
-
-        void SetLinearVelocity(Vector2 velocity);
-
-        void SetAngularVelocity(float velocity);
-
         void SetAwake(bool flag);
 
         bool IsAwake();
@@ -64,6 +56,10 @@ namespace CrispyPhysics
         void SetSleepingAllowed(bool flag);
 
         bool IsSleepingAllowed();
+
+        void SetFixedRotation(bool flag);
+
+        bool IsFixedRotation();
 
         void SetIslandBound(bool flag);
 
@@ -94,11 +90,5 @@ namespace CrispyPhysics
         Vector2 GetLocalPoint(Vector2 worldPoint);
 
         Vector2 GetLocalVector(Vector2 worldVector);
-
-        Vector2 GetLinearVelocityFromWorldPoint(Vector2 worldPoint);
-
-        Vector2 GetLinearVelocityFromLocalPoint(Vector2 localPoint);
-
-
     }
 }

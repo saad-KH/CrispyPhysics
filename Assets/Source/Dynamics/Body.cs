@@ -156,15 +156,65 @@ namespace CrispyPhysics
             if (flag)
             {
                 opFlags |= OperationFlag.Active;
-                //Debug.Assert(false, "Broad Phase");
+                Debug.Assert(false, "Broad Phase");
             }
             else
             {
                 opFlags &= ~OperationFlag.Active;
-                //Debug.Assert(false, "Broad Phase");
-                //Debug.Assert(false, "Remove Contacts");
+                Debug.Assert(false, "Broad Phase");
+                Debug.Assert(false, "Remove Contacts");
             }
         }
+
+        public bool IsActive()
+        {
+            return (opFlags & OperationFlag.Active) == OperationFlag.Active;
+        }
+
+        public void SetAwake(bool flag)
+        {
+            if (flag)
+            {
+                if ((opFlags & OperationFlag.Awake) == 0)
+                {
+                    opFlags |= OperationFlag.Awake;
+                    sleepTime = 0f;
+                }
+            }
+            else
+            {
+                opFlags &= ~OperationFlag.Awake;
+                sleepTime = 0f;
+                linearVelocity = Vector2.zero;
+                angularVelocity = 0f;
+                force = Vector2.zero;
+                torque = 0f;
+            }
+        }
+
+        public bool IsAwake()
+        {
+            return (opFlags & OperationFlag.Awake) == OperationFlag.Awake;
+        }
+
+        public void SetSleepingAllowed(bool flag)
+        {
+            if (flag)
+            {
+                opFlags |= OperationFlag.AutoSleep;
+            }
+            else
+            {
+                opFlags &= ~OperationFlag.AutoSleep;
+                SetAwake(true);
+            }
+        }
+
+        public bool IsSleepingAllowed()
+        {
+            return (opFlags & OperationFlag.AutoSleep) == OperationFlag.AutoSleep;
+        }
+
 
         public void SetFixedRotation(bool flag)
         {
@@ -180,16 +230,22 @@ namespace CrispyPhysics
             CalculateInertia();
         }
 
-        public void SetLinearVelocity(Vector2 velocity)
+        public bool IsFixedRotation()
         {
-            if (Vector2.Dot(velocity, velocity) > 0) SetAwake(true);
-            linearVelocity = velocity;
+            return (opFlags & OperationFlag.FixedRotation) == OperationFlag.FixedRotation;
         }
 
-        public void SetAngularVelocity(float velocity)
+        public void SetIslandBound(bool flag)
         {
-            if (velocity * velocity > 0f) SetAwake(true);
-            angularVelocity = velocity;
+            if (flag)
+                opFlags |= OperationFlag.Island;
+            else
+                opFlags &= ~OperationFlag.Island;
+        }
+
+        public bool IsIslandBound()
+        {
+            return (opFlags & OperationFlag.Island) == OperationFlag.Island;
         }
 
         public float GetInertia()
@@ -215,83 +271,6 @@ namespace CrispyPhysics
         public Vector2 GetLocalVector(Vector2 worldVector)
         {
             return Calculus.MulT(transform.rotation, worldVector);
-        }
-
-        public Vector2 GetLinearVelocityFromWorldPoint(Vector2 worldPoint)
-        {
-            return linearVelocity + Calculus.Cross(angularVelocity , worldPoint - transform.position);
-        }
-
-        public Vector2 GetLinearVelocityFromLocalPoint(Vector2 localPoint)
-        {
-            return GetLinearVelocityFromWorldPoint(GetWorldPoint(localPoint));
-        }
-
-        public void SetAwake(bool flag)
-        {
-            if (flag)
-            {
-                if( (opFlags & OperationFlag.Awake) == 0)
-                {
-                    opFlags |= OperationFlag.Awake;
-                    sleepTime = 0f;
-                }
-            }
-            else
-            {
-                opFlags &= ~OperationFlag.Awake;
-                sleepTime = 0f;
-                linearVelocity = Vector2.zero;
-                angularVelocity = 0f;
-                force = Vector2.zero;
-                torque = 0f;
-            }
-        }
-
-        public bool IsAwake()
-        {
-            return (opFlags & OperationFlag.Awake) == OperationFlag.Awake;
-        }
-
-        public bool IsActive()
-        {
-            return (opFlags & OperationFlag.Active) == OperationFlag.Active;
-        }
-
-        public bool IsFixedRotation()
-        {
-            return (opFlags & OperationFlag.FixedRotation) == OperationFlag.FixedRotation;
-        }
-
-        public void SetSleepingAllowed(bool flag)
-        {
-            if(flag)
-            {
-                opFlags |= OperationFlag.AutoSleep;
-            }
-            else
-            {
-                opFlags &= ~OperationFlag.AutoSleep;
-                SetAwake(true);
-            }
-        }
-
-        public bool IsSleepingAllowed()
-        {
-            return (opFlags & OperationFlag.AutoSleep) == OperationFlag.AutoSleep;
-        }
-
-        public void SetIslandBound(bool flag)
-        {
-            if (flag)
-                opFlags |= OperationFlag.Island;
-            else
-                opFlags &= ~OperationFlag.Island;
-        }
-
-        public bool IsIslandBound()
-        {
-            return (opFlags & OperationFlag.Island) == OperationFlag.Island;
         }
 
         public void ApplyForce(Vector2 force, Vector2 point, bool wake)
@@ -364,6 +343,10 @@ namespace CrispyPhysics
 
         public void ChangeVelocity(Vector2 linearVelocity, float angularVelocity)
         {
+            if (    (Vector2.Dot(linearVelocity, linearVelocity) > 0)
+                ||  (angularVelocity * angularVelocity > 0f))
+                SetAwake(true);
+
             this.linearVelocity = linearVelocity;
             this.angularVelocity = angularVelocity;
         }

@@ -149,14 +149,9 @@ namespace CrispyPhysics
             return new Vector2(x, y);
         }
 
-        public static Vector2 Cross(float scalar, Vector2 vector)
-        {
-            return new Vector2(-scalar * vector.y, scalar * vector.x);
-        }
-
         public static float Cross(Vector2 vectorA, Vector2 vectorB)
         {
-            return vectorA.x * vectorB.y - vectorB.y * vectorB.y;
+            return vectorA.x * vectorB.y - vectorA.y * vectorB.y;
         }
     }
 }
