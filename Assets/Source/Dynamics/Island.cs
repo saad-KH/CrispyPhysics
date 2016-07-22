@@ -1,4 +1,5 @@
 using UnityEngine;
+using System;
 
 namespace CrispyPhysics
 {
@@ -18,11 +19,13 @@ namespace CrispyPhysics
 
         public Island(int bodyCapacity = 1, int contactCapacity = 1)
         {
-            Debug.Assert(bodyCapacity >= 0);
-            Debug.Assert(contactCapacity >= 0);
+            if (bodyCapacity <= 0)
+                throw new ArgumentException("bodyCapacity should be strictly greater than 0");
+            if (contactCapacity <= 0)
+                throw new ArgumentException("contactCapacity should be strictly greater than 0");
 
-            this.bodyCapacity = (bodyCapacity > 0) ? bodyCapacity : 1;
-            this.contactCapacity = (contactCapacity > 0) ? contactCapacity: 1;
+            this.bodyCapacity = bodyCapacity;
+            this.contactCapacity = contactCapacity;
 
             bodyCount = 0;
             contactCount = 0;
@@ -36,13 +39,15 @@ namespace CrispyPhysics
 
         public void Add(IBody body)
         {
-            Debug.Assert(bodyCount < bodyCapacity);
+            if(bodyCount >= bodyCapacity)
+                throw new InvalidOperationException("bodyCapacity is full");
             bodies[bodyCount++] = body;
         }
 
         public void Add(IContact contact)
         {
-            Debug.Assert(contactCount < contactCapacity);
+            if (contactCount >= contactCapacity)
+                throw new InvalidOperationException("contactCapacity is full");
             contacts[contactCount++] = contact;
         }
 
@@ -119,9 +124,10 @@ namespace CrispyPhysics
                 float linTolSqr = Physics2D.linearSleepTolerance * Physics2D.linearSleepTolerance;
                 float angTolSqr = Physics2D.angularSleepTolerance * Physics2D.angularSleepTolerance;
 
-                foreach (IBody body in bodies)
+                for (int i = 0; i < bodyCount; ++i)
                 {
-                    if(
+                    IBody body = bodies[i];
+                    if (
                             body.IsSleepingAllowed() == false
                         ||  (body.angularVelocity * body.angularVelocity > angTolSqr)
                         ||  (Vector2.Dot(body.linearVelocity, body.linearVelocity) > linTolSqr)
@@ -138,8 +144,13 @@ namespace CrispyPhysics
                 }
 
                 if (minSleepTime > Physics2D.timeToSleep && positionSolved)
-                    foreach (Body body in bodies)
+                {
+                    for (int i = 0; i < bodyCount; ++i)
+                    {
+                        IBody body = bodies[i];
                         body.SetAwake(false);
+                    }
+                }
             }
         }
 
@@ -159,7 +170,7 @@ namespace CrispyPhysics
             contactCount = 0;
 
             bodies = new IBody[bodyCapacity];
-            contacts = new Contact[contactCapacity];
+            contacts = new IContact[contactCapacity];
 
             positions = new Position[bodyCapacity];
             velocities = new Velocity[contactCapacity];

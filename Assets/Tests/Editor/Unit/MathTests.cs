@@ -171,7 +171,7 @@ namespace CrispyPhysics
 
             Assert.That(
                 vecCrossVec,
-                Is.EqualTo(0.207f).Within(0.001f),
+                Is.EqualTo(0.707f).Within(0.001f),
                 "Vector is well crossed with vector");
 
 

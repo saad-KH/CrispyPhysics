@@ -327,7 +327,7 @@ namespace CrispyPhysics
 
             Assert.That(
                 body.angularVelocity,
-                Is.EqualTo(-1f),
+                Is.EqualTo(0f),
                 "Applying linear impulse should produce the specified output angular velocity");
 
             //Applying Impulse to Center
@@ -379,7 +379,7 @@ namespace CrispyPhysics
 
             Assert.That(
                 body.angularVelocity,
-                Is.EqualTo(1f),
+                Is.EqualTo(0f),
                 "Applying angular impulse should produce the specified angular velocity");
         }
 
