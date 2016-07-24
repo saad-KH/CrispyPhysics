@@ -72,13 +72,13 @@ namespace CrispyPhysics
         {
             Debug.Assert(entity.body != null);
             entities.Add(entity);
-            world.AddBody(entity.body);
+            world.Add(entity.body);
         }
 
         public void RemoveEntity(Entity entity)
         {
             if (entities.IndexOf(entity) == -1) return;
-            world.RemoveBody(entity.body);
+            world.Remove(entity.body);
             entities.Remove(entity);
         }
     }

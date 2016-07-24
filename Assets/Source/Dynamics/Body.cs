@@ -6,6 +6,8 @@ namespace CrispyPhysics
 {
     public class Body : IBody
     {
+        public event BodyEventHandler ShapeChanged;
+
         public BodyType type { get; private set; }
 
         public IShape shape { get; private set; }
@@ -27,7 +29,6 @@ namespace CrispyPhysics
 
         private Transformation transform;
 
-        public IWorld world { get; private set; }
         public List<IContact> contacts { get; private set; }
 
         public Vector2 position { get { return transform.position; } }
@@ -48,7 +49,6 @@ namespace CrispyPhysics
 
         public Body(
             BodyType type,
-            IWorld world, 
             Vector2 position, 
             float angle,
             float linearDamping = 0f,
@@ -61,8 +61,6 @@ namespace CrispyPhysics
             bool active = true
             )
         {
-            Debug.Assert(world != null);
-
             this.type = type;
             opFlags = 0;
 
@@ -72,7 +70,6 @@ namespace CrispyPhysics
             if (active) opFlags |= OperationFlag.Active;
 
             this.type = type;
-            this.world = world;
 
             transform.Set(position, angle);
 
@@ -121,7 +118,8 @@ namespace CrispyPhysics
             if (type == BodyType.DynamicBody)
                 CalculateInertia();
 
-            world.NotifyShapeAdded();
+            if(ShapeChanged != null)
+                ShapeChanged(this, EventArgs.Empty);
         }
 
         public bool ShouldCollide(IBody other)
@@ -133,7 +131,6 @@ namespace CrispyPhysics
 
         public void ChangeSituation(Vector2 position, float angle)
         {
-            if (world.IsLocked()) return;
             transform.Set(position, angle);
 
             Debug.Assert(false, "Broad Phase");
@@ -150,7 +147,6 @@ namespace CrispyPhysics
 
         public void SetActive(bool flag)
         {
-            Debug.Assert(world.IsLocked() == false);
             if (flag == IsActive()) return;
 
             if (flag)

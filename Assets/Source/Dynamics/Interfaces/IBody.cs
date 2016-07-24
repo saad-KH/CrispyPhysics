@@ -9,8 +9,12 @@ namespace CrispyPhysics
         DynamicBody
     }
 
+    public delegate void BodyEventHandler (IBody body, EventArgs args);
+
     public interface IBody
     {
+        event BodyEventHandler ShapeChanged;
+
         BodyType type { get; }
 
         IShape shape { get; }
@@ -29,7 +33,6 @@ namespace CrispyPhysics
 
         float sleepTime { get; set; }
 
-        IWorld world { get; }
         List<IContact> contacts { get; }
 
         Vector2 position { get; }

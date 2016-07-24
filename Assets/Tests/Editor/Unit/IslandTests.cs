@@ -9,7 +9,7 @@ namespace CrispyPhysics
     public class IslandTests
     {
         [Test]
-        public void SettingUpIslands()
+        public void SettingUpIsland()
         {
             Assert.Throws<ArgumentException>(
                 delegate { new Island(0, 0); });
@@ -22,22 +22,14 @@ namespace CrispyPhysics
             IIsland island = new Island();
 
             island.Add(body1);
-            Assert.Throws<InvalidOperationException>(
-               () => island.Add(body2),
-               "Body Capacity should not be overflown");
+            Assert.Throws<InvalidOperationException>(() => island.Add(body2));
 
             island.Add(contact1);
-            Assert.Throws<InvalidOperationException>(
-               () => island.Add(contact2),
-               "Contact Capacity should not be overflown");
+            Assert.Throws<InvalidOperationException>(() => island.Add(contact2));
 
             island.Clear();
-            Assert.DoesNotThrow(
-               () => island.Add(body2),
-               "Body Capacity has been cleared");
-            Assert.DoesNotThrow(
-               () => island.Add(contact2),
-               "Contact Capacity has been cleared");
+            Assert.DoesNotThrow(() => island.Add(body2));
+            Assert.DoesNotThrow(() => island.Add(contact2));
         }
 
         [Test]

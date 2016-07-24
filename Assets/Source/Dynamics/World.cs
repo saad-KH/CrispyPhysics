@@ -44,14 +44,16 @@ namespace CrispyPhysics
             tick = 0f;
         }
 
-        public void AddBody(IBody body)
+        public void Add(IBody body)
         {
             bodies.Add(body);
+            body.ShapeChanged += ShapeChanged;
         }
 
-        public void RemoveBody(IBody body)
+        public void Remove(IBody body)
         {
             Debug.Assert(false, "Remove Contact");
+            body.ShapeChanged -= ShapeChanged;
             bodies.Remove(body);
         }
 
@@ -60,7 +62,7 @@ namespace CrispyPhysics
             if (flag == allowSleep) return;
             allowSleep = flag;
             if (allowSleep == false)
-                foreach (Body body in bodies)
+                foreach (IBody body in bodies)
                     body.SetAwake(true);
         }
 
@@ -98,11 +100,6 @@ namespace CrispyPhysics
             return (opFlags & OperationFlag.Crisped) == OperationFlag.Crisped;
         }
 
-        public void NotifyShapeAdded()
-        {
-            opFlags |= World.OperationFlag.NewShape;
-        }
-
         public void Step(float dt, int velocityIterations, int positionIterations)
         {
             TimeStep step;
@@ -117,7 +114,6 @@ namespace CrispyPhysics
             opFlags |= OperationFlag.Locked;
             opFlags &= ~OperationFlag.Crisped;
 
-            
             step.dt = dt;
             step.velocityIterations = velocityIterations;
             step.positionIterations = positionIterations;
@@ -247,6 +243,11 @@ namespace CrispyPhysics
                     body.ChangeVelocity(crispedLinearVelocity, crispedAngularVelocity);
                 }
             }
+        }
+
+        private void ShapeChanged(IBody body, EventArgs args)
+        {
+        	opFlags |= World.OperationFlag.NewShape;
         }
     }
 }

@@ -18,8 +18,6 @@ namespace CrispyPhysics
         [HideInInspector]
         public IBody body { get; private set; }
 
-        private Vector2 appliedImpulse = Vector2.zero;
-
         void Awake()
         {
             mass = (mass > 0) ? mass : 1f;
@@ -51,21 +49,12 @@ namespace CrispyPhysics
             }
             else if(body != null)
                 UpdateBody();
-
-            if (Input.GetKeyDown("space"))
-                appliedImpulse = new Vector2(0f, 1f);
-            else if (Input.GetKeyUp("space"))
-                appliedImpulse = Vector2.zero;
         }
 
         void FixedUpdate()
         {
-            if (body != null)
-                body.ApplyLinearImpulse(
-                    appliedImpulse,
-                    new Vector2(Random.Range(-1.0f, 1.0f), Random.Range(-1.0f, 1.0f)),
-                    true);
         }
+
         public void SynchronizeBody()
         {
             Debug.Assert(body != null);
@@ -100,7 +89,6 @@ namespace CrispyPhysics
             if (oldBody != null)
                 return new Body(
                     BodyType.DynamicBody,
-                    engine.world,
                     oldBody.position,
                     oldBody.angle,
                     linearDrag,
@@ -115,7 +103,6 @@ namespace CrispyPhysics
             else
                 return new Body(
                     BodyType.DynamicBody,
-                    engine.world,
                     new Vector2(transform.position.x, transform.position.y),
                     transform.eulerAngles.z,
                     linearDrag,

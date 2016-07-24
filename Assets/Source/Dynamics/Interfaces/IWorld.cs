@@ -9,9 +9,9 @@ namespace CrispyPhysics
         float actionTick { get; set; }
         float tickRatio { get; }
 
-        void AddBody(IBody body);
+        void Add(IBody body);
 
-        void RemoveBody(IBody body);
+        void Remove(IBody body);
 
         void SetAllowSleeping(bool flag);
 
@@ -26,8 +26,6 @@ namespace CrispyPhysics
         bool GetAutoClearForces();
 
         bool IsCrisped();
-
-        void NotifyShapeAdded();
 
         void Step(float dt, int velocityIterations, int positionIterations);
     }
