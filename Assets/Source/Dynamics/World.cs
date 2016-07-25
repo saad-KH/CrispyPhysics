@@ -29,7 +29,7 @@ namespace CrispyPhysics
 
         private OperationFlag opFlags;
 
-        public World(float crispSize = 1f, float actionTick = 0.1f)
+        public World(float crispSize = 0.1f, float actionTick = 0.1f)
         {
             this.crispSize = crispSize;
             this.actionTick = actionTick;
@@ -210,37 +210,7 @@ namespace CrispyPhysics
                                 Mathf.Floor(Mathf.Abs(body.position.y / crispSize)) 
                             *   crispSize * Mathf.Sign(body.position.y);
 
-                    Vector2 crispation = crispedPosition - body.position;
-
-                    Vector2 crispedLinearVelocity = new Vector2(
-                            Mathf.Max(
-                                    Mathf.Abs(body.linearVelocity.x) 
-                                -   Mathf.Abs(crispation.x) * body.linearDamping
-                                ,
-                                0)
-                        *   Mathf.Sign(body.linearVelocity.x)
-                        ,
-                            Mathf.Max(
-                                    Mathf.Abs(body.linearVelocity.y) 
-                                -   Mathf.Abs(crispation.y) * body.linearDamping
-                                ,
-                                0)
-                        *   Mathf.Sign(body.linearVelocity.y)
-                    );
-
-                    float timeLaps = Mathf.Max(
-                        crispation.x / crispedLinearVelocity.x,
-                        crispation.y / crispedLinearVelocity.y
-                    );
-
-                    float crispedAngularVelocity = 
-                            body.angularVelocity
-                        /   1 + timeLaps * body.angularDamping;
-
-                    float crispedAngle = body.angle + crispedAngularVelocity * timeLaps;
-
-                    body.ChangeSituation(crispedPosition, crispedAngle);
-                    body.ChangeVelocity(crispedLinearVelocity, crispedAngularVelocity);
+                    body.ChangeSituation(crispedPosition, body.angle);
                 }
             }
         }
