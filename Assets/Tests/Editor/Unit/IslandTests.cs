@@ -5,6 +5,7 @@ using System;
 
 namespace CrispyPhysics
 {
+    using Internal;
     [TestFixture]
     public class IslandTests
     {
@@ -14,12 +15,12 @@ namespace CrispyPhysics
             Assert.Throws<ArgumentException>(
                 delegate { new Island(0, 0); });
 
-            IBody body1 = Substitute.For<IBody>();
-            IBody body2 = Substitute.For<IBody>();
+            IInternalBody body1 = Substitute.For<IInternalBody>();
+            IInternalBody body2 = Substitute.For<IInternalBody>();
             IContact contact1 = Substitute.For<IContact>();
             IContact contact2 = Substitute.For<IContact>();
 
-            IIsland island = new Island();
+            Island island = new Island();
 
             island.Add(body1);
             Assert.Throws<InvalidOperationException>(() => island.Add(body2));
@@ -35,17 +36,25 @@ namespace CrispyPhysics
         [Test]
         public void SolvingBody()
         {
-            IIsland island = new Island();
+            Island island = new Island();
 
-            IBody body = Substitute.For<IBody>();
+            IInternalMomentum futurMomentum = Substitute.For<IInternalMomentum>();
+
+            futurMomentum.force.Returns(Vector2.one);
+            futurMomentum.torque.Returns(1f);
+            futurMomentum.linearVelocity.Returns(Vector2.zero);
+            futurMomentum.angularVelocity.Returns(0f);
+            futurMomentum.position.Returns(Vector2.zero);
+            futurMomentum.angle.Returns(0f);
+
+            IInternalBody body = Substitute.For<IInternalBody>();
             island.Add(body);
 
             body.invMass.Returns(1f);
-            body.force.Returns(Vector2.one);
-            body.torque.Returns(1f);
             body.linearDamping.Returns(0.2f);
             body.angularDamping.Returns(0.2f);
             body.gravityScale.Returns(1f);
+            body.futur.Returns(futurMomentum);
 
             TimeStep step = new TimeStep();
             step.dt = 1f;
@@ -55,53 +64,23 @@ namespace CrispyPhysics
             step.dtRatio = 0f;
 
             
-            island.Solve(step, new Vector2(0f, -9.8f), false);
-            body.Received(1).ChangeSituation(
+            island.Solve(step, new Vector2(0f, -9.8f));
+
+            body.Received(1).Foresee(
+                Arg.Is<float>(x => Calculus.Approximately(x, 1f, 0)));
+
+            futurMomentum.Received(1).ChangeSituation(
                 Arg.Is<Vector2>(
-                    v =>    Mathf.Abs(v.x - 0.833f) < 0.001f 
-                        &&  Mathf.Abs(v.y - -7.333f) < 0.001f), 
-                Arg.Is<float>(x => Mathf.Abs(x - 0.833f) < 0.001f));
+                    v =>    Calculus.Approximately(v.x, 0.833f, 0.001f)
+                        &&  Calculus.Approximately(v.y, -7.333f, 0.001f)), 
+                Arg.Is<float>(x => Calculus.Approximately(x, 0.833f, 0.001f)));
 
-            body.Received(1).ChangeVelocity(
+            futurMomentum.Received(1).ChangeVelocity(
                 Arg.Is<Vector2>(
-                    v => Mathf.Abs(v.x - 0.833f) < 0.001f
-                        && Mathf.Abs(v.y - -7.333f) < 0.001f),
-                Arg.Is<float>(x => Mathf.Abs(x - 0.833f) < 0.001f));
+                    v =>    Calculus.Approximately(v.x, 0.833f, 0.001f)
+                        &&  Calculus.Approximately(v.y, -7.333f, 0.001f)),
+                Arg.Is<float>(x => Calculus.Approximately(x, 0.833f, 0.001f)));
 
-        }
-
-        [Test]
-        public void SolvingSleepingBody()
-        {
-            IIsland island = new Island();
-            
-            TimeStep step = new TimeStep();
-            step.dt = Physics2D.timeToSleep + 1f;
-            step.velocityIterations = 8;
-            step.positionIterations = 3;
-            step.invDt = 1f / step.dt;
-            step.dtRatio = 0f;
-
-            IBody body = Substitute.For<IBody>();
-            island.Add(body);
-
-            body.invMass.Returns(1f);
-            body.IsSleepingAllowed().Returns(true);
-
-            //Sleeping Body
-            island.Solve(step, Vector2.zero, true);
-            body.Received(1).SetAwake(false);
-            body.Received(1).sleepTime = step.dt;
-
-
-            //Awaking Body
-            body.ClearReceivedCalls();
-
-            body.linearVelocity.Returns(Vector2.one);
-            body.angularVelocity.Returns(1f);
-
-            island.Solve(step, Vector2.zero, true);
-            body.Received(1).sleepTime = 0f;
         }
     }
 }

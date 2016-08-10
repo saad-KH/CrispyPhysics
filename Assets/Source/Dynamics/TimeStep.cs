@@ -1,6 +1,6 @@
-﻿using UnityEngine;
+using UnityEngine;
 
-namespace CrispyPhysics
+namespace CrispyPhysics.Internal
 {
     public struct TimeStep
     {

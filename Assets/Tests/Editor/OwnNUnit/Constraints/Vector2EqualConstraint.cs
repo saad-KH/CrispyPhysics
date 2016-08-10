@@ -9,7 +9,7 @@ namespace OwnNUnit
 
         public Vector2EqualConstraint(Vector2 vector)
         {
-            this.expected = vector;
+            expected = vector;
         }
 
         public Vector2EqualConstraint Within(double tolerance)

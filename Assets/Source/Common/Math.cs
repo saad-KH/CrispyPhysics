@@ -1,8 +1,8 @@
 using UnityEngine;
 
-namespace CrispyPhysics
+namespace CrispyPhysics.Internal
 {
-
+    #region Rotation
     public struct Rotation
     {
         public float sine;
@@ -40,8 +40,30 @@ namespace CrispyPhysics
         {
             return new Vector2(-sine, cosine);
         }
-    }
 
+        public override bool Equals(object obj)
+        {
+            return obj is Rotation && this == (Rotation)obj;
+        }
+
+        public override int GetHashCode()
+        {
+            return sine.GetHashCode() ^ cosine.GetHashCode();
+        }
+        
+        public static bool operator ==(Rotation a, Rotation b)
+        {
+            return (a.sine == b.sine && a.cosine == b.cosine);
+        }
+
+        public static bool operator !=(Rotation a, Rotation b)
+        {
+            return !(a == b);
+        }
+    }
+    #endregion;
+
+    #region Transformation
     public struct Transformation
     {
         public Vector2 position;
@@ -64,8 +86,30 @@ namespace CrispyPhysics
             this.position = position;
             rotation.Set(angle);
         }
-    }
 
+        public override bool Equals(object obj)
+        {
+            return obj is Transformation && this == (Transformation)obj;
+        }
+
+        public override int GetHashCode()
+        {
+            return position.GetHashCode() ^ rotation.GetHashCode();
+        }
+
+        public static bool operator ==(Transformation a, Transformation b)
+        {
+            return (a.position == b.position && a.rotation == b.rotation);
+        }
+
+        public static bool operator !=(Transformation a, Transformation b)
+        {
+            return !(a == b);
+        }
+    }
+    #endregion
+
+    /*#region Sweep
     public struct Sweep
     {
         public Vector2 center0, center;
@@ -107,9 +151,34 @@ namespace CrispyPhysics
             angle -= twoPi * Mathf.Floor(angle / twoPi);
         }
     }
+    #endregion*/
 
+    #region Calculus
     public class Calculus
     {
+        public static bool Approximately(float a, float b, float tolerance = 0)
+        {
+            if (tolerance < Mathf.Epsilon)
+                tolerance = Mathf.Epsilon;
+            return Mathf.Abs(a - b) < tolerance;
+        }
+
+        public static bool Approximately(Vector2 a, Vector2 b, float tolerance = 0)
+        {
+            return Approximately(Vector2.SqrMagnitude(a - b), 0f, tolerance * tolerance);
+        }
+
+        public static bool Approximately(Rotation a, Rotation b, float tolerance = 0)
+        {
+            return (Approximately(a.sine, b.sine, tolerance)
+                    && Approximately(a.cosine, b.cosine, tolerance));
+        }
+
+        public static bool Approximately(Transformation a, Transformation b, float tolerance = 0)
+        {
+            return (Approximately(a.position, b.position, tolerance)
+                    && Approximately(a.rotation, b.rotation, tolerance));
+        }
 
         public static Vector2 Mul(Rotation rotation, Vector2 vector)
         {
@@ -154,4 +223,5 @@ namespace CrispyPhysics
             return vectorA.x * vectorB.y - vectorA.y * vectorB.y;
         }
     }
+    #endregion
 }

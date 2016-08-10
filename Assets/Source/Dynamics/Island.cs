@@ -1,11 +1,11 @@
 using UnityEngine;
 using System;
 
-namespace CrispyPhysics
+namespace CrispyPhysics.Internal
 {
-    public class Island : IIsland
+    public class Island
     {
-        private IBody[] bodies;
+        private IInternalBody[] bodies;
         private IContact[] contacts;
 
         private Position[] positions;
@@ -30,14 +30,14 @@ namespace CrispyPhysics
             bodyCount = 0;
             contactCount = 0;
 
-            bodies = new IBody[this.bodyCapacity];
+            bodies = new IInternalBody[this.bodyCapacity];
             contacts = new IContact[this.contactCapacity];
 
             positions = new Position[this.bodyCapacity];
             velocities = new Velocity[this.contactCapacity];
         }
 
-        public void Add(IBody body)
+        public void Add(IInternalBody body)
         {
             if(bodyCount >= bodyCapacity)
                 throw new InvalidOperationException("bodyCapacity is full");
@@ -51,28 +51,31 @@ namespace CrispyPhysics
             contacts[contactCount++] = contact;
         }
 
-        public void Solve(TimeStep step, Vector2 gravity, bool allowSleep)
+        public void Solve(TimeStep step, Vector2 gravity)
         {
             float dt = step.dt;
 
             for(int i=0; i < bodyCount; ++i)
             {
-                IBody body = bodies[i];
-                Vector2 linearVelocity = body.linearVelocity;
-                float angularVelocity = body.angularVelocity;
+                IInternalBody body = bodies[i];
+                body.Foresee(dt);
+                IInternalMomentum momentum = body.futur;
+                
+                Vector2 linearVelocity = momentum.linearVelocity;
+                float angularVelocity = momentum.angularVelocity;
 
-                positions[i].center = body.position;
-                positions[i].angle = body.angle;
+                positions[i].center = momentum.position;
+                positions[i].angle = momentum.angle;
 
                 if (body.type == BodyType.DynamicBody)
                 {
                     linearVelocity += 
                             dt 
-                        *   (body.gravityScale * gravity + body.invMass * body.force);
+                        *   (body.gravityScale * gravity + body.invMass * momentum.force);
 
                     angularVelocity += 
                             dt 
-                        *   body.invMass * body.torque;
+                        *   body.invMass * momentum.torque;
 
                     linearVelocity *= 1f / (1f + dt * body.linearDamping);
                     angularVelocity *= 1f / (1f + dt * body.angularDamping);
@@ -103,54 +106,18 @@ namespace CrispyPhysics
                 velocities[i].angularVelocity = angularVelocity;
             }
 
-            bool positionSolved = false;
+            /*bool positionSolved = false;
             {
                 positionSolved = true;
-            }
+            }*/
 
             //Debug.Assert(false, "Solve Position Constraints");
 
             for (int i = 0; i < bodyCount; ++i)
             {
-                IBody body = bodies[i];
-                body.ChangeSituation(positions[i].center, positions[i].angle);
-                body.ChangeVelocity(velocities[i].linearVelocity, velocities[i].angularVelocity);
-            }
-
-            if (allowSleep)
-            {
-                float minSleepTime = float.MaxValue;
-
-                float linTolSqr = Physics2D.linearSleepTolerance * Physics2D.linearSleepTolerance;
-                float angTolSqr = Physics2D.angularSleepTolerance * Physics2D.angularSleepTolerance;
-
-                for (int i = 0; i < bodyCount; ++i)
-                {
-                    IBody body = bodies[i];
-                    if (
-                            body.IsSleepingAllowed() == false
-                        ||  (body.angularVelocity * body.angularVelocity > angTolSqr)
-                        ||  (Vector2.Dot(body.linearVelocity, body.linearVelocity) > linTolSqr)
-                      )
-                    {
-                        body.sleepTime = 0f;
-                        minSleepTime = 0f;
-                    }
-                    else
-                    {
-                        body.sleepTime += dt;
-                        minSleepTime = Mathf.Min(minSleepTime, body.sleepTime);
-                    }
-                }
-
-                if (minSleepTime > Physics2D.timeToSleep && positionSolved)
-                {
-                    for (int i = 0; i < bodyCount; ++i)
-                    {
-                        IBody body = bodies[i];
-                        body.SetAwake(false);
-                    }
-                }
+                IInternalMomentum momentum = bodies[i].futur;
+                momentum.ChangeSituation(positions[i].center, positions[i].angle);
+                momentum.ChangeVelocity(velocities[i].linearVelocity, velocities[i].angularVelocity);
             }
         }
 
@@ -169,7 +136,7 @@ namespace CrispyPhysics
             bodyCount = 0;
             contactCount = 0;
 
-            bodies = new IBody[bodyCapacity];
+            bodies = new IInternalBody[bodyCapacity];
             contacts = new IContact[contactCapacity];
 
             positions = new Position[bodyCapacity];

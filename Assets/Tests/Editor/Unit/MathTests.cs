@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace CrispyPhysics
 {
+    using Internal;
     [TestFixture]
     public class MathTests
     {
@@ -37,7 +38,7 @@ namespace CrispyPhysics
                 OwnNUnit.Is.EqualTo(new Vector2(-0.866f, 0.5f)).Within(0.001f));
         }
 
-        [Test]
+        /*[Test]
         public void UsingSweep()
         {
             Sweep sweep = new Sweep();
@@ -71,13 +72,25 @@ namespace CrispyPhysics
 
             Assert.That(sweep.angle0, Is.EqualTo(0.392f).Within(0.001f));
             Assert.That(sweep.angle, Is.EqualTo(0.785f).Within(0.001f));
-
-
-        } 
+        }*/
 
         [Test]
         public void ComputingWithCalculus()
         {
+            Assert.That(Calculus.Approximately(
+                1f + Mathf.Epsilon,
+                1f));
+
+            Assert.That(Calculus.Approximately(
+                1f + 0.0999f,
+                1f,
+                0.1f));
+
+            Assert.That(!Calculus.Approximately(
+                1f + 0.1001f,
+                1f,
+                0.1f));
+
             Vector2 rotMulVec = Calculus.Mul(
                 new Rotation(Mathf.PI / 3f),
                 new Vector2(0.707f, 0.707f));

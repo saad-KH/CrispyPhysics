@@ -4,138 +4,171 @@ using System.Collections.Generic;
 
 namespace CrispyPhysics
 {
+    using Internal;
+    public class WorldFactory
+    {
+        public static IWorld CreateWorld(
+            float crispSize = 0.01f, float actionTick = 0.01f, 
+            float rememberableTime = 0f, float forseeableTime = 0f, float bufferTime = 0f)
+        {
+            return new World(crispSize, actionTick, rememberableTime, forseeableTime, bufferTime);
+        }
+    } 
+}
+namespace CrispyPhysics.Internal
+{
     public class World : IWorld
     {
-        public float crispSize { get; set; }
+        public float crispSize { get; private set; }
         public float tick { get; private set; }
-        public float actionTick { get; set; }
-        public float tickRatio { get { return tick / actionTick; } }
+        public float actionTick { get; private set; }
+        public float rememberableTime { get; private set; }
+        public float foreseeableTime { get; private set; }
+        public float rememberedTime { get; private set; }
+        public float foreseenTime { get; private set; }
+        public float bufferTime { get; set; }
 
 
-        private List<IBody> bodies;
+
+        private float usedDeltaTime;
+        private List<IInternalBody> bodies;
         private float lastInvDt = 0f;
-
-        private bool allowSleep;
-        private bool stepComplete;
 
         [Flags]
         private enum OperationFlag
         {
             Locked = 0x0001,
-            ClearForces = 0x0002,
-            NewShape = 0x0004,
+            BodyChange = 0x0002,
+            FuturCleared = 0x0004,
             Crisped = 0x0008
         }
 
         private OperationFlag opFlags;
 
-        public World(float crispSize = 0.1f, float actionTick = 0.1f)
+        public World(
+            float crispSize = 0.01f, float actionTick = 0.01f,
+            float rememberableTime = 0f, float foreseeableTime = 0f, float bufferTime = 0f)
         {
             this.crispSize = crispSize;
             this.actionTick = actionTick;
+            this.rememberableTime = rememberableTime;
+            this.foreseeableTime = foreseeableTime;
+            this.bufferTime = bufferTime;
 
             lastInvDt = 0f;
-            opFlags = OperationFlag.ClearForces;
-
-            stepComplete = true;
-            allowSleep = true;
-
-            bodies = new List<IBody>();
             tick = 0f;
+            rememberedTime = 0f;
+            foreseenTime = 0f;
+
+            bodies = new List<IInternalBody>();
         }
 
-        public void Add(IBody body)
+        public IBody CreateBody(
+            BodyType type, IShape shape,
+            Vector2 position, float angle,
+            float linearDamping = 0f, float angularDamping = 0f,
+            float mass = 1f, float gravityScale = 1f)
         {
-            bodies.Add(body);
-            body.ShapeChanged += ShapeChanged;
+            IInternalBody newBody = new Body(
+                type, shape,
+                position, angle,
+                linearDamping, angularDamping,
+                mass, gravityScale
+            );
+
+            bodies.Add(newBody);
+            opFlags |= OperationFlag.BodyChange;
+            newBody.FuturCleared += FuturCleared;
+
+            return newBody;
         }
 
-        public void Remove(IBody body)
+        public void DestroyBody(IBody body)
         {
+            if (!(body is IInternalBody)) return;
+
+            IInternalBody oldBody = body as IInternalBody;
+
+            int bodyIndex = bodies.IndexOf(oldBody);
+            if (bodyIndex == -1) return;
+
             Debug.Assert(false, "Remove Contact");
-            body.ShapeChanged -= ShapeChanged;
-            bodies.Remove(body);
-        }
+            opFlags |= OperationFlag.BodyChange;
+            oldBody.FuturCleared -= FuturCleared;
 
-        public void SetAllowSleeping(bool flag)
-        {
-            if (flag == allowSleep) return;
-            allowSleep = flag;
-            if (allowSleep == false)
-                foreach (IBody body in bodies)
-                    body.SetAwake(true);
-        }
-
-        public void ClearForces()
-        {
-            foreach (IBody body in bodies)
-                body.ChangeImpulse(Vector2.zero, 0f);
-        }
-
-        public bool IsLocked()
-        {
-            return (opFlags & OperationFlag.Locked) == OperationFlag.Locked;
-        }
-
-        public Vector2 GetGravity()
-        {
-            return Physics2D.gravity;
-        }
-
-        public void SetAutoClearForces(bool flag)
-        {
-            if (flag)
-                opFlags |= OperationFlag.ClearForces;
-            else
-                opFlags &= ~OperationFlag.ClearForces;
-        }
-
-        public bool GetAutoClearForces()
-        {
-            return (opFlags & OperationFlag.ClearForces) == OperationFlag.ClearForces;
-        }
-
-        public bool IsCrisped()
-        {
-            return (opFlags & OperationFlag.Crisped) == OperationFlag.Crisped;
+            bodies.RemoveAt(bodyIndex);
         }
 
         public void Step(float dt, int velocityIterations, int positionIterations)
         {
-            TimeStep step;
+            if (dt <= 0) return;
+            bool clearFutur = 
+                    (opFlags & OperationFlag.FuturCleared) == OperationFlag.FuturCleared
+                ||  (opFlags & OperationFlag.BodyChange) == OperationFlag.BodyChange;
+
+            bool lookForContacts = 
+                (opFlags & OperationFlag.BodyChange) == OperationFlag.BodyChange;
+
+            if (usedDeltaTime != dt)
+            {
+                usedDeltaTime = dt;
+                clearFutur = true;
+            }
             tick += dt;
 
-            if ((opFlags & OperationFlag.NewShape) == OperationFlag.NewShape)
+            if (clearFutur)
             {
-                //Debug.Assert(false, "Find New Contacts");
-                opFlags &= ~OperationFlag.NewShape;
+                foreach (IInternalBody body in bodies)
+                    body.ClearFutur();
+                foreseenTime = 0f;
+            }
+
+            if(lookForContacts)
+            {
+                //Debug.Assert(false, "Look for Contacts");
             }
 
             opFlags |= OperationFlag.Locked;
-            opFlags &= ~OperationFlag.Crisped;
 
+            TimeStep step;
             step.dt = dt;
             step.velocityIterations = velocityIterations;
             step.positionIterations = positionIterations;
-            step.invDt = (dt > 0f) ? 1f / dt : 0f;
+            step.invDt = 1f / dt;
             step.dtRatio = lastInvDt * dt;
 
             //Debug.Assert(false, "Update Collider");
 
-            if (stepComplete && step.dt > 0)
+            float time = 0f;
+            float toBuffer = Math.Min(bufferTime, foreseeableTime - foreseenTime);
+
+            if(foreseenTime < step.dt)
+                toBuffer += step.dt;
+
+            while(time < toBuffer)
+            {
                 Solve(step);
+                time += step.dt;
+            }
+            foreseenTime += time;
 
             //Debug.Assert(false, "Handle TOI events");
 
-            if (step.dt > 0f) lastInvDt = step.invDt;
+            foreach (IInternalBody body in bodies)
+            {
+                body.Step(step.dt);
+                body.keep(rememberableTime, foreseeableTime);
+            }
+                
 
-            if ((opFlags & OperationFlag.ClearForces) == OperationFlag.ClearForces)
-                ClearForces();
+            rememberedTime = Math.Min(rememberableTime, rememberedTime + step.dt);
+            foreseenTime = Math.Max(0, foreseenTime - step.dt);
 
-
-            Crisp();
-
+            lastInvDt = step.invDt;
             opFlags &= ~OperationFlag.Locked;
+            //opFlags &= ~OperationFlag.Crisped;
+            opFlags &= ~OperationFlag.BodyChange;
+            opFlags &= ~OperationFlag.FuturCleared;
 
         }
 
@@ -143,34 +176,28 @@ namespace CrispyPhysics
         {
             Island island = new Island(bodies.Count);
 
-            foreach (IBody body in bodies)
-                body.SetIslandBound(false);
+            foreach (IInternalBody body in bodies)
+                body.islandBound = false;
 
             //Debug.Assert(false, "Clear Contacts Island Flags");
 
-            Stack<IBody> stack = new Stack<IBody>(bodies.Count);
-            foreach (IBody seed in bodies)
+            Stack<IInternalBody> stack = new Stack<IInternalBody>(bodies.Count);
+            foreach (IInternalBody seed in bodies)
             {
-                if (seed.IsIslandBound())
-                    continue;
-
-                if (!seed.IsAwake() || !seed.IsActive())
+                if (seed.islandBound)
                     continue;
 
                 island.Clear();
                 stack.Push(seed);
-                seed.SetIslandBound(true);
+                seed.islandBound = (true);
                 while (stack.Count > 0)
                 {
-                    IBody body = stack.Pop();
-                    Debug.Assert(body.IsActive() == true);
+                    IInternalBody body = stack.Pop();
                     island.Add(body);
-
-                    body.SetAwake(true);
 
                     //Debug.Assert(false, "Search Contacts associated to body");
 
-                    island.Solve(step, GetGravity(), allowSleep);
+                    island.Solve(step, Physics2D.gravity);
                 }
             }
 
@@ -184,7 +211,7 @@ namespace CrispyPhysics
 
         private void Crisp()
         {
-            if(tick >= actionTick)
+            /*if(tick >= actionTick)
             {
                 tick = tick - actionTick;
                 opFlags |= OperationFlag.Crisped;
@@ -212,12 +239,12 @@ namespace CrispyPhysics
 
                     body.ChangeSituation(crispedPosition, body.angle);
                 }
-            }
+            }*/
         }
 
-        private void ShapeChanged(IBody body, EventArgs args)
+        private void FuturCleared(IBody body, EventArgs args)
         {
-        	opFlags |= World.OperationFlag.NewShape;
+        	opFlags |= World.OperationFlag.FuturCleared;
         }
     }
 }

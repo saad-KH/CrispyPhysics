@@ -5,65 +5,79 @@ using System;
 
 namespace CrispyPhysics
 {
-	[TestFixture]
+    using Internal;
+    [TestFixture]
 	public class WorldTests
 	{
 		[Test]
 		public void SettingUpWorld()
 		{
-			IWorld world = new World();
+			World world = new World();
 
-			Assert.That(world.GetAutoClearForces() == true);
-			Assert.That(world.IsCrisped() == false);
-			Assert.That(world.IsLocked() == false);
+			Assert.That(world.crispSize, Is.EqualTo(0.01f));
+            Assert.That(world.tick, Is.EqualTo(0f));
+            Assert.That(world.actionTick, Is.EqualTo(0.01f));
+            Assert.That(world.rememberableTime, Is.EqualTo(0f));
+            Assert.That(world.foreseeableTime, Is.EqualTo(0f));
+            Assert.That(world.rememberedTime, Is.EqualTo(0f));
+            Assert.That(world.foreseenTime, Is.EqualTo(0f));
+            Assert.That(world.bufferTime, Is.EqualTo(0f));
 
-			world.SetAutoClearForces(false);
-			Assert.That(world.GetAutoClearForces() == false);
-			world.SetAutoClearForces(true);
-			Assert.That(world.GetAutoClearForces() == true);
+            World specificWorld = new World(
+                0.25f, 0.5f,
+                5f, 5f, 0.25f);
 
-			IBody body = Substitute.For<IBody>();
-			world.Add(body);
+            Assert.That(specificWorld.crispSize, Is.EqualTo(0.25f));
+            Assert.That(specificWorld.tick, Is.EqualTo(0f));
+            Assert.That(specificWorld.actionTick, Is.EqualTo(0.5f));
+            Assert.That(specificWorld.rememberableTime, Is.EqualTo(5f));
+            Assert.That(specificWorld.foreseeableTime, Is.EqualTo(5f));
+            Assert.That(specificWorld.rememberedTime, Is.EqualTo(0f));
+            Assert.That(specificWorld.foreseenTime, Is.EqualTo(0f));
+            Assert.That(specificWorld.bufferTime, Is.EqualTo(0.25f));
+        }
 
-			world.SetAllowSleeping(false);
-			world.SetAllowSleeping(true);
-			body.Received(1).SetAwake(true);
+        [Test]
+        public void SteppingWorld()
+        {
+            IWorld world = new World(
+                0.1f, 0.2f,
+                0.5f, 0.5f, 0.1f);
+            Vector2 initialGravity = Physics2D.gravity;
+            Physics2D.gravity = new Vector2(-10f, -10f);
 
-			world.ClearForces();
-			body.Received(1).ChangeImpulse(Vector2.zero, 0f);
-		}
+            IInternalBody body = world.CreateBody(BodyType.DynamicBody, null, Vector2.zero, 0f) as IInternalBody;
 
-		[Test]
-		public void SteppingWorld()
-		{
-			IWorld world = new World(0.1f, 0.1f);
+            world.Step(0.01f, 8, 3);
+            Assert.That(world.tick, Is.EqualTo(0.01f).Within(0.001f));
 
-			IBody body = Substitute.For<IBody>();
-			world.Add(body);
-			body.IsAwake().Returns(true);
-			body.IsActive().Returns(true);
+            while(world.tick < 1f || !Calculus.Approximately(world.tick, 1f, 0.001f))
+                world.Step(0.01f, 8, 3);
 
-			IBody sleepingBody = Substitute.For<IBody>();
-			world.Add(sleepingBody);
-			sleepingBody.IsAwake().Returns(false);
+            Assert.That(world.tick, Is.EqualTo(1f).Within(0.001f));
+            Assert.That(world.rememberedTime, Is.EqualTo(0.5f).Within(0.001f));
+            Assert.That(world.foreseenTime, Is.EqualTo(0.5f).Within(0.001f));
 
-			IBody inactiveBody = Substitute.For<IBody>();
-			world.Add(inactiveBody);
-			inactiveBody.IsActive().Returns(false);
+            Assert.That(body.current.tick, Is.EqualTo(1f).Within(0.001f));
+            Assert.That(
+                body.linearVelocity,
+                OwnNUnit.Is.EqualTo(new Vector2(-10f,-10f)).Within(0.001f));
+            Assert.That(
+                body.position,
+                OwnNUnit.Is.EqualTo(new Vector2(-5.049f, -5.049f)).Within(0.001f));
 
-			world.Step(0.05f, 8, 3);
-            Assert.That(world.tick, Is.EqualTo(0.05f).Within(0.001f));
-            body.Received(1).SetIslandBound(false);
-			body.Received(1).SetIslandBound(true);
-			body.Received(1).SetAwake(true);
+            Assert.That(body.futur.tick, Is.EqualTo(1f + world.foreseenTime).Within(0.001f));
+            Assert.That(
+                body.futur.linearVelocity,
+                OwnNUnit.Is.EqualTo(new Vector2(-15f, -15f)).Within(0.001f));
+            Assert.That(
+                body.futur.position,
+                OwnNUnit.Is.EqualTo(new Vector2(-11.325f, -11.325f)).Within(0.001f));
 
-			sleepingBody.Received(1).SetIslandBound(false);
-			sleepingBody.Received(0).SetIslandBound(true);
+            Physics2D.gravity = initialGravity;
+        }
 
-			inactiveBody.Received(1).SetIslandBound(false);
-			inactiveBody.Received(0).SetIslandBound(true);
-		}
-
+        /*
 		[Test]
 		public void CrispingWorld()
 		{
@@ -152,6 +166,6 @@ namespace CrispyPhysics
                     v => Mathf.Abs(v.x - 1.470f) < 0.001f
                         && Mathf.Abs(v.y - -1.470f) < 0.001f),
                 Arg.Is<float>(x => Mathf.Abs(x - 0.970f) < 0.001f));
-        }
-	}
+        }*/
+    }
 }

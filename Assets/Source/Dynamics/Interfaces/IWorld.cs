@@ -4,29 +4,26 @@ namespace CrispyPhysics
 {
     public interface IWorld
     {
-        float crispSize { get; set; }
+        float crispSize { get; }
         float tick { get; }
-        float actionTick { get; set; }
-        float tickRatio { get; }
+        float actionTick { get; }
+        float rememberableTime { get; }
+        float foreseeableTime { get; }
+        float rememberedTime { get; }
+        float foreseenTime { get; }
+        float bufferTime { get; set; }
 
-        void Add(IBody body);
+        IBody CreateBody(
+            BodyType type, IShape shape,
+            Vector2 position, float angle,
+            float linearDamping = 0f, float angularDamping = 0f,
+            float mass = 1f, float gravityScale = 1f);
 
-        void Remove(IBody body);
+        void DestroyBody(IBody body);
 
-        void SetAllowSleeping(bool flag);
-
-        void ClearForces();
-
-        bool IsLocked();
-
-        Vector2 GetGravity();
-
-        void SetAutoClearForces(bool flag);
-
-        bool GetAutoClearForces();
-
-        bool IsCrisped();
-
-        void Step(float dt, int velocityIterations, int positionIterations);
+        void Step(
+            float dt, 
+            int velocityIterations, 
+            int positionIterations);
     }
 }
