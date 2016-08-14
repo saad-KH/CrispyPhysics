@@ -4,14 +4,13 @@ namespace CrispyPhysics
 {
     public interface IWorld
     {
-        float crispSize { get; }
+        float fixedStep { get; }
+        float crispyStep { get; }
+        float crispySize { get; }
         float tick { get; }
-        float actionTick { get; }
-        float rememberableTime { get; }
-        float foreseeableTime { get; }
         float rememberedTime { get; }
         float foreseenTime { get; }
-        float bufferTime { get; set; }
+
 
         IBody CreateBody(
             BodyType type, IShape shape,
@@ -21,9 +20,8 @@ namespace CrispyPhysics
 
         void DestroyBody(IBody body);
 
-        void Step(
-            float dt, 
-            int velocityIterations, 
-            int positionIterations);
+        void Step(float dt, float keepPast  = 0f, float foresee = 0f, float keepFutur = 0f);
+
+        void StepBack(float dt, float keepPast = 0f, float keepFutur = 0f);
     }
 }

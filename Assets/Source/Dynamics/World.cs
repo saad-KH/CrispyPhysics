@@ -8,10 +8,9 @@ namespace CrispyPhysics
     public class WorldFactory
     {
         public static IWorld CreateWorld(
-            float crispSize = 0.01f, float actionTick = 0.01f, 
-            float rememberableTime = 0f, float forseeableTime = 0f, float bufferTime = 0f)
+            float fixedStep = 0.01f, float crispyStep = 0.01f, float crispySize = 0.01f)
         {
-            return new World(crispSize, actionTick, rememberableTime, forseeableTime, bufferTime);
+            return new World(fixedStep, crispyStep, crispySize);
         }
     } 
 }
@@ -19,43 +18,37 @@ namespace CrispyPhysics.Internal
 {
     public class World : IWorld
     {
-        public float crispSize { get; private set; }
+        public float fixedStep { get; private set; }
+        public float crispyStep { get; private set; }
+        public float crispySize { get; private set; }
         public float tick { get; private set; }
-        public float actionTick { get; private set; }
-        public float rememberableTime { get; private set; }
-        public float foreseeableTime { get; private set; }
         public float rememberedTime { get; private set; }
         public float foreseenTime { get; private set; }
-        public float bufferTime { get; set; }
 
 
-
-        private float usedDeltaTime;
         private List<IInternalBody> bodies;
-        private float lastInvDt = 0f;
 
         [Flags]
         private enum OperationFlag
         {
             Locked = 0x0001,
             BodyChange = 0x0002,
-            FuturCleared = 0x0004,
+            FuturForeseen = 0x0004,
             Crisped = 0x0008
         }
 
         private OperationFlag opFlags;
 
-        public World(
-            float crispSize = 0.01f, float actionTick = 0.01f,
-            float rememberableTime = 0f, float foreseeableTime = 0f, float bufferTime = 0f)
+        public World(float fixedStep = 0.01f, float crispyStep = 0.01f, float crispySize = 0.01f)
         {
-            this.crispSize = crispSize;
-            this.actionTick = actionTick;
-            this.rememberableTime = rememberableTime;
-            this.foreseeableTime = foreseeableTime;
-            this.bufferTime = bufferTime;
+            if  (   fixedStep < 0
+                ||  Calculus.Approximately(fixedStep, 0f))
+                throw new ArgumentOutOfRangeException("Fixed Step should be stricly greater than 0");
+            
+            this.fixedStep = fixedStep;
+            this.crispyStep = Mathf.Max(crispyStep, this.fixedStep);
+            this.crispySize = Mathf.Max(crispySize, 0f);
 
-            lastInvDt = 0f;
             tick = 0f;
             rememberedTime = 0f;
             foreseenTime = 0f;
@@ -99,77 +92,107 @@ namespace CrispyPhysics.Internal
             bodies.RemoveAt(bodyIndex);
         }
 
-        public void Step(float dt, int velocityIterations, int positionIterations)
+        public void Step(float dt, float foresee = 0f, float keepPast  = 0f, float keepFutur = 0f)
         {
-            if (dt <= 0) return;
+            if  (   dt < 0
+                ||  Calculus.Approximately(dt, 0f))
+                throw new ArgumentOutOfRangeException("Step Delta time should be stricly greater than 0");
+            
+            opFlags |= OperationFlag.Locked;
+            tick += dt;
+
             bool clearFutur = 
-                    (opFlags & OperationFlag.FuturCleared) == OperationFlag.FuturCleared
+                    (opFlags & OperationFlag.FuturForeseen) != OperationFlag.FuturForeseen
                 ||  (opFlags & OperationFlag.BodyChange) == OperationFlag.BodyChange;
 
             bool lookForContacts = 
                 (opFlags & OperationFlag.BodyChange) == OperationFlag.BodyChange;
 
-            if (usedDeltaTime != dt)
-            {
-                usedDeltaTime = dt;
-                clearFutur = true;
-            }
-            tick += dt;
-
             if (clearFutur)
-            {
                 foreach (IInternalBody body in bodies)
                     body.ClearFutur();
-                foreseenTime = 0f;
-            }
-
+            
             if(lookForContacts)
             {
                 //Debug.Assert(false, "Look for Contacts");
             }
 
-            opFlags |= OperationFlag.Locked;
-
             TimeStep step;
-            step.dt = dt;
-            step.velocityIterations = velocityIterations;
-            step.positionIterations = positionIterations;
+            step.dt = fixedStep;
+            step.velocityIterations = 8;
+            step.positionIterations = 3;
             step.invDt = 1f / dt;
-            step.dtRatio = lastInvDt * dt;
+            step.dtRatio = 1f;
 
-            //Debug.Assert(false, "Update Collider");
+            float toBuffer = 0f;
 
-            float time = 0f;
-            float toBuffer = Math.Min(bufferTime, foreseeableTime - foreseenTime);
+            if  (   keepFutur >= 0
+                ||  Calculus.Approximately(keepFutur, 0f))
+                foresee = Mathf.Min(
+                    foresee,
+                    Mathf.Max(keepFutur - foreseenTime, 0f));
+            
+            if  (   foresee > 0
+                &&  !Calculus.Approximately(foresee, 0f))
+                toBuffer = dt + foresee;
+            else if (   dt > foreseenTime
+                    &&   !Calculus.Approximately(dt, foreseenTime))
+                toBuffer = dt;
 
-            if(foreseenTime < step.dt)
-                toBuffer += step.dt;
-
-            while(time < toBuffer)
+            float solvedTime = 0f;
+            while(toBuffer >= step.dt || Calculus.Approximately(toBuffer, step.dt))
             {
                 Solve(step);
-                time += step.dt;
+                //Debug.Assert(false, "Handle TOI events");
+                //Debug.Assert(false, "Update Collider");
+                toBuffer -= step.dt;
+                solvedTime += step.dt;
             }
-            foreseenTime += time;
 
-            //Debug.Assert(false, "Handle TOI events");
+            rememberedTime = 
+                (keepPast >= 0) ? 
+                    Mathf.Min(keepPast, rememberedTime + dt) 
+                :   rememberedTime + dt;
+            
+            foreseenTime = 
+                (keepFutur >= 0) ?
+                    Mathf.Min(
+                        keepFutur, 
+                        Mathf.Max(foreseenTime + solvedTime - dt,0f))
+                    : Mathf.Max(foreseenTime + solvedTime - dt, 0f);
 
             foreach (IInternalBody body in bodies)
             {
-                body.Step(step.dt);
-                body.keep(rememberableTime, foreseeableTime);
+                body.Step(dt);
+                body.keep(rememberedTime, foreseenTime);
             }
-                
 
-            rememberedTime = Math.Min(rememberableTime, rememberedTime + step.dt);
-            foreseenTime = Math.Max(0, foreseenTime - step.dt);
 
-            lastInvDt = step.invDt;
             opFlags &= ~OperationFlag.Locked;
             //opFlags &= ~OperationFlag.Crisped;
             opFlags &= ~OperationFlag.BodyChange;
-            opFlags &= ~OperationFlag.FuturCleared;
+            opFlags |= OperationFlag.FuturForeseen;
 
+        }
+
+        public void StepBack(float dt, float keepPast = -1.0f, float keepFutur = 0f)
+        {
+            if  (   dt < 0
+                ||  Calculus.Approximately(dt, 0f))
+                throw new ArgumentOutOfRangeException("Step Delta time should be stricly greater than 0");
+
+            opFlags |= OperationFlag.Locked;
+            tick -= dt;
+
+            rememberedTime = (keepPast >= 0) ? Mathf.Min(keepPast, rememberedTime) : rememberedTime;
+            foreseenTime = (keepFutur >= 0) ? Mathf.Min(keepFutur, foreseenTime) : foreseenTime;
+
+            foreach (IInternalBody body in bodies)
+            {
+                body.StepBack(dt);
+                body.keep(rememberedTime, foreseenTime);
+            }
+            opFlags &= ~OperationFlag.Locked;
         }
 
         private void Solve(TimeStep step)
@@ -244,7 +267,11 @@ namespace CrispyPhysics.Internal
 
         private void FuturCleared(IBody body, EventArgs args)
         {
-        	opFlags |= World.OperationFlag.FuturCleared;
+            if((opFlags & World.OperationFlag.FuturForeseen) == World.OperationFlag.FuturForeseen)
+            {
+                foreseenTime = 0f;
+                opFlags &= ~World.OperationFlag.FuturForeseen;
+            }
         }
     }
 }

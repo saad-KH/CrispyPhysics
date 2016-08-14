@@ -14,45 +14,40 @@ namespace CrispyPhysics
 		{
 			World world = new World();
 
-			Assert.That(world.crispSize, Is.EqualTo(0.01f));
+			Assert.That(world.fixedStep, Is.EqualTo(0.01f));
+            Assert.That(world.crispyStep, Is.EqualTo(0.01f));
+            Assert.That(world.crispySize, Is.EqualTo(0.01f));
             Assert.That(world.tick, Is.EqualTo(0f));
-            Assert.That(world.actionTick, Is.EqualTo(0.01f));
-            Assert.That(world.rememberableTime, Is.EqualTo(0f));
-            Assert.That(world.foreseeableTime, Is.EqualTo(0f));
             Assert.That(world.rememberedTime, Is.EqualTo(0f));
             Assert.That(world.foreseenTime, Is.EqualTo(0f));
-            Assert.That(world.bufferTime, Is.EqualTo(0f));
 
-            World specificWorld = new World(
-                0.25f, 0.5f,
-                5f, 5f, 0.25f);
+            World specificWorld = new World(0.01f, 0.5f, 0.25f);
 
-            Assert.That(specificWorld.crispSize, Is.EqualTo(0.25f));
+            Assert.That(specificWorld.fixedStep, Is.EqualTo(0.01f));
+            Assert.That(specificWorld.crispyStep, Is.EqualTo(0.5f));
+            Assert.That(specificWorld.crispySize, Is.EqualTo(0.25f));
             Assert.That(specificWorld.tick, Is.EqualTo(0f));
-            Assert.That(specificWorld.actionTick, Is.EqualTo(0.5f));
-            Assert.That(specificWorld.rememberableTime, Is.EqualTo(5f));
-            Assert.That(specificWorld.foreseeableTime, Is.EqualTo(5f));
             Assert.That(specificWorld.rememberedTime, Is.EqualTo(0f));
             Assert.That(specificWorld.foreseenTime, Is.EqualTo(0f));
-            Assert.That(specificWorld.bufferTime, Is.EqualTo(0.25f));
+
         }
 
         [Test]
         public void SteppingWorld()
         {
-            IWorld world = new World(
-                0.1f, 0.2f,
-                0.5f, 0.5f, 0.1f);
+            World world = new World(0.01f, 0.01f, 0.001f);
             Vector2 initialGravity = Physics2D.gravity;
             Physics2D.gravity = new Vector2(-10f, -10f);
 
             IInternalBody body = world.CreateBody(BodyType.DynamicBody, null, Vector2.zero, 0f) as IInternalBody;
 
-            world.Step(0.01f, 8, 3);
+            world.Step(0.01f);
             Assert.That(world.tick, Is.EqualTo(0.01f).Within(0.001f));
-
-            while(world.tick < 1f || !Calculus.Approximately(world.tick, 1f, 0.001f))
-                world.Step(0.01f, 8, 3);
+            Assert.That(world.rememberedTime , Is.EqualTo(0f).Within(0.001f));
+            Assert.That(world.foreseenTime, Is.EqualTo(0f).Within(0.001f));
+            
+            while(world.tick < 1f && !Calculus.Approximately(world.tick, 1f, 0.001f))
+                world.Step(0.01f, 0.1f, 0.5f, 0.5f);
 
             Assert.That(world.tick, Is.EqualTo(1f).Within(0.001f));
             Assert.That(world.rememberedTime, Is.EqualTo(0.5f).Within(0.001f));

@@ -170,14 +170,14 @@ namespace CrispyPhysics.Internal
 
         public static bool Approximately(Rotation a, Rotation b, float tolerance = 0)
         {
-            return (Approximately(a.sine, b.sine, tolerance)
-                    && Approximately(a.cosine, b.cosine, tolerance));
+            return  (   Approximately(a.sine, b.sine, tolerance)
+                    &&  Approximately(a.cosine, b.cosine, tolerance));
         }
 
         public static bool Approximately(Transformation a, Transformation b, float tolerance = 0)
         {
-            return (Approximately(a.position, b.position, tolerance)
-                    && Approximately(a.rotation, b.rotation, tolerance));
+            return  (   Approximately(a.position, b.position, tolerance)
+                    &&  Approximately(a.rotation, b.rotation, tolerance));
         }
 
         public static Vector2 Mul(Rotation rotation, Vector2 vector)

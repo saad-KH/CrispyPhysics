@@ -4,8 +4,6 @@ namespace CrispyPhysics.Internal
 {
     public interface IInternalMomentum : IMomentum
     {
-        float tick { get; }
-
         void ChangeImpulse(Vector2 force, float torque);
         void ChangeVelocity(Vector2 linearVelocity, float angularVelocity);
         void ChangeSituation(Vector2 position, float angle);
