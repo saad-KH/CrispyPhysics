@@ -38,6 +38,10 @@ namespace CrispyPhysics
 
         List<IContact> contacts { get; }
 
+        void ChangeImpulse(Vector2 force, float torque);
+        void ChangeVelocity(Vector2 linearVelocity, float angularVelocity);
+        void ChangeSituation(Vector2 position, float angle);
+
         void ApplyForce(Vector2 force, Vector2 point);
         void ApplyForceToCenter(Vector2 force);
         void ApplyTorque(float torque);

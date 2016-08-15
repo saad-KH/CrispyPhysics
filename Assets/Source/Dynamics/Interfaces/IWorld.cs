@@ -20,8 +20,11 @@ namespace CrispyPhysics
 
         void DestroyBody(IBody body);
 
-        void Step(float dt, float keepPast  = 0f, float foresee = 0f, float keepFutur = 0f);
+        void Step(
+            float dt,
+            float foresee = 0f, float bufferingCap = 0f,
+            float keepPast = 0f);
 
-        void StepBack(float dt, float keepPast = 0f, float keepFutur = 0f);
+        void StepBack(float dt, float keepPast = 0f);
     }
 }

@@ -22,11 +22,12 @@ namespace CrispyPhysics.Internal
         public float crispyStep { get; private set; }
         public float crispySize { get; private set; }
         public float tick { get; private set; }
-        public float rememberedTime { get; private set; }
-        public float foreseenTime { get; private set; }
-
+        public float rememberedTime { get { return tick - pastTick; } }
+        public float foreseenTime { get { return futurTick - tick; } }
 
         private List<IInternalBody> bodies;
+        private float pastTick;
+        private float futurTick;
 
         [Flags]
         private enum OperationFlag
@@ -50,8 +51,8 @@ namespace CrispyPhysics.Internal
             this.crispySize = Mathf.Max(crispySize, 0f);
 
             tick = 0f;
-            rememberedTime = 0f;
-            foreseenTime = 0f;
+            pastTick = 0f;
+            futurTick = 0f;
 
             bodies = new List<IInternalBody>();
         }
@@ -85,14 +86,17 @@ namespace CrispyPhysics.Internal
             int bodyIndex = bodies.IndexOf(oldBody);
             if (bodyIndex == -1) return;
 
-            Debug.Assert(false, "Remove Contact");
+            //Debug.Assert(false, "Remove Contact");
             opFlags |= OperationFlag.BodyChange;
             oldBody.FuturCleared -= FuturCleared;
 
             bodies.RemoveAt(bodyIndex);
         }
 
-        public void Step(float dt, float foresee = 0f, float keepPast  = 0f, float keepFutur = 0f)
+        public void Step(
+            float dt, 
+            float foresee = 0f, float bufferingCap = 0f,
+            float keepPast = 0f)
         {
             if  (   dt < 0
                 ||  Calculus.Approximately(dt, 0f))
@@ -124,47 +128,43 @@ namespace CrispyPhysics.Internal
             step.invDt = 1f / dt;
             step.dtRatio = 1f;
 
-            float toBuffer = 0f;
-
-            if  (   keepFutur >= 0
-                ||  Calculus.Approximately(keepFutur, 0f))
-                foresee = Mathf.Min(
-                    foresee,
-                    Mathf.Max(keepFutur - foreseenTime, 0f));
             
-            if  (   foresee > 0
-                &&  !Calculus.Approximately(foresee, 0f))
-                toBuffer = dt + foresee;
-            else if (   dt > foreseenTime
-                    &&   !Calculus.Approximately(dt, foreseenTime))
-                toBuffer = dt;
+            
+            float toBuffer = 0f;
+            float foreseenTime = futurTick - tick;
 
-            float solvedTime = 0f;
-            while(toBuffer >= step.dt || Calculus.Approximately(toBuffer, step.dt))
+            if (    foreseenTime < 0f
+               &&   !Calculus.Approximately(dt, foreseenTime))
+            {
+                toBuffer += Mathf.Abs(foreseenTime);
+                foreseenTime = 0f;
+            }
+
+            toBuffer += Mathf.Max(foresee, foreseenTime) - foreseenTime;
+            toBuffer = Mathf.Min(toBuffer, Mathf.Max(bufferingCap + dt, 0f));
+
+            while (toBuffer >= step.dt || Calculus.Approximately(toBuffer, step.dt))
             {
                 Solve(step);
                 //Debug.Assert(false, "Handle TOI events");
                 //Debug.Assert(false, "Update Collider");
                 toBuffer -= step.dt;
-                solvedTime += step.dt;
             }
 
-            rememberedTime = 
-                (keepPast >= 0) ? 
-                    Mathf.Min(keepPast, rememberedTime + dt) 
-                :   rememberedTime + dt;
-            
-            foreseenTime = 
-                (keepFutur >= 0) ?
-                    Mathf.Min(
-                        keepFutur, 
-                        Mathf.Max(foreseenTime + solvedTime - dt,0f))
-                    : Mathf.Max(foreseenTime + solvedTime - dt, 0f);
-
+            pastTick = tick - keepPast;
+            futurTick = tick + foresee;
             foreach (IInternalBody body in bodies)
             {
                 body.Step(dt);
-                body.keep(rememberedTime, foreseenTime);
+                body.ForgetPast(keepPast);
+
+                if (    body.past.tick > pastTick
+                    &&  !Calculus.Approximately(body.past.tick, pastTick))
+                    pastTick = body.past.tick;
+
+                if (    body.futur.tick < futurTick
+                    &&  !Calculus.Approximately(body.futur.tick, futurTick))
+                    futurTick = body.futur.tick;
             }
 
 
@@ -175,7 +175,7 @@ namespace CrispyPhysics.Internal
 
         }
 
-        public void StepBack(float dt, float keepPast = -1.0f, float keepFutur = 0f)
+        public void StepBack(float dt, float keepPast = 0f)
         {
             if  (   dt < 0
                 ||  Calculus.Approximately(dt, 0f))
@@ -184,13 +184,19 @@ namespace CrispyPhysics.Internal
             opFlags |= OperationFlag.Locked;
             tick -= dt;
 
-            rememberedTime = (keepPast >= 0) ? Mathf.Min(keepPast, rememberedTime) : rememberedTime;
-            foreseenTime = (keepFutur >= 0) ? Mathf.Min(keepFutur, foreseenTime) : foreseenTime;
-
+            pastTick = tick - keepPast;
             foreach (IInternalBody body in bodies)
             {
                 body.StepBack(dt);
-                body.keep(rememberedTime, foreseenTime);
+                body.ForgetPast(keepPast);
+
+                if (    body.past.tick > pastTick
+                    &&  !Calculus.Approximately(body.past.tick, pastTick))
+                    pastTick = body.past.tick;
+
+                if (    body.futur.tick < futurTick
+                    &&  !Calculus.Approximately(body.futur.tick, futurTick))
+                    futurTick = body.futur.tick;
             }
             opFlags &= ~OperationFlag.Locked;
         }
@@ -269,7 +275,7 @@ namespace CrispyPhysics.Internal
         {
             if((opFlags & World.OperationFlag.FuturForeseen) == World.OperationFlag.FuturForeseen)
             {
-                foreseenTime = 0f;
+                futurTick = tick;
                 opFlags &= ~World.OperationFlag.FuturForeseen;
             }
         }

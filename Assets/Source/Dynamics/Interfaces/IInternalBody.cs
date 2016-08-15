@@ -16,7 +16,8 @@ namespace CrispyPhysics.Internal
         #endregion
 
         #region Track
-        IInternalMomentum current { get; }
+        IMomentum past { get; }
+        IMomentum current { get; }
         IInternalMomentum futur { get; }
         bool islandBound { get; set; }
 
@@ -24,8 +25,7 @@ namespace CrispyPhysics.Internal
         void StepBack(float dt);
         void Foresee(float dt);
         bool IsForeseen();
-        void keep(float past = -1f, float futur = -1f);
-        void ForgetPast();
+        void ForgetPast(float past = 0f);
         void ClearFutur();
         #endregion
     }

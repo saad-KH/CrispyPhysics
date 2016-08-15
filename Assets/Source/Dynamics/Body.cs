@@ -110,13 +110,36 @@ namespace CrispyPhysics.Internal
 
         public List<IContact> contacts { get; private set; }
 
+        public void ChangeImpulse(Vector2 force, float torque)
+        {
+            if (type != BodyType.DynamicBody) return;
+
+            ClearFutur();
+            momentums[currentIndex].ChangeImpulse(force, torque);
+        }
+
+        public void ChangeVelocity(Vector2 linearVelocity, float angularVelocity)
+        {
+            if (type != BodyType.DynamicBody) return;
+
+            ClearFutur();
+            momentums[currentIndex].ChangeVelocity(linearVelocity, angularVelocity);
+        }
+
+        public void ChangeSituation(Vector2 position, float angle)
+        {
+            ClearFutur();
+            momentums[currentIndex].ChangeSituation(position, angle);
+            //Debug.Assert(false, "Broad Phase");
+        }
+
         public void ApplyForce(Vector2 force, Vector2 point)
         {
             if (type != BodyType.DynamicBody) return;
 
             ClearFutur();
 
-            current.ChangeImpulse(
+            momentums[currentIndex].ChangeImpulse(
                 current.force + force,
                 current.torque + Calculus.Cross(point - current.position, force));
         }
@@ -126,7 +149,7 @@ namespace CrispyPhysics.Internal
             if (type != BodyType.DynamicBody) return;
 
             ClearFutur();
-            current.ChangeImpulse(current.force + force, current.torque);
+            momentums[currentIndex].ChangeImpulse(current.force + force, current.torque);
         }
 
         public void ApplyTorque(float torque)
@@ -134,7 +157,7 @@ namespace CrispyPhysics.Internal
             if (type != BodyType.DynamicBody) return;
 
             ClearFutur();
-            current.ChangeImpulse(current.force, current.torque + torque);
+            momentums[currentIndex].ChangeImpulse(current.force, current.torque + torque);
         }
 
         public void ApplyLinearImpulse(Vector2 impulse, Vector2 point)
@@ -142,7 +165,7 @@ namespace CrispyPhysics.Internal
             if (type != BodyType.DynamicBody) return;
             ClearFutur();
 
-            current.ChangeVelocity(
+            momentums[currentIndex].ChangeVelocity(
                 current.linearVelocity + invMass * impulse,
                 current.angularVelocity +
                     (invRotationalInertia
@@ -155,7 +178,7 @@ namespace CrispyPhysics.Internal
 
             ClearFutur();
 
-            current.ChangeVelocity(
+            momentums[currentIndex].ChangeVelocity(
                 current.linearVelocity + invMass * impulse,
                 current.angularVelocity);
 
@@ -167,7 +190,7 @@ namespace CrispyPhysics.Internal
 
             ClearFutur();
 
-            current.ChangeVelocity(
+            momentums[currentIndex].ChangeVelocity(
                 current.linearVelocity,
                 current.angularVelocity + invRotationalInertia * impulse);
         }
@@ -176,7 +199,8 @@ namespace CrispyPhysics.Internal
         #region Track
         private float currentTick;
         private int currentIndex;
-        public IInternalMomentum current { get { return momentums[currentIndex]; } }
+        public IMomentum past { get { return momentums[0]; } }
+        public IMomentum current { get { return momentums[currentIndex]; } }
         public IInternalMomentum futur { get { return momentums[momentums.Count - 1]; } }
         private List<IInternalMomentum> momentums;
         public bool islandBound { get; set; }
@@ -285,10 +309,16 @@ namespace CrispyPhysics.Internal
             return currentIndex < (momentums.Count - 1);
         }
 
-        public void keep(float past = -1f, float futur = -1f)
+        public void ForgetPast(float past = 0f)
         {
             if (Calculus.Approximately(past, 0f))
-                ForgetPast();
+            {
+                if(currentIndex > 0)
+                {
+                    momentums.RemoveRange(0, currentIndex);
+                    currentIndex = 0;
+                }
+            }
             else if (past > 0f)
             {
                 float keepTick = currentTick - past;
@@ -299,8 +329,8 @@ namespace CrispyPhysics.Internal
                 while (!done && currentIndex != keepIndex)
                 {
                     //Next tick is wihtin the keeping range, we keep the current one
-                    if  (   momentums[keepIndex + 1].tick > keepTick
-                        &&  !Calculus.Approximately(momentums[keepIndex + 1].tick, keepTick))
+                    if (momentums[keepIndex + 1].tick > keepTick
+                        && !Calculus.Approximately(momentums[keepIndex + 1].tick, keepTick))
                         done = true;
                     else
                         keepIndex++;
@@ -308,8 +338,8 @@ namespace CrispyPhysics.Internal
 
                 //We only retains the keeped momentum and the next ones
                 //However we raise the keeped momentum's tick to the keep tick if needed
-                if  (   momentums[keepIndex].tick < keepTick
-                    &&  !Calculus.Approximately(momentums[keepIndex].tick, keepTick))
+                if (momentums[keepIndex].tick < keepTick
+                    && !Calculus.Approximately(momentums[keepIndex].tick, keepTick))
                 {
                     currentIndex++;
                     keepIndex++;
@@ -326,34 +356,6 @@ namespace CrispyPhysics.Internal
                     currentIndex -= keepIndex;
                     momentums.RemoveRange(0, keepIndex);
                 }
-            }
-
-            if (Calculus.Approximately(futur, 0f))
-                ClearFutur();
-            else if (futur > 0f)
-            {
-                float keepTick = currentTick + futur;
-                int keepIndex = momentums.Count - 1;
-                while   (   currentIndex != keepIndex
-                        &&  (   momentums[keepIndex].tick > keepTick
-                            &&  !Calculus.Approximately(momentums[keepIndex].tick, keepTick)))
-                    keepIndex--;
-
-                if ((keepIndex + 1) < momentums.Count)
-                {
-                    momentums.RemoveRange(keepIndex + 1, momentums.Count - (keepIndex + 1));
-                    if (FuturCleared != null)
-                        FuturCleared(this, EventArgs.Empty);
-                }
-            }
-        }
-
-        public void ForgetPast()
-        {
-            if (currentIndex > 0)
-            {
-                momentums.RemoveRange(0, currentIndex);
-                currentIndex = 0;
             }
         }
 
