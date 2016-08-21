@@ -5,7 +5,7 @@ namespace CrispyPhysics.Internal
     #region Momentum Definition
     public class Momentum : IInternalMomentum
     {
-        public float tick { get; private set; }
+        public uint tick { get; private set; }
         public Vector2 force { get; private set; }
         public float torque { get; private set; }
         public Vector2 linearVelocity { get; private set; }
@@ -17,7 +17,7 @@ namespace CrispyPhysics.Internal
         private Transformation transform;
 
         public Momentum(
-            float tick,
+            uint tick,
             Vector2 force, float torque,
             Vector2 linearVelocity, float angularVelocity,
             Vector2 position, float angle)
@@ -30,7 +30,7 @@ namespace CrispyPhysics.Internal
             transform = new Transformation(position, new Rotation(angle));
         }
 
-        public Momentum(float tick, IInternalMomentum source)
+        public Momentum(uint tick, IInternalMomentum source)
         {
             this.tick = tick;
             force = source.force;

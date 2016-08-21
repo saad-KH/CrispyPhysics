@@ -4,7 +4,7 @@ namespace CrispyPhysics
 {
     public interface IMomentum
     {
-    	float tick { get; }
+    	uint tick { get; }
         Vector2 force { get; }
         float torque { get; }
         Vector2 linearVelocity { get; }

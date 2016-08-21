@@ -7,9 +7,9 @@ namespace CrispyPhysics
         float fixedStep { get; }
         float crispyStep { get; }
         float crispySize { get; }
-        float tick { get; }
-        float rememberedTime { get; }
-        float foreseenTime { get; }
+        uint tick { get; }
+        uint pastTick { get; }
+        uint futurTick { get; }
 
 
         IBody CreateBody(
@@ -21,10 +21,10 @@ namespace CrispyPhysics
         void DestroyBody(IBody body);
 
         void Step(
-            float dt,
-            float foresee = 0f, float bufferingCap = 0f,
-            float keepPast = 0f);
+            uint steps = 1,
+            uint foreseeTicks = 0, uint bufferingTicks = 0,
+            uint keepTicks = 0);
 
-        void StepBack(float dt, float keepPast = 0f);
+        void RollBack(uint toPastTick, uint keepTicks = 0);
     }
 }

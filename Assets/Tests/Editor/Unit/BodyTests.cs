@@ -11,6 +11,7 @@ namespace CrispyPhysics
         public Body CreateBody()
         {
            return new Body(
+                0,
                 BodyType.DynamicBody,
                 null,
                 Vector2.zero,
@@ -134,152 +135,147 @@ namespace CrispyPhysics
         {
             Body body = CreateBody();
 
-            body.Step(0.2f);
-            Assert.That(body.current.tick, Is.EqualTo(0.2f).Within(0.001f));
+            body.Step();
+            Assert.That(body.current.tick, Is.EqualTo(1));
             Assert.That(body.force, Is.EqualTo(Vector2.zero));
             Assert.That(body.torque, Is.EqualTo(0f));
-            Assert.That(body.past.tick, Is.EqualTo(0f).Within(0.001f));
+            Assert.That(body.past.tick, Is.EqualTo(0f));
             Assert.That(body.past.force, Is.EqualTo(Vector2.zero));
             Assert.That(body.past.torque, Is.EqualTo(0f));
             Assert.That(body.IsForeseen() == false);
 
-            body.Foresee(0.3f);
-            Assert.That(body.current.tick, Is.EqualTo(0.2f).Within(0.001f));
+            body.Foresee();
+            Assert.That(body.current.tick, Is.EqualTo(1));
             Assert.That(body.force, Is.EqualTo(Vector2.zero));
             Assert.That(body.torque, Is.EqualTo(0f));
-            Assert.That(body.past.tick, Is.EqualTo(0f).Within(0.001f));
+            Assert.That(body.past.tick, Is.EqualTo(0f));
             Assert.That(body.past.force, Is.EqualTo(Vector2.zero));
             Assert.That(body.past.torque, Is.EqualTo(0f));
             Assert.That(body.IsForeseen());
-            Assert.That(body.futur.tick, Is.EqualTo(0.5f).Within(0.001f));
+            Assert.That(body.futur.tick, Is.EqualTo(2));
             Assert.That(body.futur.force, Is.EqualTo(Vector2.zero));
             Assert.That(body.futur.torque, Is.EqualTo(0f));
 
-            body.Foresee(0.5f);
+            body.Foresee();
             body.futur.ChangeImpulse(Vector2.one, 1f);
             Assert.That(body.IsForeseen());
-            Assert.That(body.futur.tick, Is.EqualTo(1f).Within(0.001f));
+            Assert.That(body.futur.tick, Is.EqualTo(3));
             Assert.That(body.futur.force, Is.EqualTo(Vector2.one));
             Assert.That(body.futur.torque, Is.EqualTo(1f));
 
-            body.Foresee(0.5f);
+            body.Foresee(2);
             body.futur.ChangeImpulse(Vector2.one, 1f);
             Assert.That(body.IsForeseen());
-            Assert.That(body.futur.tick, Is.EqualTo(1.5f).Within(0.001f));
+            Assert.That(body.futur.tick, Is.EqualTo(5));
             Assert.That(body.futur.force, Is.EqualTo(Vector2.one));
             Assert.That(body.futur.torque, Is.EqualTo(1f));
 
-            body.Foresee(0.5f);
+            body.Foresee();
             body.futur.ChangeImpulse(Vector2.down, -1f);
             Assert.That(body.IsForeseen());
-            Assert.That(body.futur.tick, Is.EqualTo(2f).Within(0.001f));
+            Assert.That(body.futur.tick, Is.EqualTo(6));
             Assert.That(body.futur.force, Is.EqualTo(Vector2.down));
             Assert.That(body.futur.torque, Is.EqualTo(-1f));
 
-            body.Step(0.3f);
-            Assert.That(body.current.tick, Is.EqualTo(0.5f).Within(0.001f));
+            body.Step(2);
+            Assert.That(body.current.tick, Is.EqualTo(3));
             Assert.That(body.force, Is.EqualTo(Vector2.zero));
             Assert.That(body.torque, Is.EqualTo(0f));
-            Assert.That(body.past.tick, Is.EqualTo(0f).Within(0.001f));
+            Assert.That(body.past.tick, Is.EqualTo(0));
             Assert.That(body.past.force, Is.EqualTo(Vector2.zero));
             Assert.That(body.past.torque, Is.EqualTo(0f));
             Assert.That(body.IsForeseen());
 
-            body.Step(0.4f);
-            Assert.That(body.current.tick, Is.EqualTo(0.9f).Within(0.001f));
-            Assert.That(body.force, Is.EqualTo(Vector2.zero));
-            Assert.That(body.torque, Is.EqualTo(0f));
-            Assert.That(body.IsForeseen());
-
-            body.Step(0.2f);
-            Assert.That(body.current.tick, Is.EqualTo(1.1f).Within(0.001f));
+            body.Step();
+            Assert.That(body.current.tick, Is.EqualTo(4));
             Assert.That(body.force, Is.EqualTo(Vector2.one));
             Assert.That(body.torque, Is.EqualTo(1f));
             Assert.That(body.IsForeseen());
 
-            body.Step(0.6f);
-            Assert.That(body.current.tick, Is.EqualTo(1.7f).Within(0.001f));
+            body.Step();
+            Assert.That(body.current.tick, Is.EqualTo(5));
             Assert.That(body.force, Is.EqualTo(Vector2.one));
             Assert.That(body.torque, Is.EqualTo(1f));
             Assert.That(body.IsForeseen());
 
-            body.Step(0.5f);
-            Assert.That(body.current.tick, Is.EqualTo(2.2f).Within(0.001f));
+            body.Step();
+            Assert.That(body.current.tick, Is.EqualTo(6));
             Assert.That(body.force, Is.EqualTo(Vector2.down));
             Assert.That(body.torque, Is.EqualTo(-1f));
             Assert.That(body.IsForeseen() == false);
 
-            body.Foresee(0.5f);
+            body.Foresee();
             body.futur.ChangeImpulse(Vector2.up, 2f);
-            Assert.That(body.current.tick, Is.EqualTo(2.2f).Within(0.001f));
+            Assert.That(body.current.tick, Is.EqualTo(6));
             Assert.That(body.force, Is.EqualTo(Vector2.down));
             Assert.That(body.torque, Is.EqualTo(-1f));
             Assert.That(body.IsForeseen());
-            Assert.That(body.futur.tick, Is.EqualTo(2.7f).Within(0.001f));
+            Assert.That(body.futur.tick, Is.EqualTo(7));
             Assert.That(body.futur.force, Is.EqualTo(Vector2.up));
             Assert.That(body.futur.torque, Is.EqualTo(2f));
 
             body.ChangeImpulse(Vector2.zero, 0f);
             body.ApplyForceToCenter(Vector2.left);
             body.ApplyTorque(3f);
+            Assert.That(body.current.tick, Is.EqualTo(6));
             Assert.That(body.force, Is.EqualTo(Vector2.left));
             Assert.That(body.torque, Is.EqualTo(3f));
             Assert.That(body.IsForeseen() == false);
 
-            body.Step(0.5f);
-            Assert.That(body.current.tick, Is.EqualTo(2.7f).Within(0.001f));
+            body.Step();
+            Assert.That(body.current.tick, Is.EqualTo(7));
             Assert.That(body.force, Is.EqualTo(Vector2.left));
             Assert.That(body.torque, Is.EqualTo(3f));
             Assert.That(body.IsForeseen() == false);
 
-            body.StepBack(1.5f);
-            Assert.That(body.current.tick, Is.EqualTo(1.2f).Within(0.001f));
+            body.RollBack(4);
+            Assert.That(body.current.tick, Is.EqualTo(4));
             Assert.That(body.force, Is.EqualTo(Vector2.one));
             Assert.That(body.torque, Is.EqualTo(1f));
-            Assert.That(body.past.tick, Is.EqualTo(0f).Within(0.001f));
+            Assert.That(body.past.tick, Is.EqualTo(0));
             Assert.That(body.past.force, Is.EqualTo(Vector2.zero));
             Assert.That(body.past.torque, Is.EqualTo(0f));
             Assert.That(body.IsForeseen());
-            Assert.That(body.futur.tick, Is.EqualTo(2.2f).Within(0.001f));
+            Assert.That(body.futur.tick, Is.EqualTo(6));
             Assert.That(body.futur.force, Is.EqualTo(Vector2.left));
             Assert.That(body.futur.torque, Is.EqualTo(3f));
 
             bool wasCalled = false;
             body.FuturCleared += (sender, args) => wasCalled = true;
             body.ClearFutur();
-            Assert.That(body.current.tick, Is.EqualTo(1.2f).Within(0.001f));
+            Assert.That(body.current.tick, Is.EqualTo(4));
             Assert.That(body.force, Is.EqualTo(Vector2.one));
             Assert.That(body.torque, Is.EqualTo(1f));
             Assert.That(body.IsForeseen() == false);
             Assert.That(wasCalled);
     
-            body.ForgetPast(0.3f);
-            Assert.That(body.past.tick, Is.EqualTo(0.9f).Within(0.001f));
+            body.RollBack(2);
+            Assert.That(body.past.tick, Is.EqualTo(2));
             Assert.That(body.past.force, Is.EqualTo(Vector2.zero));
             Assert.That(body.past.torque, Is.EqualTo(0f));
-            body.StepBack(0.3f);
-            Assert.That(body.current.tick, Is.EqualTo(0.9f).Within(0.001f));
+            body.RollBack(1);
+            Assert.That(body.current.tick, Is.EqualTo(1));
             Assert.That(body.force, Is.EqualTo(Vector2.zero));
             Assert.That(body.torque, Is.EqualTo(0f));
 
-            body.Step(0.3f);
-            body.ForgetPast(0.3f);
-            Assert.That(body.past.tick, Is.EqualTo(0.9f).Within(0.001f));
+            body.Step(1);
+            body.ForgetPast(1);
+            Assert.That(body.past.tick, Is.EqualTo(4));
             Assert.That(body.past.force, Is.EqualTo(Vector2.zero));
             Assert.That(body.past.torque, Is.EqualTo(0f));
-            body.StepBack(0.2f);
-            Assert.That(body.current.tick, Is.EqualTo(1f).Within(0.001f));
+            body.RollBack(3);
+            Assert.That(body.current.tick, Is.EqualTo(3));
             Assert.That(body.force, Is.EqualTo(Vector2.one));
             Assert.That(body.torque, Is.EqualTo(1f));
 
 
-            body.Step(0.2f);
+            body.Step();
             body.ChangeImpulse(Vector2.down, -1f);
-            body.ForgetPast();
+            body.ForgetPast(body.current.tick);
             Assert.That(body.past.tick, Is.EqualTo(1.2f).Within(0.001f));
             Assert.That(body.past.force, Is.EqualTo(Vector2.down));
             Assert.That(body.past.torque, Is.EqualTo(-1f));
-            body.StepBack(0.3f);
+            body.RollBack(0.3f);
             Assert.That(body.current.tick, Is.EqualTo(0.9f).Within(0.001f));
             Assert.That(body.force, Is.EqualTo(Vector2.down));
             Assert.That(body.torque, Is.EqualTo(-1f));

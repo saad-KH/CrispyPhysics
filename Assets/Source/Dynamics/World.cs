@@ -21,13 +21,11 @@ namespace CrispyPhysics.Internal
         public float fixedStep { get; private set; }
         public float crispyStep { get; private set; }
         public float crispySize { get; private set; }
-        public float tick { get; private set; }
-        public float rememberedTime { get { return tick - pastTick; } }
-        public float foreseenTime { get { return futurTick - tick; } }
+        public uint tick { get; private set; }
+        public uint pastTick { get; private set; }
+        public uint futurTick { get; private set; }
 
         private List<IInternalBody> bodies;
-        private float pastTick;
-        private float futurTick;
 
         [Flags]
         private enum OperationFlag
@@ -50,9 +48,9 @@ namespace CrispyPhysics.Internal
             this.crispyStep = Mathf.Max(crispyStep, this.fixedStep);
             this.crispySize = Mathf.Max(crispySize, 0f);
 
-            tick = 0f;
-            pastTick = 0f;
-            futurTick = 0f;
+            tick = 0;
+            pastTick = 0;
+            futurTick = 0;
 
             bodies = new List<IInternalBody>();
         }
@@ -64,6 +62,7 @@ namespace CrispyPhysics.Internal
             float mass = 1f, float gravityScale = 1f)
         {
             IInternalBody newBody = new Body(
+                tick,
                 type, shape,
                 position, angle,
                 linearDamping, angularDamping,
@@ -94,16 +93,12 @@ namespace CrispyPhysics.Internal
         }
 
         public void Step(
-            float dt, 
-            float foresee = 0f, float bufferingCap = 0f,
-            float keepPast = 0f)
+            uint steps = 1,
+            uint foreseeTicks = 0, uint bufferingTicks = 0,
+            uint keepTicks = 0)
         {
-            if  (   dt < 0
-                ||  Calculus.Approximately(dt, 0f))
-                throw new ArgumentOutOfRangeException("Step Delta time should be stricly greater than 0");
-            
             opFlags |= OperationFlag.Locked;
-            tick += dt;
+            tick += steps;
 
             bool clearFutur = 
                     (opFlags & OperationFlag.FuturForeseen) != OperationFlag.FuturForeseen
@@ -121,42 +116,40 @@ namespace CrispyPhysics.Internal
                 //Debug.Assert(false, "Look for Contacts");
             }
 
+
+            uint iterationsToSolve = 0;
+            if (futurTick < tick)
+                iterationsToSolve += steps;
+            Debug.Log("needed Iterations " + iterationsToSolve);
+
+            uint iterationsToForesee = (uint)
+                Mathf.Min(
+                    Mathf.Max(
+                            (int)(tick + foreseeTicks)
+                        -   Mathf.Max((int) tick, (int) futurTick),
+                        0),
+                    (int) bufferingTicks);
+            Debug.Log("iterationsToForesee : " + iterationsToForesee);
+
+            iterationsToSolve += iterationsToForesee;
+            Debug.Log("iterationsToSolve : " + iterationsToSolve);
             TimeStep step;
             step.dt = fixedStep;
             step.velocityIterations = 8;
             step.positionIterations = 3;
-            step.invDt = 1f / dt;
+            step.invDt = 1f / fixedStep;
             step.dtRatio = 1f;
 
-            
-            
-            float toBuffer = 0f;
-            float foreseenTime = futurTick - tick;
-
-            if (    foreseenTime < 0f
-               &&   !Calculus.Approximately(dt, foreseenTime))
-            {
-                toBuffer += Mathf.Abs(foreseenTime);
-                foreseenTime = 0f;
-            }
-
-            toBuffer += Mathf.Max(foresee, foreseenTime) - foreseenTime;
-            toBuffer = Mathf.Min(toBuffer, Mathf.Max(bufferingCap + dt, 0f));
-
-            while (toBuffer >= step.dt || Calculus.Approximately(toBuffer, step.dt))
-            {
+            for (int i = 0; i < iterationsToSolve; i++)
                 Solve(step);
-                //Debug.Assert(false, "Handle TOI events");
-                //Debug.Assert(false, "Update Collider");
-                toBuffer -= step.dt;
-            }
 
-            pastTick = tick - keepPast;
-            futurTick = tick + foresee;
+            pastTick = tick - keepTicks;
+            futurTick = tick + foreseeTicks;
+            Debug.Log("Imagining a past and futur : " + pastTick + ", " + futurTick);
             foreach (IInternalBody body in bodies)
             {
-                body.Step(dt);
-                body.ForgetPast(keepPast);
+                body.Step();
+                body.ForgetPast(pastTick);
 
                 if (    body.past.tick > pastTick
                     &&  !Calculus.Approximately(body.past.tick, pastTick))
@@ -166,7 +159,7 @@ namespace CrispyPhysics.Internal
                     &&  !Calculus.Approximately(body.futur.tick, futurTick))
                     futurTick = body.futur.tick;
             }
-
+            Debug.Log("Dealing with a past and futur : " + pastTick + ", " + futurTick);
 
             opFlags &= ~OperationFlag.Locked;
             //opFlags &= ~OperationFlag.Crisped;
@@ -175,20 +168,17 @@ namespace CrispyPhysics.Internal
 
         }
 
-        public void StepBack(float dt, float keepPast = 0f)
+        public void RollBack(uint toPastTick, uint keepTicks = 0)
         {
-            if  (   dt < 0
-                ||  Calculus.Approximately(dt, 0f))
-                throw new ArgumentOutOfRangeException("Step Delta time should be stricly greater than 0");
 
             opFlags |= OperationFlag.Locked;
-            tick -= dt;
+            tick = toPastTick;
 
-            pastTick = tick - keepPast;
+            pastTick = tick - keepTicks;
             foreach (IInternalBody body in bodies)
             {
-                body.StepBack(dt);
-                body.ForgetPast(keepPast);
+                body.RollBack(tick);
+                body.ForgetPast(pastTick);
 
                 if (    body.past.tick > pastTick
                     &&  !Calculus.Approximately(body.past.tick, pastTick))

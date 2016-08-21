@@ -30,7 +30,7 @@ namespace CrispyPhysics
             Assert.That(bodyMomentum.position, Is.EqualTo(Vector2.zero));
             Assert.That(bodyMomentum.angle, Is.EqualTo(0f));
 
-            Momentum newBodyMomentum = new Momentum(1f, bodyMomentum);
+            Momentum newBodyMomentum = new Momentum(1, bodyMomentum);
 
             Assert.That(newBodyMomentum.tick, Is.EqualTo(1f));
             Assert.That(newBodyMomentum.force, Is.EqualTo(bodyMomentum.force));
@@ -79,7 +79,7 @@ namespace CrispyPhysics
             bodyMomentum.ChangeVelocity(Vector2.one, Mathf.PI / 4f);
             bodyMomentum.ChangeImpulse(Vector2.one, Mathf.PI / 4f);
 
-            Momentum sameMomentum = new Momentum(0.01f, bodyMomentum);
+            Momentum sameMomentum = new Momentum(1, bodyMomentum);
             Assert.That(sameMomentum.Same(bodyMomentum));
 
             bodyMomentum.ChangeSituation(Vector2.down, Mathf.PI);

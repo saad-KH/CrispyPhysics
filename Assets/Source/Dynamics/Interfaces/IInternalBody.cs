@@ -21,11 +21,11 @@ namespace CrispyPhysics.Internal
         IInternalMomentum futur { get; }
         bool islandBound { get; set; }
 
-        void Step(float dt);
-        void StepBack(float dt);
-        void Foresee(float dt);
+        void Step(uint steps = 1);
+        void RollBack(uint toPastTick);
+        void Foresee(uint steps = 1);
         bool IsForeseen();
-        void ForgetPast(float past = 0f);
+        void ForgetPast(uint keepTick);
         void ClearFutur();
         #endregion
     }

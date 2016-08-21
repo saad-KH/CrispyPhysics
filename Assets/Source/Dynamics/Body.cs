@@ -8,6 +8,7 @@ namespace CrispyPhysics.Internal
     {
         #region Constructor
         public Body(
+           uint currentTick,
            BodyType type,
            IShape shape,
            Vector2 position,
@@ -18,6 +19,7 @@ namespace CrispyPhysics.Internal
            float gravityScale = 1f
            )
         {
+            this.currentTick = currentTick;
             this.type = type;
 
             SetMass(mass);
@@ -29,12 +31,12 @@ namespace CrispyPhysics.Internal
 
             momentums = new List<IInternalMomentum>();
             momentums.Add(new Momentum(
-                0f,
+                this.currentTick,
                 Vector2.zero, 0f,
                 Vector2.zero, 0f,
                 position, angle));
 
-            currentTick = 0f;
+            
             currentIndex = 0;
 
             contacts = new List<IContact>();
@@ -197,7 +199,7 @@ namespace CrispyPhysics.Internal
         #endregion
 
         #region Track
-        private float currentTick;
+        private uint currentTick;
         private int currentIndex;
         public IMomentum past { get { return momentums[0]; } }
         public IMomentum current { get { return momentums[currentIndex]; } }
@@ -205,9 +207,9 @@ namespace CrispyPhysics.Internal
         private List<IInternalMomentum> momentums;
         public bool islandBound { get; set; }
 
-        public void Step(float dt)
+        public void Step(uint steps = 1)
         {
-            currentTick += dt;
+            currentTick += steps;
 
             //The aim is to find the momentum with the higher tick that is lesser than current tick
             //If while looking a momentum's tick is higher than the previous one and lesser than the current
@@ -233,8 +235,7 @@ namespace CrispyPhysics.Internal
                 if (currentIndex == momentums.Count - 1)
                     done = true;
                 // Next one has a higher tick
-                else if (   momentums[currentIndex + 1].tick > currentTick
-                        &&  !Calculus.Approximately(momentums[currentIndex + 1].tick, currentTick))
+                else if ( momentums[currentIndex + 1].tick > currentTick)
                     done = true;
                 //Next one does not change the timeline, we delete it and conserve the current
                 else if (momentums[currentIndex].Same(momentums[currentIndex + 1]))
@@ -245,7 +246,7 @@ namespace CrispyPhysics.Internal
 
             //We create a new current momentum that is synced with the current tick
             //It will than hold any new momentum change for this tick
-            if (!Calculus.Approximately(momentums[currentIndex].tick, currentTick))
+            if (momentums[currentIndex].tick != currentTick)
             {
                 currentIndex++;
                 momentums.Insert(
@@ -256,9 +257,9 @@ namespace CrispyPhysics.Internal
             }
         }
 
-        public void StepBack(float dt)
+        public void RollBack(uint toPastTick)
         {
-            currentTick -= dt;
+            currentTick = toPastTick;
 
             //The aime is to find the momentum with a tick lesser or equal to the current one
             //While looking if the current momentum's tick is greater than the current tick
@@ -268,8 +269,7 @@ namespace CrispyPhysics.Internal
             while (!done && currentIndex >= 0)
                 if (currentIndex == 0)
                     done = true;
-                else if (   momentums[currentIndex].tick <= currentTick
-                        ||  Calculus.Approximately(momentums[currentIndex].tick, currentTick))
+                else if ( momentums[currentIndex].tick <= currentTick)
                     done = true;
                 else
                 {
@@ -280,7 +280,7 @@ namespace CrispyPhysics.Internal
 
             //We create a new current momentum that has the current tick
             //It will than hold any new momentum change for this tick
-            if (!Calculus.Approximately(momentums[currentIndex].tick, currentTick))
+            if (momentums[currentIndex].tick != currentTick)
             {
                 currentIndex++;
                 momentums.Insert(
@@ -291,10 +291,10 @@ namespace CrispyPhysics.Internal
             }
         }
 
-        public void Foresee(float dt)
+        public void Foresee(uint steps = 1)
         {
             IInternalMomentum futurMomentum = new Momentum(
-                momentums[momentums.Count - 1].tick + dt,
+                momentums[momentums.Count - 1].tick + steps,
                 momentums[momentums.Count - 1]);
 
             if (currentIndex != momentums.Count - 1)
@@ -309,9 +309,9 @@ namespace CrispyPhysics.Internal
             return currentIndex < (momentums.Count - 1);
         }
 
-        public void ForgetPast(float past = 0f)
+        public void ForgetPast(uint keepTick)
         {
-            if (Calculus.Approximately(past, 0f))
+            if (keepTick == 0)
             {
                 if(currentIndex > 0)
                 {
@@ -319,9 +319,8 @@ namespace CrispyPhysics.Internal
                     currentIndex = 0;
                 }
             }
-            else if (past > 0f)
+            else if (keepTick > 0)
             {
-                float keepTick = currentTick - past;
                 int keepIndex = 0;
                 //We want to find the momentum with the highest tick that is lesser or equal to the keep tick
                 //The aim is to keep it along with any newer momentums
@@ -329,8 +328,7 @@ namespace CrispyPhysics.Internal
                 while (!done && currentIndex != keepIndex)
                 {
                     //Next tick is wihtin the keeping range, we keep the current one
-                    if (momentums[keepIndex + 1].tick > keepTick
-                        && !Calculus.Approximately(momentums[keepIndex + 1].tick, keepTick))
+                    if (momentums[keepIndex + 1].tick > keepTick)
                         done = true;
                     else
                         keepIndex++;
@@ -338,8 +336,7 @@ namespace CrispyPhysics.Internal
 
                 //We only retains the keeped momentum and the next ones
                 //However we raise the keeped momentum's tick to the keep tick if needed
-                if (momentums[keepIndex].tick < keepTick
-                    && !Calculus.Approximately(momentums[keepIndex].tick, keepTick))
+                if (momentums[keepIndex].tick < keepTick)
                 {
                     currentIndex++;
                     keepIndex++;
