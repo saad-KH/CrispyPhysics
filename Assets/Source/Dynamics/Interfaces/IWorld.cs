@@ -25,6 +25,6 @@ namespace CrispyPhysics
             uint foreseeTicks = 0, uint bufferingTicks = 0,
             uint keepTicks = 0);
 
-        void RollBack(uint toPastTick, uint keepTicks = 0);
+        void RollBack(uint toTick, uint keepTicks = 0);
     }
 }

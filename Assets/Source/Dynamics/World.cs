@@ -117,22 +117,28 @@ namespace CrispyPhysics.Internal
             }
 
 
+  
+
+            if (keepTicks > tick) keepTicks = tick;
+            pastTick = (uint)Mathf.Max(tick - keepTicks , pastTick);
+
             uint iterationsToSolve = 0;
             if (futurTick < tick)
-                iterationsToSolve += steps;
-            Debug.Log("needed Iterations " + iterationsToSolve);
+            {
+                iterationsToSolve = steps;
+                futurTick = tick;
+            }
 
-            uint iterationsToForesee = (uint)
-                Mathf.Min(
-                    Mathf.Max(
-                            (int)(tick + foreseeTicks)
-                        -   Mathf.Max((int) tick, (int) futurTick),
-                        0),
-                    (int) bufferingTicks);
-            Debug.Log("iterationsToForesee : " + iterationsToForesee);
+            uint iterationsToForesee = 0;
+            if (tick + foreseeTicks > futurTick)
+                iterationsToForesee = (uint) 
+                    Mathf.Min(
+                        tick + foreseeTicks - futurTick,
+                        bufferingTicks);
 
+            futurTick  += iterationsToForesee;
             iterationsToSolve += iterationsToForesee;
-            Debug.Log("iterationsToSolve : " + iterationsToSolve);
+
             TimeStep step;
             step.dt = fixedStep;
             step.velocityIterations = 8;
@@ -143,23 +149,15 @@ namespace CrispyPhysics.Internal
             for (int i = 0; i < iterationsToSolve; i++)
                 Solve(step);
 
-            pastTick = tick - keepTicks;
-            futurTick = tick + foreseeTicks;
-            Debug.Log("Imagining a past and futur : " + pastTick + ", " + futurTick);
             foreach (IInternalBody body in bodies)
             {
-                body.Step();
+                body.Step(steps);
                 body.ForgetPast(pastTick);
 
-                if (    body.past.tick > pastTick
-                    &&  !Calculus.Approximately(body.past.tick, pastTick))
-                    pastTick = body.past.tick;
-
-                if (    body.futur.tick < futurTick
-                    &&  !Calculus.Approximately(body.futur.tick, futurTick))
-                    futurTick = body.futur.tick;
+                Debug.Assert(body.current.tick == tick);
+                Debug.Assert(body.past.tick == pastTick);
+                Debug.Assert(body.futur.tick == futurTick);
             }
-            Debug.Log("Dealing with a past and futur : " + pastTick + ", " + futurTick);
 
             opFlags &= ~OperationFlag.Locked;
             //opFlags &= ~OperationFlag.Crisped;
@@ -168,25 +166,21 @@ namespace CrispyPhysics.Internal
 
         }
 
-        public void RollBack(uint toPastTick, uint keepTicks = 0)
+        public void RollBack(uint toTick, uint keepTicks = 0)
         {
 
             opFlags |= OperationFlag.Locked;
-            tick = toPastTick;
+            tick = toTick;
 
-            pastTick = tick - keepTicks;
+            pastTick = (uint)Mathf.Max((int)(tick - keepTicks), pastTick);
             foreach (IInternalBody body in bodies)
             {
                 body.RollBack(tick);
                 body.ForgetPast(pastTick);
 
-                if (    body.past.tick > pastTick
-                    &&  !Calculus.Approximately(body.past.tick, pastTick))
-                    pastTick = body.past.tick;
-
-                if (    body.futur.tick < futurTick
-                    &&  !Calculus.Approximately(body.futur.tick, futurTick))
-                    futurTick = body.futur.tick;
+                Debug.Assert(body.current.tick == tick);
+                Debug.Assert(body.past.tick == pastTick);
+                Debug.Assert(body.futur.tick == futurTick);
             }
             opFlags &= ~OperationFlag.Locked;
         }

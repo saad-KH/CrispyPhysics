@@ -67,7 +67,7 @@ namespace CrispyPhysics
             island.Solve(step, new Vector2(0f, -9.8f));
 
             body.Received(1).Foresee(
-                Arg.Is<float>(x => Calculus.Approximately(x, 1f, 0)));
+                Arg.Is<uint>(x =>  x == 1));
 
             futurMomentum.Received(1).ChangeSituation(
                 Arg.Is<Vector2>(

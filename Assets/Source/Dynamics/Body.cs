@@ -257,9 +257,9 @@ namespace CrispyPhysics.Internal
             }
         }
 
-        public void RollBack(uint toPastTick)
+        public void RollBack(uint toTick)
         {
-            currentTick = toPastTick;
+            currentTick = toTick;
 
             //The aime is to find the momentum with a tick lesser or equal to the current one
             //While looking if the current momentum's tick is greater than the current tick
@@ -309,9 +309,9 @@ namespace CrispyPhysics.Internal
             return currentIndex < (momentums.Count - 1);
         }
 
-        public void ForgetPast(uint keepTick)
+        public void ForgetPast(uint fromTick)
         {
-            if (keepTick == 0)
+            if (fromTick == 0)
             {
                 if(currentIndex > 0)
                 {
@@ -319,7 +319,7 @@ namespace CrispyPhysics.Internal
                     currentIndex = 0;
                 }
             }
-            else if (keepTick > 0)
+            else if (fromTick > 0)
             {
                 int keepIndex = 0;
                 //We want to find the momentum with the highest tick that is lesser or equal to the keep tick
@@ -328,7 +328,7 @@ namespace CrispyPhysics.Internal
                 while (!done && currentIndex != keepIndex)
                 {
                     //Next tick is wihtin the keeping range, we keep the current one
-                    if (momentums[keepIndex + 1].tick > keepTick)
+                    if (momentums[keepIndex + 1].tick > fromTick)
                         done = true;
                     else
                         keepIndex++;
@@ -336,14 +336,14 @@ namespace CrispyPhysics.Internal
 
                 //We only retains the keeped momentum and the next ones
                 //However we raise the keeped momentum's tick to the keep tick if needed
-                if (momentums[keepIndex].tick < keepTick)
+                if (momentums[keepIndex].tick < fromTick)
                 {
                     currentIndex++;
                     keepIndex++;
                     momentums.Insert(
                         keepIndex,
                         new Momentum(
-                            keepTick,
+                            fromTick,
                             momentums[keepIndex - 1]));
 
                 }

@@ -22,10 +22,10 @@ namespace CrispyPhysics.Internal
         bool islandBound { get; set; }
 
         void Step(uint steps = 1);
-        void RollBack(uint toPastTick);
+        void RollBack(uint toTick);
         void Foresee(uint steps = 1);
         bool IsForeseen();
-        void ForgetPast(uint keepTick);
+        void ForgetPast(uint fromTick);
         void ClearFutur();
         #endregion
     }
