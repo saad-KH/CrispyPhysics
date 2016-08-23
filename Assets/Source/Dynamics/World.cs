@@ -172,7 +172,11 @@ namespace CrispyPhysics.Internal
             opFlags |= OperationFlag.Locked;
             tick = toTick;
 
-            pastTick = (uint)Mathf.Max((int)(tick - keepTicks), pastTick);
+            if (pastTick > tick) pastTick = tick;
+
+            if (keepTicks > tick) keepTicks = tick;
+            pastTick = (uint)Mathf.Max(tick - keepTicks, pastTick);
+
             foreach (IInternalBody body in bodies)
             {
                 body.RollBack(tick);
