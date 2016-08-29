@@ -51,7 +51,7 @@ namespace CrispyPhysics.Internal
             contacts[contactCount++] = contact;
         }
 
-        public void Solve(TimeStep step, Vector2 gravity)
+        public void Solve(TimeStep step)
         {
             float dt = step.dt;
 
@@ -71,7 +71,7 @@ namespace CrispyPhysics.Internal
                 {
                     linearVelocity += 
                             dt 
-                        *   (body.gravityScale * gravity + body.invMass * momentum.force);
+                        *   (body.gravityScale * step.gravity + body.invMass * momentum.force);
 
                     angularVelocity += 
                             dt 
@@ -93,12 +93,12 @@ namespace CrispyPhysics.Internal
                 float angularVelocity = velocities[i].angularVelocity;
 
                 Vector2 translation = dt * linearVelocity;
-                if(Vector2.Dot(translation, translation) > Physics2D.maxTranslationSpeed * Physics2D.maxTranslationSpeed)
-                    linearVelocity *= Physics2D.maxTranslationSpeed / translation.magnitude;
+                if(Vector2.Dot(translation, translation) > step.maxTranslationSpeed * step.maxTranslationSpeed)
+                    linearVelocity *= step.maxTranslationSpeed / translation.magnitude;
 
                 float rotation = dt * angularVelocity;
-                if (rotation * rotation > Physics2D.maxRotationSpeed * Physics2D.maxRotationSpeed)
-                    angularVelocity *= Physics2D.maxRotationSpeed / Mathf.Abs(rotation);
+                if (rotation * rotation > step.maxRotationSpeed * step.maxRotationSpeed)
+                    angularVelocity *= step.maxRotationSpeed / Mathf.Abs(rotation);
 
                 positions[i].center += dt * linearVelocity;
                 positions[i].angle += dt * angularVelocity;

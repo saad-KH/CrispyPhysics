@@ -56,15 +56,13 @@ namespace CrispyPhysics
             body.gravityScale.Returns(1f);
             body.futur.Returns(futurMomentum);
 
-            TimeStep step = new TimeStep();
-            step.dt = 1f;
-            step.velocityIterations = 8;
-            step.positionIterations = 3;
-            step.invDt = 1f / step.dt;
-            step.dtRatio = 0f;
+            TimeStep step = new TimeStep(
+                1f, 1f, 0f,
+                new Vector2(0f, -9.8f), 8, 3,
+                100, 360);
 
             
-            island.Solve(step, new Vector2(0f, -9.8f));
+            island.Solve(step);
 
             body.Received(1).Foresee(
                 Arg.Is<uint>(x =>  x == 1));

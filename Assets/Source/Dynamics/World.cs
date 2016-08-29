@@ -2,43 +2,40 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 
+#region Factory
 namespace CrispyPhysics
 {
     using Internal;
     public class WorldFactory
     {
         public static IWorld CreateWorld(
-            float fixedStep = 0.01f, float crispyStep = 0.01f, float crispySize = 0.01f)
+            float fixedStep, float crispyStep, float crispySize,
+            Vector2 gravity, int velocityIterations = 8, int positionIterations = 3,
+            float maxTranslationSpeed = 100, float maxRotationSpeed = 360)
         {
-            return new World(fixedStep, crispyStep, crispySize);
+            return new World(
+                fixedStep, crispyStep, crispySize,
+                gravity, velocityIterations, positionIterations,
+                maxTranslationSpeed, maxRotationSpeed);
         }
-    } 
+
+        public static IWorld CreateWorld(WorldDefinition wordDefinition)
+        {
+            return new World(wordDefinition);
+        }
+    }
 }
+#endregion
+
 namespace CrispyPhysics.Internal
 {
     public class World : IWorld
     {
-        public float fixedStep { get; private set; }
-        public float crispyStep { get; private set; }
-        public float crispySize { get; private set; }
-        public uint tick { get; private set; }
-        public uint pastTick { get; private set; }
-        public uint futurTick { get; private set; }
-
-        private List<IInternalBody> bodies;
-
-        [Flags]
-        private enum OperationFlag
-        {
-            Locked = 0x0001,
-            BodyChange = 0x0002,
-            FuturForeseen = 0x0004,
-            Crisped = 0x0008
-        }
-
-        private OperationFlag opFlags;
-
-        public World(float fixedStep = 0.01f, float crispyStep = 0.01f, float crispySize = 0.01f)
+        #region Constructors
+        public World(
+            float fixedStep, float crispyStep, float crispySize,
+            Vector2 gravity, int velocityIterations = 8, int positionIterations = 3,
+            float maxTranslationSpeed = 100, float maxRotationSpeed = 360)
         {
             if  (   fixedStep < 0
                 ||  Calculus.Approximately(fixedStep, 0f))
@@ -48,25 +45,47 @@ namespace CrispyPhysics.Internal
             this.crispyStep = Mathf.Max(crispyStep, this.fixedStep);
             this.crispySize = Mathf.Max(crispySize, 0f);
 
+            this.gravity = gravity;
+            this.velocityIterations = velocityIterations;
+            this.positionIterations = positionIterations;
+
+            this.maxTranslationSpeed = maxTranslationSpeed;
+            this.maxRotationSpeed = maxRotationSpeed;
+
             tick = 0;
             pastTick = 0;
             futurTick = 0;
 
             bodies = new List<IInternalBody>();
+
+            step = new TimeStep(
+                fixedStep, 1f / fixedStep, 1f,
+                gravity, velocityIterations, positionIterations,
+                maxTranslationSpeed, maxRotationSpeed);
         }
 
+        public World(WorldDefinition worldDef) : this(
+            worldDef.fixedStep, worldDef.crispyStep, worldDef.crispySize,
+            worldDef.gravity, worldDef.velocityIterations, worldDef.positionIterations,
+            worldDef.maxTranslationSpeed, worldDef.maxRotationSpeed)
+        {}
+        #endregion
+
+        #region Body Manager
+        private List<IInternalBody> bodies;
+
         public IBody CreateBody(
-            BodyType type, IShape shape,
             Vector2 position, float angle,
+            BodyType type, IShape shape, float mass = 1f,
             float linearDamping = 0f, float angularDamping = 0f,
-            float mass = 1f, float gravityScale = 1f)
+            float gravityScale = 1f)
         {
             IInternalBody newBody = new Body(
                 tick,
-                type, shape,
                 position, angle,
+                type, shape, mass,
                 linearDamping, angularDamping,
-                mass, gravityScale
+                gravityScale
             );
 
             bodies.Add(newBody);
@@ -74,6 +93,17 @@ namespace CrispyPhysics.Internal
             newBody.FuturCleared += FuturCleared;
 
             return newBody;
+        }
+
+        public IBody CreateBody(
+            Vector2 position, float angle,
+            BodyDefintion bodyDef)
+        {
+            return CreateBody(
+                position, angle,
+                bodyDef.type, bodyDef.shape, bodyDef.mass,
+                bodyDef.linearDamping, bodyDef.angularDamping,
+                bodyDef.gravityScale);
         }
 
         public void DestroyBody(IBody body)
@@ -91,7 +121,38 @@ namespace CrispyPhysics.Internal
 
             bodies.RemoveAt(bodyIndex);
         }
+        #endregion
 
+        #region Nature
+        public float fixedStep { get; private set; }
+        public float crispyStep { get; private set; }
+        public float crispySize { get; private set; }
+
+        public Vector2 gravity { get; private set; }
+        public int velocityIterations { get; private set; }
+        public int positionIterations { get; private set; }
+
+        public float maxTranslationSpeed { get; private set; }
+        public float maxRotationSpeed { get; private set; }
+
+        public uint tick { get; private set; }
+        public uint pastTick { get; private set; }
+        public uint futurTick { get; private set; }
+
+        [Flags]
+        private enum OperationFlag
+        {
+            Locked = 0x0001,
+            BodyChange = 0x0002,
+            FuturForeseen = 0x0004,
+            Crisped = 0x0008
+        }
+
+        private OperationFlag opFlags;
+        private TimeStep step;
+        #endregion
+
+        #region Track
         public void Step(
             uint steps = 1,
             uint foreseeTicks = 0, uint bufferingTicks = 0,
@@ -138,13 +199,6 @@ namespace CrispyPhysics.Internal
 
             futurTick  += iterationsToForesee;
             iterationsToSolve += iterationsToForesee;
-
-            TimeStep step;
-            step.dt = fixedStep;
-            step.velocityIterations = 8;
-            step.positionIterations = 3;
-            step.invDt = 1f / fixedStep;
-            step.dtRatio = 1f;
 
             for (int i = 0; i < iterationsToSolve; i++)
                 Solve(step);
@@ -214,7 +268,7 @@ namespace CrispyPhysics.Internal
 
                     //Debug.Assert(false, "Search Contacts associated to body");
 
-                    island.Solve(step, Physics2D.gravity);
+                    island.Solve(step);
                 }
             }
 
@@ -267,5 +321,6 @@ namespace CrispyPhysics.Internal
                 opFlags &= ~World.OperationFlag.FuturForeseen;
             }
         }
+        #endregion
     }
 }

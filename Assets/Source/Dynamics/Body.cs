@@ -6,16 +6,12 @@ namespace CrispyPhysics.Internal
 {
     public class Body : IInternalBody
     {
-        #region Constructor
+        #region Constructors
         public Body(
            uint currentTick,
-           BodyType type,
-           IShape shape,
-           Vector2 position,
-           float angle,
-           float linearDamping = 0f,
-           float angularDamping = 0f,
-           float mass = 1f,
+           Vector2 position, float angle,
+           BodyType type, IShape shape, float mass = 1f,
+           float linearDamping = 0f, float angularDamping = 0f,
            float gravityScale = 1f
            )
         {
@@ -36,11 +32,19 @@ namespace CrispyPhysics.Internal
                 Vector2.zero, 0f,
                 position, angle));
 
-            
+
             currentIndex = 0;
 
             contacts = new List<IContact>();
         }
+
+        public Body(uint currentTick, Vector2 position, float angle, BodyDefintion bodyDef) : this (
+            currentTick,
+            position, angle,
+            bodyDef.type, bodyDef.shape, bodyDef.mass,
+            bodyDef.linearDamping, bodyDef.angularDamping,
+            bodyDef.gravityScale)
+        {}
         #endregion
 
         #region Events
@@ -235,7 +239,7 @@ namespace CrispyPhysics.Internal
                 if (currentIndex == momentums.Count - 1)
                     done = true;
                 // Next one has a higher tick
-                else if ( momentums[currentIndex + 1].tick > currentTick)
+                else if (momentums[currentIndex + 1].tick > currentTick)
                     done = true;
                 //Next one does not change the timeline, we delete it and conserve the current
                 else if (momentums[currentIndex].Same(momentums[currentIndex + 1]))
@@ -269,7 +273,7 @@ namespace CrispyPhysics.Internal
             while (!done && currentIndex >= 0)
                 if (currentIndex == 0)
                     done = true;
-                else if ( momentums[currentIndex].tick <= currentTick)
+                else if (momentums[currentIndex].tick <= currentTick)
                     done = true;
                 else
                 {
@@ -313,13 +317,13 @@ namespace CrispyPhysics.Internal
         {
             if (fromTick == 0)
             {
-                if(currentIndex > 0)
+                if (currentIndex > 0)
                 {
                     momentums.RemoveRange(0, currentIndex);
                     currentIndex = 0;
                 }
             }
-            else if (fromTick > 0)
+            else
             {
                 int keepIndex = 0;
                 //We want to find the momentum with the highest tick that is lesser or equal to the keep tick

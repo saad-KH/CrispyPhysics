@@ -10,13 +10,7 @@ namespace CrispyPhysics
     {
         public Body CreateBody()
         {
-           return new Body(
-                0,
-                BodyType.DynamicBody,
-                null,
-                Vector2.zero,
-                0f
-            );
+           return new Body(0, Vector2.zero, 0f, BodyType.DynamicBody, null);
         }
 
         [Test]

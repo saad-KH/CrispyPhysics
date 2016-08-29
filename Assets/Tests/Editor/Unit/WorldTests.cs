@@ -12,20 +12,33 @@ namespace CrispyPhysics
 		[Test]
 		public void SettingUpWorld()
 		{
-			World world = new World();
+			World world = new World(0.01f, 0.01f, 0.01f, new Vector2(-10f, -10f));
 
 			Assert.That(world.fixedStep, Is.EqualTo(0.01f));
             Assert.That(world.crispyStep, Is.EqualTo(0.01f));
             Assert.That(world.crispySize, Is.EqualTo(0.01f));
+            Assert.That(world.gravity, Is.EqualTo(new Vector2(-10f, -10f)));
+            Assert.That(world.velocityIterations, Is.EqualTo(8));
+            Assert.That(world.positionIterations, Is.EqualTo(3));
+            Assert.That(world.maxTranslationSpeed, Is.EqualTo(100));
+            Assert.That(world.maxRotationSpeed, Is.EqualTo(360));
             Assert.That(world.tick, Is.EqualTo(0));
             Assert.That(world.pastTick, Is.EqualTo(0));
             Assert.That(world.futurTick, Is.EqualTo(0));
 
-            World specificWorld = new World(0.01f, 0.5f, 0.25f);
+            World specificWorld = new World(
+                0.1f, 0.5f, 0.25f,
+                new Vector2(0f, -10f), 5, 5,
+                50, 180);
 
-            Assert.That(specificWorld.fixedStep, Is.EqualTo(0.01f));
+            Assert.That(specificWorld.fixedStep, Is.EqualTo(0.1f));
             Assert.That(specificWorld.crispyStep, Is.EqualTo(0.5f));
             Assert.That(specificWorld.crispySize, Is.EqualTo(0.25f));
+            Assert.That(specificWorld.gravity, Is.EqualTo(new Vector2(0f, -10f)));
+            Assert.That(specificWorld.velocityIterations, Is.EqualTo(5));
+            Assert.That(specificWorld.positionIterations, Is.EqualTo(5));
+            Assert.That(specificWorld.maxTranslationSpeed, Is.EqualTo(50));
+            Assert.That(specificWorld.maxRotationSpeed, Is.EqualTo(180));
             Assert.That(specificWorld.tick, Is.EqualTo(0));
             Assert.That(specificWorld.pastTick, Is.EqualTo(0));
             Assert.That(specificWorld.futurTick, Is.EqualTo(0));
@@ -35,11 +48,11 @@ namespace CrispyPhysics
         [Test]
         public void SteppingWorld()
         {
-            World world = new World(0.01f, 0.01f, 0.001f);
-            Vector2 initialGravity = Physics2D.gravity;
-            Physics2D.gravity = new Vector2(-10f, -10f);
+            World world = new World(0.01f, 0.01f, 0.001f, new Vector2(-10f, -10f));
 
-            IInternalBody body = world.CreateBody(BodyType.DynamicBody, null, Vector2.zero, 0f) as IInternalBody;
+            IInternalBody body = 
+                    world.CreateBody(Vector2.zero, 0f, BodyType.DynamicBody, null) 
+                as  IInternalBody;
 
             world.Step();
             Assert.That(world.tick, Is.EqualTo(1));
@@ -144,8 +157,6 @@ namespace CrispyPhysics
             Assert.That(
                 body.futur.position,
                 OwnNUnit.Is.EqualTo(new Vector2(-11.325f, -11.325f)).Within(0.001f));
-
-            Physics2D.gravity = initialGravity;
         }
 
         /*
