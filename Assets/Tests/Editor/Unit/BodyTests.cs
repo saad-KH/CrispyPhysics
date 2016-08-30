@@ -38,6 +38,34 @@ namespace CrispyPhysics
             Assert.That(body.torque, Is.EqualTo(0f));
 
             Assert.That(body.GetInertia(), Is.EqualTo(0f));
+
+
+            BodyDefintion bodyDef = new BodyDefintion(
+                BodyType.DynamicBody, null, 5f,
+                0.2f, 0.3f, 0.5f);
+
+            Body specifiedBody = new Body(0, Vector2.one, 1f, bodyDef);
+
+
+            Assert.That(specifiedBody.type, Is.EqualTo(BodyType.DynamicBody));
+
+            Assert.That(specifiedBody.position, Is.EqualTo(Vector2.one));
+            Assert.That(specifiedBody.angle, Is.EqualTo(1f));
+
+            Assert.That(specifiedBody.linearVelocity, Is.EqualTo(Vector2.zero));
+            Assert.That(specifiedBody.angularVelocity, Is.EqualTo(0f));
+
+            Assert.That(specifiedBody.mass, Is.EqualTo(5f));
+            Assert.That(specifiedBody.invMass, Is.EqualTo(1f/5f).Within(0.001f));
+
+            Assert.That(specifiedBody.linearDamping, Is.EqualTo(0.2f));
+            Assert.That(specifiedBody.angularDamping, Is.EqualTo(0.3f));
+            Assert.That(specifiedBody.gravityScale, Is.EqualTo(0.5f));
+
+            Assert.That(specifiedBody.force, Is.EqualTo(Vector2.zero));
+            Assert.That(specifiedBody.torque, Is.EqualTo(0f));
+
+            Assert.That(specifiedBody.GetInertia(), Is.EqualTo(0f));
         }
 
         [Test]

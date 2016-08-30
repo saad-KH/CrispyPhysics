@@ -26,10 +26,12 @@ namespace CrispyPhysics
             Assert.That(world.pastTick, Is.EqualTo(0));
             Assert.That(world.futurTick, Is.EqualTo(0));
 
-            World specificWorld = new World(
+            WorldDefinition worldDef = new WorldDefinition(
                 0.1f, 0.5f, 0.25f,
                 new Vector2(0f, -10f), 5, 5,
                 50, 180);
+
+            World specificWorld = new World(worldDef);
 
             Assert.That(specificWorld.fixedStep, Is.EqualTo(0.1f));
             Assert.That(specificWorld.crispyStep, Is.EqualTo(0.5f));

@@ -28,7 +28,7 @@ namespace CrispyPhysics
 
         public BodyDefintion(
             BodyType type, IShape shape, float mass, 
-            float linearDamping = 0.2f, float angularDamping = 0.2f, 
+            float linearDamping = 0f, float angularDamping = 0f, 
             float gravityScale = 1f)
         {
             this.type = type;
