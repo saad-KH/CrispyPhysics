@@ -40,26 +40,6 @@ namespace CrispyPhysics.Internal
         {
             return new Vector2(-sine, cosine);
         }
-
-        public override bool Equals(object obj)
-        {
-            return obj is Rotation && this == (Rotation)obj;
-        }
-
-        public override int GetHashCode()
-        {
-            return sine.GetHashCode() ^ cosine.GetHashCode();
-        }
-        
-        public static bool operator ==(Rotation a, Rotation b)
-        {
-            return (a.sine == b.sine && a.cosine == b.cosine);
-        }
-
-        public static bool operator !=(Rotation a, Rotation b)
-        {
-            return !(a == b);
-        }
     }
     #endregion;
 
@@ -85,26 +65,6 @@ namespace CrispyPhysics.Internal
         {
             this.position = position;
             rotation.Set(angle);
-        }
-
-        public override bool Equals(object obj)
-        {
-            return obj is Transformation && this == (Transformation)obj;
-        }
-
-        public override int GetHashCode()
-        {
-            return position.GetHashCode() ^ rotation.GetHashCode();
-        }
-
-        public static bool operator ==(Transformation a, Transformation b)
-        {
-            return (a.position == b.position && a.rotation == b.rotation);
-        }
-
-        public static bool operator !=(Transformation a, Transformation b)
-        {
-            return !(a == b);
         }
     }
     #endregion
@@ -218,9 +178,35 @@ namespace CrispyPhysics.Internal
             return new Vector2(x, y);
         }
 
+        public static float Dot(Vector2 vectorA, Vector2 vectorB)
+        {
+            return vectorA.x * vectorB.x + vectorA.y * vectorB.y;
+        }
+
         public static float Cross(Vector2 vectorA, Vector2 vectorB)
         {
-            return vectorA.x * vectorB.y - vectorA.y * vectorB.y;
+            return vectorA.x * vectorB.y - vectorA.y * vectorB.x;
+        }
+
+        public static Vector2 Cross(Vector2 vector, float number)
+        {
+            return new Vector2(
+                number * vector.y,
+                -number * vector.x);
+        }
+
+        public static Vector2 Abs(Vector2 vector)
+        {
+            return new Vector2(
+                Mathf.Abs(vector.x),
+                Mathf.Abs(vector.y));
+        }
+
+        public static void Swap<T>(ref T lhs, ref T rhs)
+        {
+            T temp = lhs;
+            lhs = rhs;
+            rhs = temp;
         }
     }
     #endregion

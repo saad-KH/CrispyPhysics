@@ -4,6 +4,7 @@ using UnityEngine;
 namespace CrispyPhysics
 {
     using Internal;
+
     [TestFixture]
     public class MathTests
     {
@@ -36,6 +37,32 @@ namespace CrispyPhysics
             Assert.That(
                 rot.GetYAxis(),
                 OwnNUnit.Is.EqualTo(new Vector2(-0.866f, 0.5f)).Within(0.001f));
+        }
+
+        [Test]
+        public void UsingTransformation()
+        {
+            Transformation transform = new Transformation(
+                Vector2.one,
+                new Rotation(Mathf.PI / 3));
+
+            Assert.That(transform.position, OwnNUnit.Is.EqualTo(Vector2.one).Within(0.001f));
+            Assert.That(transform.rotation.sine, Is.EqualTo(0.866f).Within(0.001f));
+            Assert.That(transform.rotation.cosine, Is.EqualTo(0.5f).Within(0.001f));
+
+            transform.Set(
+                Vector2.down,
+                Mathf.PI / 4);
+
+            Assert.That(transform.position, OwnNUnit.Is.EqualTo(Vector2.down).Within(0.001f));
+            Assert.That(transform.rotation.sine, Is.EqualTo(0.707f).Within(0.001f));
+            Assert.That(transform.rotation.cosine, Is.EqualTo(0.707f).Within(0.001f));
+
+            transform.SetIdentity();
+
+            Assert.That(transform.position, OwnNUnit.Is.EqualTo(Vector2.zero).Within(0.001f));
+            Assert.That(transform.rotation.sine, Is.EqualTo(0f).Within(0.001f));
+            Assert.That(transform.rotation.cosine, Is.EqualTo(0f).Within(0.001f));
         }
 
         /*[Test]
@@ -131,11 +158,44 @@ namespace CrispyPhysics
                 transMulTVec,
                 OwnNUnit.Is.EqualTo(new Vector2(-0.516f, 0.856f)).Within(0.001f));
 
+            float vecDotVec = Calculus.Dot(
+                new Vector2(1f, 0f),
+                new Vector2(0.707f, 0.707f));
+
+            Assert.That(
+                vecDotVec,
+                Is.EqualTo(0.707f).Within(0.001f));
+
             float vecCrossVec = Calculus.Cross(
                 new Vector2(1f, 0f),
                 new Vector2(0.707f, 0.707f));
 
             Assert.That(vecCrossVec, Is.EqualTo(0.707f).Within(0.001f));
+
+            Vector2 vecCrossNum = Calculus.Cross(
+                new Vector2(1f, 0f),
+                0.707f);
+
+            Assert.That(
+                 vecCrossNum,
+                 OwnNUnit.Is.EqualTo(new Vector2(0f, -0.707f)).Within(0.001f));
+
+            Vector2 absVector = Calculus.Abs(new Vector2(-1.5f, -1.8f));
+
+            Assert.That(absVector, Is.EqualTo(new Vector2(1.5f, 1.8f)).Within(0.001f));
+
+            float swapieNum1 = 1f;
+            float swapieNum2 = -1f;
+            Vector2 swapieVec1 = Vector2.one;
+            Vector2 swapieVec2 = Vector2.down;
+
+            Calculus.Swap(ref swapieNum1, ref swapieNum2);
+            Calculus.Swap(ref swapieVec1, ref swapieVec2);
+
+            Assert.That(swapieNum1, Is.EqualTo(-1f));
+            Assert.That(swapieNum2, Is.EqualTo(1f));
+            Assert.That(swapieVec1, Is.EqualTo(Vector2.down));
+            Assert.That(swapieVec2, Is.EqualTo(Vector2.one));
 
 
         }
