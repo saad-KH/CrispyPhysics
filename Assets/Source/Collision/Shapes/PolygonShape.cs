@@ -98,23 +98,23 @@ namespace CrispyPhysics.Internal
             return c;
         }
 
-        public void Set(Vector2[] points, int count)
+        public void Set(Vector2[] points, int newCount)
         {
             Debug.Assert(3 <= count && count <= Constants.maxPolygonVertices);
 
-            if (count < 3)
+            if (newCount < 3)
             {
                 SetAsBox(1.0f, 1.0f);
                 return;
             }
 
-            int n = Mathf.Min(count, Constants.maxPolygonVertices);
+            int n = Mathf.Min(newCount, Constants.maxPolygonVertices);
 
             Vector2[] ps = new Vector2[Constants.maxPolygonVertices];
             int tempCount = 0;
             for (int i = 0; i < n; ++i)
             {
-                Vector2 v = vertices[i];
+                Vector2 v = points[i];
 
                 bool unique = true;
                 for (int j = 0; j < tempCount; ++j)
@@ -128,9 +128,7 @@ namespace CrispyPhysics.Internal
                 }
 
                 if (unique)
-                {
                     ps[tempCount++] = v;
-                }
             }
 
             n = tempCount;
@@ -148,7 +146,7 @@ namespace CrispyPhysics.Internal
             // Find the right most point on the hull
             int i0 = 0;
             float x0 = ps[0].x;
-            for (int i = 1; i < n; ++i)
+            for (int i = 1; i < n; i++)
             {
                 float x = ps[i].x;
                 if (x > x0 || (x == x0 && ps[i].y < ps[i0].y))
@@ -186,7 +184,7 @@ namespace CrispyPhysics.Internal
                         ie = j;
                 }
 
-                ++m;
+                m++;
                 ih = ie;
 
                 if (ie == i0)
@@ -204,13 +202,11 @@ namespace CrispyPhysics.Internal
             count = m;
 
             // Copy vertices.
-            for (int i = 0; i < m; ++i)
-            {
+            for (int i = 0; i < m; i++)
                 vertices[i] = ps[hull[i]];
-            }
 
             // Compute normals. Ensure the edges have non-zero length.
-            for (int i = 0; i < m; ++i)
+            for (int i = 0; i < m; i++)
             {
                 int i1 = i;
                 int i2 = i + 1 < m ? i + 1 : 0;
