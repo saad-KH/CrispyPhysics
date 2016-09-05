@@ -50,6 +50,7 @@ namespace CrispyPhysics
             IInternalBody body = Substitute.For<IInternalBody>();
             island.Add(body);
 
+            body.type.Returns(BodyType.Dynamic);
             body.invMass.Returns(1f);
             body.linearDamping.Returns(0.2f);
             body.angularDamping.Returns(0.2f);

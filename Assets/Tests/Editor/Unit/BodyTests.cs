@@ -8,18 +8,13 @@ namespace CrispyPhysics
     [TestFixture]
     public class BodyTests
     {
-        public Body CreateBody()
-        {
-           return new Body(0, Vector2.zero, 0f, BodyType.DynamicBody, null);
-        }
-
         [Test]
         public void CreatingBody()
         {
-            Body body = CreateBody();
+            Body body = new Body(0, Vector2.zero, 0f, BodyType.Dynamic, null);
             Assert.That(body.islandBound == false);
 
-            Assert.That(body.type, Is.EqualTo(BodyType.DynamicBody));
+            Assert.That(body.type, Is.EqualTo(BodyType.Dynamic));
 
             Assert.That(body.position, Is.EqualTo(Vector2.zero));
             Assert.That(body.angle, Is.EqualTo(0f));
@@ -39,15 +34,15 @@ namespace CrispyPhysics
 
             Assert.That(body.GetInertia(), Is.EqualTo(0f));
 
-
+            IShape shape = ShapeFactory.CreateCircle(1f);
             BodyDefintion bodyDef = new BodyDefintion(
-                BodyType.DynamicBody, null, 5f,
+                BodyType.Dynamic, shape, 5f,
                 0.2f, 0.3f, 0.5f);
 
             Body specifiedBody = new Body(0, Vector2.one, 1f, bodyDef);
 
 
-            Assert.That(specifiedBody.type, Is.EqualTo(BodyType.DynamicBody));
+            Assert.That(specifiedBody.type, Is.EqualTo(BodyType.Dynamic));
 
             Assert.That(specifiedBody.position, Is.EqualTo(Vector2.one));
             Assert.That(specifiedBody.angle, Is.EqualTo(1f));
@@ -65,97 +60,222 @@ namespace CrispyPhysics
             Assert.That(specifiedBody.force, Is.EqualTo(Vector2.zero));
             Assert.That(specifiedBody.torque, Is.EqualTo(0f));
 
+            Assert.That(specifiedBody.GetInertia(), Is.EqualTo(2.5f));
+
+            bodyDef.shape = ShapeFactory.CreateEdge(Vector2.left, Vector2.right);
+            specifiedBody = new Body(0, Vector2.one, 1f, bodyDef);
             Assert.That(specifiedBody.GetInertia(), Is.EqualTo(0f));
+
+            bodyDef.shape = ShapeFactory.CreateBox(1f, 1f);
+            specifiedBody = new Body(0, Vector2.one, 1f, bodyDef);
+            Assert.That(specifiedBody.GetInertia(), Is.EqualTo(3.333f).Within(0.001f));
+
+            bodyDef.type = BodyType.Static;
+            specifiedBody = new Body(0, Vector2.one, 1f, bodyDef);
+            Assert.That(specifiedBody.mass, Is.EqualTo(0f).Within(0.001f));
+            Assert.That(specifiedBody.invMass, Is.EqualTo(0f).Within(0.001f));
+            Assert.That(specifiedBody.GetInertia(), Is.EqualTo(0f).Within(0.001f));
         }
 
         [Test]
         public void ShouldBeCollidingBody()
         {
-            Body body = CreateBody();
-            IBody dynamicBody = Substitute.For<IBody>();
-            dynamicBody.type.Returns(BodyType.DynamicBody);
+            Body body = new Body(0, Vector2.zero, 0f, BodyType.Dynamic, null);
+            IBody dynamicDummy = Substitute.For<IBody>();
+            dynamicDummy.type.Returns(BodyType.Dynamic);
 
-            Assert.That(body.ShouldCollide(dynamicBody) == true);
+            IBody staticDummy = Substitute.For<IBody>();
+            staticDummy.type.Returns(BodyType.Static);
+
+            IBody kineticDummy = Substitute.For<IBody>();
+            kineticDummy.type.Returns(BodyType.Kinematic);
+
+
+            Assert.That(body.ShouldCollide(dynamicDummy) == true);
+            Assert.That(body.ShouldCollide(staticDummy) == true);
+            Assert.That(body.ShouldCollide(kineticDummy) == true);
+
+            Body staticBody = new Body(0, Vector2.zero, 0f, BodyType.Static, null);
+
+            Assert.That(staticBody.ShouldCollide(dynamicDummy) == true);
+            Assert.That(staticBody.ShouldCollide(staticDummy) == false);
+            Assert.That(staticBody.ShouldCollide(kineticDummy) == false);
+
+            Body kineticBody = new Body(0, Vector2.zero, 0f, BodyType.Static, null);
+
+            Assert.That(kineticBody.ShouldCollide(dynamicDummy) == true);
+            Assert.That(kineticBody.ShouldCollide(staticDummy) == false);
+            Assert.That(kineticBody.ShouldCollide(kineticDummy) == false);
         }
 
         [Test]
         public void ChangingStates()
         {
-            Body body = CreateBody();
+            Body body = new Body(
+                0, Vector2.zero, 0f,
+                BodyType.Dynamic, ShapeFactory.CreateCircle(1f));
+            Body staticBody = new Body(
+                0, Vector2.zero, 0f,
+                BodyType.Static, ShapeFactory.CreateEdge(Vector2.left, Vector2.right));
+            Body kinematicBody = new Body(
+                0, Vector2.zero, 0f,
+                BodyType.Kinematic, ShapeFactory.CreateBox(1f, 1f));
             //Changing Impulse
             body.ChangeImpulse(Vector2.one, 1f);
+            staticBody.ChangeImpulse(Vector2.one, 1f);
+            kinematicBody.ChangeImpulse(Vector2.one, 1f);
 
             Assert.That(body.force, Is.EqualTo(Vector2.one));
             Assert.That(body.torque, Is.EqualTo(1f));
+            Assert.That(staticBody.force, Is.EqualTo(Vector2.zero));
+            Assert.That(staticBody.torque, Is.EqualTo(0f));
+            Assert.That(kinematicBody.force, Is.EqualTo(Vector2.zero));
+            Assert.That(kinematicBody.torque, Is.EqualTo(0f));
 
             //Changing Velocity
             body.ChangeVelocity(Vector2.up, 2f);
+            staticBody.ChangeVelocity(Vector2.up, 2f);
+            kinematicBody.ChangeVelocity(Vector2.up, 2f);
 
             Assert.That(body.linearVelocity, Is.EqualTo(Vector2.up));
             Assert.That(body.angularVelocity, Is.EqualTo(2f));
+            Assert.That(staticBody.linearVelocity, Is.EqualTo(Vector2.zero));
+            Assert.That(staticBody.angularVelocity, Is.EqualTo(0f));
+            Assert.That(kinematicBody.linearVelocity, Is.EqualTo(Vector2.zero));
+            Assert.That(kinematicBody.angularVelocity, Is.EqualTo(0f));
 
             //Changing Situation
             body.ChangeSituation(Vector2.down, -1f);
+            staticBody.ChangeSituation(Vector2.down, -1f);
+            kinematicBody.ChangeSituation(Vector2.down, -1f);
 
             Assert.That(body.position, Is.EqualTo(Vector2.down));
             Assert.That(body.angle, Is.EqualTo(-1f));
+            Assert.That(staticBody.position, Is.EqualTo(Vector2.down));
+            Assert.That(staticBody.angle, Is.EqualTo(-1f));
+            Assert.That(kinematicBody.position, Is.EqualTo(Vector2.down));
+            Assert.That(kinematicBody.angle, Is.EqualTo(-1f));
         }
 
         [Test]
         public void ApplyingForces()
         {
-            Body body = CreateBody();
+            Body body = new Body(
+                0, Vector2.zero, 0f,
+                BodyType.Dynamic, ShapeFactory.CreateCircle(1f));
+            Body staticBody = new Body(
+                0, Vector2.zero, 0f,
+                BodyType.Static, ShapeFactory.CreateEdge(Vector2.left, Vector2.right));
+            Body kinematicBody = new Body(
+                0, Vector2.zero, 0f,
+                BodyType.Kinematic, ShapeFactory.CreateBox(1f, 1f));
+
             //Applying force
             body.ApplyForce(Vector2.one, new Vector2(-0.5f, 0.5f));
+            staticBody.ApplyForce(Vector2.one, new Vector2(-0.5f, 0.5f));
+            kinematicBody.ApplyForce(Vector2.one, new Vector2(-0.5f, 0.5f));
 
             Assert.That(body.force, Is.EqualTo(Vector2.one));
             Assert.That(body.torque, Is.EqualTo(-1f));
+            Assert.That(staticBody.force, Is.EqualTo(Vector2.zero));
+            Assert.That(staticBody.torque, Is.EqualTo(0f));
+            Assert.That(kinematicBody.force, Is.EqualTo(Vector2.zero));
+            Assert.That(kinematicBody.torque, Is.EqualTo(0f));
 
             //Applying force to Center
             body.ChangeImpulse(Vector2.zero, 0f);
             body.ApplyForceToCenter(Vector2.one);
+            staticBody.ChangeImpulse(Vector2.zero, 0f);
+            staticBody.ApplyForceToCenter(Vector2.one);
+            kinematicBody.ChangeImpulse(Vector2.zero, 0f);
+            kinematicBody.ApplyForceToCenter(Vector2.one);
 
             Assert.That(body.force, Is.EqualTo(Vector2.one));
             Assert.That(body.torque, Is.EqualTo(0f));
+            Assert.That(staticBody.force, Is.EqualTo(Vector2.zero));
+            Assert.That(staticBody.torque, Is.EqualTo(0f));
+            Assert.That(kinematicBody.force, Is.EqualTo(Vector2.zero));
+            Assert.That(kinematicBody.torque, Is.EqualTo(0f));
 
             //Applying Torque
             body.ChangeImpulse(Vector2.zero, 0f);
             body.ApplyTorque(1f);
+            staticBody.ChangeImpulse(Vector2.zero, 0f);
+            staticBody.ApplyTorque(1f);
+            kinematicBody.ChangeImpulse(Vector2.zero, 0f);
+            kinematicBody.ApplyTorque(1f);
 
             Assert.That(body.force, Is.EqualTo(Vector2.zero));
             Assert.That(body.torque, Is.EqualTo(1f));
+            Assert.That(staticBody.force, Is.EqualTo(Vector2.zero));
+            Assert.That(staticBody.torque, Is.EqualTo(0f));
+            Assert.That(kinematicBody.force, Is.EqualTo(Vector2.zero));
+            Assert.That(kinematicBody.torque, Is.EqualTo(0f));
         }
     
         [Test]
         public void ApplyingImpulses()
         {
-            Body body = CreateBody();
+            Body body = new Body(
+                0, Vector2.zero, 0f,
+                BodyType.Dynamic, ShapeFactory.CreateCircle(1f));
+            Body staticBody = new Body(
+                0, Vector2.zero, 0f, 
+                BodyType.Static, ShapeFactory.CreateEdge(Vector2.left, Vector2.right));
+            Body kinematicBody = new Body(
+                0, Vector2.zero, 0f, 
+                BodyType.Kinematic, ShapeFactory.CreateBox(1f, 1f));
+
             //Applying Impulse
             body.ChangeVelocity(Vector2.zero, 0f);
             body.ApplyLinearImpulse(Vector2.one, new Vector2(-0.5f, 0.5f));
+            staticBody.ChangeVelocity(Vector2.zero, 0f);
+            staticBody.ApplyLinearImpulse(Vector2.one, new Vector2(-0.5f, 0.5f));
+            kinematicBody.ChangeVelocity(Vector2.zero, 0f);
+            kinematicBody.ApplyLinearImpulse(Vector2.one, new Vector2(-0.5f, 0.5f));
 
             Assert.That(body.linearVelocity, Is.EqualTo(Vector2.one));
-            Assert.That(body.angularVelocity, Is.EqualTo(0f));
+            Assert.That(body.angularVelocity, Is.EqualTo(-2f));
+            Assert.That(staticBody.linearVelocity, Is.EqualTo(Vector2.zero));
+            Assert.That(staticBody.angularVelocity, Is.EqualTo(0f));
+            Assert.That(kinematicBody.linearVelocity, Is.EqualTo(Vector2.zero));
+            Assert.That(kinematicBody.angularVelocity, Is.EqualTo(0f));
 
             //Applying Impulse to Center
             body.ChangeVelocity(Vector2.zero, 0f);
             body.ApplyLinearImpulseToCenter(Vector2.one);
+            staticBody.ChangeVelocity(Vector2.zero, 0f);
+            staticBody.ApplyLinearImpulseToCenter(Vector2.one);
+            kinematicBody.ChangeVelocity(Vector2.zero, 0f);
+            kinematicBody.ApplyLinearImpulseToCenter(Vector2.one);
 
             Assert.That(body.linearVelocity, Is.EqualTo(Vector2.one));
             Assert.That(body.angularVelocity, Is.EqualTo(0f));
+            Assert.That(staticBody.linearVelocity, Is.EqualTo(Vector2.zero));
+            Assert.That(staticBody.angularVelocity, Is.EqualTo(0f));
+            Assert.That(kinematicBody.linearVelocity, Is.EqualTo(Vector2.zero));
+            Assert.That(kinematicBody.angularVelocity, Is.EqualTo(0f));
 
             //Apply Angular Impulse
             body.ChangeVelocity(Vector2.zero, 0f);
             body.ApplyAngularImpulse(1f);
+            staticBody.ChangeVelocity(Vector2.zero, 0f);
+            staticBody.ApplyAngularImpulse(1f);
+            body.ChangeVelocity(Vector2.zero, 0f);
+            body.ApplyAngularImpulse(1f);
 
             Assert.That(body.linearVelocity, Is.EqualTo(Vector2.zero));
-            Assert.That(body.angularVelocity, Is.EqualTo(0f));
+            Assert.That(body.angularVelocity, Is.EqualTo(2f));
+            Assert.That(staticBody.linearVelocity, Is.EqualTo(Vector2.zero));
+            Assert.That(staticBody.angularVelocity, Is.EqualTo(0f));
+            Assert.That(kinematicBody.linearVelocity, Is.EqualTo(Vector2.zero));
+            Assert.That(kinematicBody.angularVelocity, Is.EqualTo(0f));
         }
 
         [Test]
         public void Tracking()
         {
-            Body body = CreateBody();
+            Body body = new Body(0, Vector2.zero, 0f, BodyType.Dynamic, null);
 
             body.Step();
             Assert.That(body.current.tick, Is.EqualTo(1));

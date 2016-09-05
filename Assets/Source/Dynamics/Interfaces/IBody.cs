@@ -7,7 +7,9 @@ namespace CrispyPhysics
     #region Types Definition
     public enum BodyType
     {
-        DynamicBody
+        Static,
+        Kinematic,
+        Dynamic
     }
     #endregion
 

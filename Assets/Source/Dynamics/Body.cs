@@ -58,16 +58,20 @@ namespace CrispyPhysics.Internal
         public float invMass { get; private set; }
         private float rotationalInertia, invRotationalInertia;
 
+        private IInternalShape internalShape { get { return shape as IInternalShape; } }
+
         private void SetMass(float mass)
         {
-            if (type != BodyType.DynamicBody)
+            if (type != BodyType.Dynamic)
             {
                 this.mass = invMass = 0f;
-                return;
             }
-
-            this.mass = (mass > Mathf.Epsilon) ? mass : 1f;
-            invMass = 1f / this.mass;
+            else
+            {
+                this.mass = (mass > Mathf.Epsilon) ? mass : 1f;
+                invMass = 1f / this.mass;
+            }
+            CalculateInertia();
         }
 
         private void DefineShape(IShape shape)
@@ -75,13 +79,13 @@ namespace CrispyPhysics.Internal
             this.shape = shape;
             //Debug.Assert(false, "Search Contacts");
             //Debug.Assert(false, "Broad Phase");
-            if (type == BodyType.DynamicBody)
+            if (type == BodyType.Dynamic)
                 CalculateInertia();
         }
 
         public bool ShouldCollide(IBody other)
         {
-            if (type != BodyType.DynamicBody && other.type != BodyType.DynamicBody)
+            if (type != BodyType.Dynamic && other.type != BodyType.Dynamic)
                 return false;
             return true;
         }
@@ -91,8 +95,17 @@ namespace CrispyPhysics.Internal
             rotationalInertia = 0f;
             invRotationalInertia = 0f;
 
-            Debug.Assert(type == BodyType.DynamicBody);
-            //Debug.Assert(false, "Find Inertia of body");
+            if (type != BodyType.Dynamic)
+                return;
+
+            if (internalShape != null)
+            {
+                MassData massData = internalShape.computeMassData(mass);
+                rotationalInertia =
+                        massData.rotationalGravity
+                    -   (mass * Calculus.Dot(massData.center, massData.center));
+                invRotationalInertia = 1f / rotationalInertia;
+            }
         }
 
         public float GetInertia()
@@ -118,7 +131,7 @@ namespace CrispyPhysics.Internal
 
         public void ChangeImpulse(Vector2 force, float torque)
         {
-            if (type != BodyType.DynamicBody) return;
+            if (type != BodyType.Dynamic) return;
 
             ClearFutur();
             momentums[currentIndex].ChangeImpulse(force, torque);
@@ -126,7 +139,7 @@ namespace CrispyPhysics.Internal
 
         public void ChangeVelocity(Vector2 linearVelocity, float angularVelocity)
         {
-            if (type != BodyType.DynamicBody) return;
+            if (type != BodyType.Dynamic) return;
 
             ClearFutur();
             momentums[currentIndex].ChangeVelocity(linearVelocity, angularVelocity);
@@ -141,7 +154,7 @@ namespace CrispyPhysics.Internal
 
         public void ApplyForce(Vector2 force, Vector2 point)
         {
-            if (type != BodyType.DynamicBody) return;
+            if (type != BodyType.Dynamic) return;
 
             ClearFutur();
 
@@ -152,7 +165,7 @@ namespace CrispyPhysics.Internal
 
         public void ApplyForceToCenter(Vector2 force)
         {
-            if (type != BodyType.DynamicBody) return;
+            if (type != BodyType.Dynamic) return;
 
             ClearFutur();
             momentums[currentIndex].ChangeImpulse(current.force + force, current.torque);
@@ -160,7 +173,7 @@ namespace CrispyPhysics.Internal
 
         public void ApplyTorque(float torque)
         {
-            if (type != BodyType.DynamicBody) return;
+            if (type != BodyType.Dynamic) return;
 
             ClearFutur();
             momentums[currentIndex].ChangeImpulse(current.force, current.torque + torque);
@@ -168,7 +181,7 @@ namespace CrispyPhysics.Internal
 
         public void ApplyLinearImpulse(Vector2 impulse, Vector2 point)
         {
-            if (type != BodyType.DynamicBody) return;
+            if (type != BodyType.Dynamic) return;
             ClearFutur();
 
             momentums[currentIndex].ChangeVelocity(
@@ -180,7 +193,7 @@ namespace CrispyPhysics.Internal
 
         public void ApplyLinearImpulseToCenter(Vector2 impulse)
         {
-            if (type != BodyType.DynamicBody) return;
+            if (type != BodyType.Dynamic) return;
 
             ClearFutur();
 
@@ -192,7 +205,7 @@ namespace CrispyPhysics.Internal
 
         public void ApplyAngularImpulse(float impulse)
         {
-            if (type != BodyType.DynamicBody) return;
+            if (type != BodyType.Dynamic) return;
 
             ClearFutur();
 

@@ -25,7 +25,6 @@ namespace CrispyPhysics
 
     public interface IShape
     {
-        float radius { get; }
         ShapeType type { get; }
     }
 }

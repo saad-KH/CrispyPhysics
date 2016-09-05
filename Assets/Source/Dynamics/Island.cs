@@ -67,7 +67,7 @@ namespace CrispyPhysics.Internal
                 positions[i].center = momentum.position;
                 positions[i].angle = momentum.angle;
 
-                if (body.type == BodyType.DynamicBody)
+                if (body.type == BodyType.Dynamic)
                 {
                     linearVelocity += 
                             dt 
