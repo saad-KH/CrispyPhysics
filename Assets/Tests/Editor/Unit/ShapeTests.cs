@@ -327,42 +327,39 @@ namespace CrispyPhysics
             polygon.SetAsBox(1f, 1f);
             Assert.That(polygon.count, Is.EqualTo(4));
             Assert.That(
-                polygon.GetVertex(0),
+                polygon.vertices[0],
                 OwnNUnit.Is.EqualTo(new Vector2(-1f, -1f)).Within(0.001f));
             Assert.That(
-                polygon.GetVertex(1),
+                polygon.vertices[1],
                 OwnNUnit.Is.EqualTo(new Vector2(1f, -1f)).Within(0.001f));
             Assert.That(
-                polygon.GetVertex(2),
+                polygon.vertices[2],
                 OwnNUnit.Is.EqualTo(new Vector2(1f, 1f)).Within(0.001f));
             Assert.That(
-                polygon.GetVertex(3),
+                polygon.vertices[3],
                 OwnNUnit.Is.EqualTo(new Vector2(-1f, 1f)).Within(0.001f));
             Assert.That(
                 polygon.centroid,
                 OwnNUnit.Is.EqualTo(Vector2.zero).Within(0.001f));
 
-            Assert.Throws<InvalidOperationException>(() => polygon.GetVertex(4));
-
             polygon.SetAsBox(1f, 1f, Vector2.one * 0.5f, Mathf.PI/4);
             Assert.That(polygon.count, Is.EqualTo(4));
             Assert.That(
-                polygon.GetVertex(0),
+                polygon.vertices[0],
                 OwnNUnit.Is.EqualTo(new Vector2(0.5f, -0.914f)).Within(0.001f));
             Assert.That(
-                polygon.GetVertex(1),
+                polygon.vertices[1],
                 OwnNUnit.Is.EqualTo(new Vector2(1.914f, 0.5f)).Within(0.001f));
             Assert.That(
-                polygon.GetVertex(2),
+                polygon.vertices[2],
                 OwnNUnit.Is.EqualTo(new Vector2(0.5f, 1.914f)).Within(0.001f));
             Assert.That(
-                polygon.GetVertex(3),
+                polygon.vertices[3],
                 OwnNUnit.Is.EqualTo(new Vector2(-0.914f, 0.5f)).Within(0.001f));
             Assert.That(
                 polygon.centroid,
                 OwnNUnit.Is.EqualTo(Vector2.one * 0.5f).Within(0.001f));
 
-            Assert.Throws<InvalidOperationException>(() => polygon.GetVertex(4));
 
             polygon.Set(
                 new Vector2[] {
@@ -375,19 +372,19 @@ namespace CrispyPhysics
 
             Assert.That(polygon.count, Is.EqualTo(5));
             Assert.That(
-                polygon.GetVertex(0),
+                polygon.vertices[0],
                 OwnNUnit.Is.EqualTo(new Vector2(1f, -1f)).Within(0.001f));
             Assert.That(
-                polygon.GetVertex(1),
+                polygon.vertices[1],
                 OwnNUnit.Is.EqualTo(new Vector2(1f, 1f)).Within(0.001f));
             Assert.That(
-                polygon.GetVertex(2),
+                polygon.vertices[2],
                 OwnNUnit.Is.EqualTo(new Vector2(0f, 2f)).Within(0.001f));
             Assert.That(
-                polygon.GetVertex(3),
+                polygon.vertices[3],
                 OwnNUnit.Is.EqualTo(new Vector2(-1f, 1f)).Within(0.001f));
             Assert.That(
-                polygon.GetVertex(4),
+                polygon.vertices[4],
                 OwnNUnit.Is.EqualTo(new Vector2(-1f, -1f)).Within(0.001f));
             Assert.That(
                 polygon.centroid,

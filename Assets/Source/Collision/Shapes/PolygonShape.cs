@@ -10,21 +10,14 @@ namespace CrispyPhysics.Internal
         public Vector2 centroid { get; private set; }
         public int count { get; private set; }
 
-        private Vector2[] vertices;
-        private Vector2[] normals;
+        public Vector2[] vertices { get; private set; }
+        public Vector2[] normals { get; private set; }
 
         public PolygonShape()
         {
             count = 0;
             vertices = new Vector2[Constants.maxPolygonVertices];
             normals = new Vector2[Constants.maxPolygonVertices];
-        }
-
-        public Vector2 GetVertex(int index)
-        {
-            if (index >= count)
-                throw new InvalidOperationException("bodyCapacity is full");
-            return vertices[index];
         }
 
         public void SetAsBox(float hx, float hy)
