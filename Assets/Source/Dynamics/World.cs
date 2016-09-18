@@ -29,6 +29,10 @@ namespace CrispyPhysics
 
 namespace CrispyPhysics.Internal
 {
+    #region Events Definition
+    public delegate IEnumerable<IInternalBody> BodyIteratorDelegate(uint start = 0, uint end = 0);
+    #endregion
+
     public class World : IWorld
     {
         #region Constructors
@@ -57,6 +61,7 @@ namespace CrispyPhysics.Internal
             futurTick = 0;
 
             bodies = new List<IInternalBody>();
+            contactManager = new ContactManager(new BodyIteratorDelegate(BodyIterator));
 
             step = new TimeStep(
                 fixedStep, 1f / fixedStep, 1f,
@@ -73,6 +78,7 @@ namespace CrispyPhysics.Internal
 
         #region Body Manager
         private List<IInternalBody> bodies;
+        private ContactManager contactManager;
 
         public IBody CreateBody(
             Vector2 position, float angle,
@@ -120,6 +126,14 @@ namespace CrispyPhysics.Internal
             oldBody.FuturCleared -= FuturCleared;
 
             bodies.RemoveAt(bodyIndex);
+        }
+
+        private IEnumerable<IInternalBody> BodyIterator(uint start = 0, uint end = 0)
+        {
+            if(end == 0)
+                end = (uint) bodies.Count;
+            for (int i=(int)start; i <= (int)end; i++)
+                yield return bodies[i];
         }
         #endregion
 
@@ -175,6 +189,7 @@ namespace CrispyPhysics.Internal
             if(lookForContacts)
             {
                 //Debug.Assert(false, "Look for Contacts");
+                contactManager.FindNewContacts();
             }
 
 
@@ -248,7 +263,7 @@ namespace CrispyPhysics.Internal
 
         private void Solve(TimeStep step)
         {
-            Island island = new Island(bodies.Count);
+            Island island = new Island((uint)bodies.Count);
 
             foreach (IInternalBody body in bodies)
                 body.islandBound = false;
@@ -278,7 +293,11 @@ namespace CrispyPhysics.Internal
 
                     island.Solve(step);
 
-                    //foreach
+                    foreach (IInternalBody islandBody in island.BodyIterator())
+                    {
+                        if(islandBody.type == BodyType.Static)
+                            islandBody.islandBound = false;
+                    }
                 }
             }
 

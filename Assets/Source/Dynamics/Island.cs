@@ -1,5 +1,7 @@
 using UnityEngine;
 using System;
+using System.Collections.Generic;
+
 
 namespace CrispyPhysics.Internal
 {
@@ -11,17 +13,17 @@ namespace CrispyPhysics.Internal
         private Position[] positions;
         private Velocity[] velocities;
 
-        private int bodyCount;
-        private int contactCount;
+        private uint bodyCount;
+        private uint contactCount;
 
-        private int bodyCapacity;
-        private int contactCapacity;
+        private readonly uint bodyCapacity;
+        private readonly uint contactCapacity;
 
-        public Island(int bodyCapacity = 1, int contactCapacity = 1)
+        public Island(uint bodyCapacity = 1, uint contactCapacity = 1)
         {
-            if (bodyCapacity <= 0)
+            if (bodyCapacity == 0)
                 throw new ArgumentException("bodyCapacity should be strictly greater than 0");
-            if (contactCapacity <= 0)
+            if (contactCapacity == 0)
                 throw new ArgumentException("contactCapacity should be strictly greater than 0");
 
             this.bodyCapacity = bodyCapacity;
@@ -51,11 +53,27 @@ namespace CrispyPhysics.Internal
             contacts[contactCount++] = contact;
         }
 
+        public IEnumerable<IInternalBody> BodyIterator(uint start = 0, uint end = 0)
+        {
+            if(end == 0)
+                end = bodyCount;
+            for (uint i=start; i <= end; i++)
+                yield return bodies[i];
+        }
+
+        public IEnumerable<IContact> ContactIterator(uint start = 0, uint end = 0)
+        {
+            if(end == 0)
+                end = bodyCount;
+            for (uint i=start; i <= end; i++)
+                yield return contacts[i];
+        }
+
         public void Solve(TimeStep step)
         {
             float dt = step.dt;
 
-            for(int i=0; i < bodyCount; ++i)
+            for(int i=0; i < bodyCount; i++)
             {
                 IInternalBody body = bodies[i];
                 body.Foresee();
@@ -87,7 +105,7 @@ namespace CrispyPhysics.Internal
 
             //Debug.Assert(false, "Solve Contacts");
 
-            for (int i = 0; i < bodyCount; ++i)
+            for (int i = 0; i < bodyCount; i++)
             {
                 Vector2 linearVelocity = velocities[i].linearVelocity;
                 float angularVelocity = velocities[i].angularVelocity;
@@ -119,11 +137,6 @@ namespace CrispyPhysics.Internal
                 momentum.ChangeSituation(positions[i].center, positions[i].angle);
                 momentum.ChangeVelocity(velocities[i].linearVelocity, velocities[i].angularVelocity);
             }
-        }
-
-        public void Report()
-        {
-            Debug.Assert(false, "Report");
         }
 
         public void Clear()
