@@ -250,20 +250,6 @@ namespace CrispyPhysics.Internal
         }
     }
 
-    public struct ClipVertex
-    {
-        Vector2 vertex;
-        ContactID id;
-
-        public ClipVertex( Vector2 vertex, ContactID id)
-        {
-            this.vertex = vertex;
-            this.id = id;
-        }
-    }
-
-
-
     #endregion
     #region Raycast
     public struct RayCastInput
@@ -548,6 +534,125 @@ namespace CrispyPhysics.Internal
         {
             Manifold manifold = new Manifold();
             manifold.pointCount = 0;
+
+            // Compute circle in frame of edge
+            Vector2 Q = Calculus.MulT(
+                transformA, 
+                Calculus.Mul(transformB, circleB.position));
+
+            Vector2 A = edgeA.vertex1, B = edgeA.vertex2;
+            Vector2 e = B - A;
+
+            // Barycentric coordinates
+            float u = Calculus.Dot(e, B - Q);
+            float v = Calculus.Dot(e, Q - A);
+
+            float radius = edgeA.radius + circleB.radius;
+
+            ContactFeature cf;
+            cf.indexB = 0;
+            cf.typeB = (byte) ContactFeature.Type.Vertex;
+
+            // Region A
+            if (v <= 0.0f)
+            {
+                Vector2 P = A;
+                Vector2 d = Q - P;
+                float dd = Calculus.Dot(d, d);
+                if (dd > radius * radius)
+                    return manifold;
+
+                // Is there an edge connected to A?
+                if (edgeA.hasVertex0)
+                {
+                    Vector2 A1 = edgeA.vertex0;
+                    Vector2 B1 = A;
+                    Vector2 e1 = B1 - A1;
+                    float u1 = Calculus.Dot(e1, B1 - Q);
+
+                    // Is the circle in Region AB of the previous edge?
+                    if (u1 > 0.0f)
+                        return manifold;
+                }
+
+                cf.indexA = 0;
+                cf.typeA = (byte)ContactFeature.Type.Vertex;
+                Debug.Assert(manifold.points.Length >= 1);
+                manifold.pointCount = 1;
+                manifold.type = Manifold.Type.Circles;
+                manifold.localNormal = Vector2.zero;
+                manifold.localPoint = P;
+                manifold.points[0].id.key = 0;
+                manifold.points[0].id.feature = cf;
+                manifold.points[0].localPoint = circleB.position;
+                return manifold;
+            }
+
+            // Region B
+            if (u <= 0.0f)
+            {
+                Vector2 P = B;
+                Vector2 d = Q - P;
+                float dd = Calculus.Dot(d, d);
+                if (dd > radius * radius)
+                    return manifold;
+                
+
+                // Is there an edge connected to B?
+                if (edgeA.hasVertex3)
+                {
+                    Vector2 B2 = edgeA.vertex3;
+                    Vector2 A2 = B;
+                    Vector2 e2 = B2 - A2;
+                    float v2 = Calculus.Dot(e2, Q - A2);
+
+                    // Is the circle in Region AB of the next edge?
+                    if (v2 > 0.0f)
+                        return manifold;
+                }
+
+                cf.indexA = 1;
+                cf.typeA = (byte) ContactFeature.Type.Vertex;
+                Debug.Assert(manifold.points.Length >= 1);
+                manifold.pointCount = 1;
+                manifold.type = Manifold.Type.Circles;
+                manifold.localNormal = Vector2.zero;
+                manifold.localPoint = P;
+                manifold.points[0].id.key = 0;
+                manifold.points[0].id.feature = cf;
+                manifold.points[0].localPoint = circleB.position;
+                return manifold;
+            }
+
+            // Region AB
+            {
+
+                float den = Calculus.Dot(e, e);
+                Debug.Assert(den > 0.0f);
+                Vector2 P = (1.0f / den) * (u * A + v * B);
+                Vector2 d = Q - P;
+                float dd = Calculus.Dot(d, d);
+                if (dd > radius * radius)
+                    return manifold;
+
+                Vector2 n = new Vector2(-e.y, e.x);
+                if (Calculus.Dot(n, Q - A) < 0.0f)
+                    n.Set(-n.x, -n.y);
+                n.Normalize();
+
+                cf.indexA = 0;
+                cf.typeA = (byte)ContactFeature.Type.Face;
+                Debug.Assert(manifold.points.Length >= 1);
+                manifold.pointCount = 1;
+                manifold.type = Manifold.Type.FaceA;
+                manifold.localNormal = n;
+                manifold.localPoint = A;
+                manifold.points[0].id.key = 0;
+                manifold.points[0].id.feature = cf;
+                manifold.points[0].localPoint = circleB.position;
+            }
+
+
             return manifold;
         }
     }

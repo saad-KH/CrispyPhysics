@@ -201,7 +201,10 @@ namespace CrispyPhysics.Internal
             iterationsToSolve += iterationsToForesee;
 
             for (int i = 0; i < iterationsToSolve; i++)
+            {
+                //Debug.Assert(false, "Destroy useless contacts");
                 Solve(step);
+            }
 
             foreach (IInternalBody body in bodies)
             {
@@ -257,27 +260,29 @@ namespace CrispyPhysics.Internal
             {
                 if (seed.islandBound)
                     continue;
+                if (seed.type == BodyType.Static)
+                    continue;
 
                 island.Clear();
                 stack.Push(seed);
-                seed.islandBound = (true);
+                seed.islandBound = true;
                 while (stack.Count > 0)
                 {
                     IInternalBody body = stack.Pop();
                     island.Add(body);
 
+                    if (body.type == BodyType.Static)
+                        continue;
+
                     //Debug.Assert(false, "Search Contacts associated to body");
 
                     island.Solve(step);
+
+                    //foreach
                 }
             }
 
             //Debug.Assert(false, "Find New Contacts");
-        }
-
-        private void SolveTOI(TimeStep step)
-        {
-            Debug.Assert(false, "SolveTOI");
         }
 
         private void Crisp()

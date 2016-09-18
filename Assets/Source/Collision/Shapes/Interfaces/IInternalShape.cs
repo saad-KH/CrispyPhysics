@@ -3,8 +3,6 @@ namespace CrispyPhysics.Internal
 {
     public interface IInternalShape : IShape
     {
-        float radius { get; }
-
         bool TestPoint(Transformation transform, Vector2 point);
 
         bool RayCast(

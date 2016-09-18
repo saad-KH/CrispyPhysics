@@ -121,11 +121,6 @@ namespace CrispyPhysics.Internal
             }
         }
 
-        public void SolveTOI(TimeStep subStep, int toiIndexA, int toiIndexB)
-        {
-            Debug.Assert(false, "Solve TOI for Island");
-        }
-
         public void Report()
         {
             Debug.Assert(false, "Report");

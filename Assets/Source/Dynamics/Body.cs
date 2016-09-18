@@ -62,10 +62,8 @@ namespace CrispyPhysics.Internal
 
         private void SetMass(float mass)
         {
-            if (type != BodyType.Dynamic)
-            {
+            if (type == BodyType.Static || type == BodyType.Kinematic)
                 this.mass = invMass = 0f;
-            }
             else
             {
                 this.mass = (mass > Mathf.Epsilon) ? mass : 1f;
@@ -126,12 +124,13 @@ namespace CrispyPhysics.Internal
         public float angularVelocity { get { return current.angularVelocity; } }
         public Vector2 force { get { return current.force; } }
         public float torque { get { return current.torque; } }
+        public Transformation transform { get { return current.transform; } }
 
         public List<IContact> contacts { get; private set; }
 
         public void ChangeImpulse(Vector2 force, float torque)
         {
-            if (type != BodyType.Dynamic) return;
+            if (type == BodyType.Static) return;
 
             ClearFutur();
             momentums[currentIndex].ChangeImpulse(force, torque);
@@ -139,7 +138,7 @@ namespace CrispyPhysics.Internal
 
         public void ChangeVelocity(Vector2 linearVelocity, float angularVelocity)
         {
-            if (type != BodyType.Dynamic) return;
+            if (type == BodyType.Static) return;
 
             ClearFutur();
             momentums[currentIndex].ChangeVelocity(linearVelocity, angularVelocity);
@@ -218,8 +217,8 @@ namespace CrispyPhysics.Internal
         #region Track
         private uint currentTick;
         private int currentIndex;
-        public IMomentum past { get { return momentums[0]; } }
-        public IMomentum current { get { return momentums[currentIndex]; } }
+        public IInternalMomentum past { get { return momentums[0]; } }
+        public IInternalMomentum current { get { return momentums[currentIndex]; } }
         public IInternalMomentum futur { get { return momentums[momentums.Count - 1]; } }
         private List<IInternalMomentum> momentums;
         public bool islandBound { get; set; }

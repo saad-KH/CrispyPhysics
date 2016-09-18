@@ -10,11 +10,12 @@ namespace CrispyPhysics.Internal
         public float torque { get; private set; }
         public Vector2 linearVelocity { get; private set; }
         public float angularVelocity { get; private set; }
+        public Transformation transform { get; private set; }
 
         public Vector2 position { get { return transform.position; } }
         public float angle { get { return transform.rotation.GetAngle(); } }
 
-        private Transformation transform;
+ 
 
         public Momentum(
             uint tick,

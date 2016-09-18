@@ -15,9 +15,13 @@ namespace CrispyPhysics.Internal
         float invMass { get; }
         #endregion
 
+        #region Behavior
+        Transformation transform { get; }
+        #endregion
+
         #region Track
-        IMomentum past { get; }
-        IMomentum current { get; }
+        IInternalMomentum past { get; }
+        IInternalMomentum current { get; }
         IInternalMomentum futur { get; }
         bool islandBound { get; set; }
 
