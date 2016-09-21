@@ -30,7 +30,7 @@ namespace CrispyPhysics
 namespace CrispyPhysics.Internal
 {
     #region Events Definition
-    public delegate IEnumerable<IInternalBody> BodyIteratorDelegate(uint start = 0, uint end = 0);
+    public delegate IEnumerable<Body> BodyIteratorDelegate(uint start = 0, uint end = 0);
     #endregion
 
     public class World : IWorld
@@ -60,7 +60,7 @@ namespace CrispyPhysics.Internal
             pastTick = 0;
             futurTick = 0;
 
-            bodies = new List<IInternalBody>();
+            bodies = new List<Body>();
             contactManager = new ContactManager(new BodyIteratorDelegate(BodyIterator));
 
             step = new TimeStep(
@@ -77,7 +77,7 @@ namespace CrispyPhysics.Internal
         #endregion
 
         #region Body Manager
-        private List<IInternalBody> bodies;
+        private List<Body> bodies;
         private ContactManager contactManager;
 
         public IBody CreateBody(
@@ -86,7 +86,7 @@ namespace CrispyPhysics.Internal
             float linearDamping = 0f, float angularDamping = 0f,
             float gravityScale = 1f)
         {
-            IInternalBody newBody = new Body(
+            Body newBody = new Body(
                 tick,
                 position, angle,
                 type, shape, mass,
@@ -114,9 +114,9 @@ namespace CrispyPhysics.Internal
 
         public void DestroyBody(IBody body)
         {
-            if (!(body is IInternalBody)) return;
+            if (!(body is Body)) return;
 
-            IInternalBody oldBody = body as IInternalBody;
+            Body oldBody = body as Body;
 
             int bodyIndex = bodies.IndexOf(oldBody);
             if (bodyIndex == -1) return;
@@ -128,11 +128,11 @@ namespace CrispyPhysics.Internal
             bodies.RemoveAt(bodyIndex);
         }
 
-        private IEnumerable<IInternalBody> BodyIterator(uint start = 0, uint end = 0)
+        private IEnumerable<Body> BodyIterator(uint start = 0, uint end = 0)
         {
             if(end == 0)
                 end = (uint) bodies.Count;
-            for (int i=(int)start; i <= (int)end; i++)
+            for (int i=(int)start; i < (int)end; i++)
                 yield return bodies[i];
         }
         #endregion
@@ -183,14 +183,11 @@ namespace CrispyPhysics.Internal
                 (opFlags & OperationFlag.BodyChange) == OperationFlag.BodyChange;
 
             if (clearFutur)
-                foreach (IInternalBody body in bodies)
+                foreach (Body body in bodies)
                     body.ClearFutur();
             
             if(lookForContacts)
-            {
-                //Debug.Assert(false, "Look for Contacts");
                 contactManager.FindNewContacts();
-            }
 
 
   
@@ -221,7 +218,7 @@ namespace CrispyPhysics.Internal
                 Solve(step);
             }
 
-            foreach (IInternalBody body in bodies)
+            foreach (Body body in bodies)
             {
                 body.Step(steps);
                 body.ForgetPast(pastTick);
@@ -249,7 +246,7 @@ namespace CrispyPhysics.Internal
             if (keepTicks > tick) keepTicks = tick;
             pastTick = (uint)Mathf.Max(tick - keepTicks, pastTick);
 
-            foreach (IInternalBody body in bodies)
+            foreach (Body body in bodies)
             {
                 body.RollBack(tick);
                 body.ForgetPast(pastTick);
@@ -265,13 +262,13 @@ namespace CrispyPhysics.Internal
         {
             Island island = new Island((uint)bodies.Count);
 
-            foreach (IInternalBody body in bodies)
+            foreach (Body body in bodies)
                 body.islandBound = false;
 
             //Debug.Assert(false, "Clear Contacts Island Flags");
 
-            Stack<IInternalBody> stack = new Stack<IInternalBody>(bodies.Count);
-            foreach (IInternalBody seed in bodies)
+            Stack<Body> stack = new Stack<Body>(bodies.Count);
+            foreach (Body seed in bodies)
             {
                 if (seed.islandBound)
                     continue;
@@ -283,7 +280,7 @@ namespace CrispyPhysics.Internal
                 seed.islandBound = true;
                 while (stack.Count > 0)
                 {
-                    IInternalBody body = stack.Pop();
+                    Body body = stack.Pop();
                     island.Add(body);
 
                     if (body.type == BodyType.Static)
@@ -293,7 +290,7 @@ namespace CrispyPhysics.Internal
 
                     island.Solve(step);
 
-                    foreach (IInternalBody islandBody in island.BodyIterator())
+                    foreach (Body islandBody in island.BodyIterator())
                     {
                         if(islandBody.type == BodyType.Static)
                             islandBody.islandBound = false;

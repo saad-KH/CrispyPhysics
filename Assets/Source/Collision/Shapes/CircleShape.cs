@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace CrispyPhysics.Internal
 {
-    public class CircleShape : IInternalShape
+    public class CircleShape : IShape
     {
         public ShapeType type { get { return ShapeType.Circle; } }
         public float radius { get; private set; }
@@ -52,9 +52,7 @@ namespace CrispyPhysics.Internal
             if (0.0f <= a && a <= input.maxFraction * rr)
             {
                 a /= rr;
-                output.fraction = a;
-                output.normal = s + a * r;
-                output.normal.Normalize();
+                output = new RayCastOuput((s + a * r).normalized, a);
                 return true;
             }
 

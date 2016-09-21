@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace CrispyPhysics.Internal
 {
-    public class EdgeShape : IInternalShape
+    public class EdgeShape : IShape
     {
         public ShapeType type { get { return ShapeType.Edge; } }
         public float radius { get { return Constants.polygonRadius; } }
@@ -71,11 +71,11 @@ namespace CrispyPhysics.Internal
             if (s < 0.0f || 1.0f < s)
                 return false;
 
-            output.fraction = t;
-            if (numerator > 0.0f)
-                output.normal = -Calculus.Mul(transform.rotation, normal);
-            else
-                output.normal = Calculus.Mul(transform.rotation, normal);
+            output = new RayCastOuput(
+                (numerator > 0.0f) ?
+                    -Calculus.Mul(transform.rotation, normal)
+                :   Calculus.Mul(transform.rotation, normal),
+                t);
 
             return true;
         }

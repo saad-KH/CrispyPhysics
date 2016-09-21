@@ -1,11 +1,12 @@
 using UnityEngine;
 namespace CrispyPhysics
 {
+    using Internal;
     public struct MassData
     {
-        public float mass;
-        public Vector2 center;
-        public float rotationalGravity;
+        public readonly float mass;
+        public readonly Vector2 center;
+        public readonly float rotationalGravity;
 
         public MassData(float mass, Vector2 center, float rotationalGravity)
         {
@@ -27,6 +28,16 @@ namespace CrispyPhysics
     {
         ShapeType type { get; }
         float radius { get; }
+
+        bool TestPoint(Transformation transform, Vector2 point);
+
+        bool RayCast(
+            ref RayCastOuput output, RayCastInput input,
+            Transformation transform);
+
+        AABB computeAABB(Transformation transform);
+
+        MassData computeMassData(float mass);
 
     }
 }

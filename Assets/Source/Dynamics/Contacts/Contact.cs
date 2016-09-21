@@ -7,7 +7,7 @@ namespace CrispyPhysics.Internal
     public delegate void ContactEventHandler(Contact contact, EventArgs args);
     #endregion
 
-    public class Contact
+    public class Contact : IContact
     {
         public event ContactEventHandler BeginContact;
         public event ContactEventHandler EndContact;
@@ -15,8 +15,10 @@ namespace CrispyPhysics.Internal
         public event ContactEventHandler PostSolve;
 
         public Manifold manifold { get; private set; }
-        public IInternalBody bodyA { get; private set; }
-        public IInternalBody bodyB { get; private set; }
+        public Body internalBodyA { get; private set; }
+        public IBody bodyA { get { return internalBodyA as IBody; } }
+        public Body internalBodyB { get; private set; }
+        public IBody bodyB { get { return internalBodyB as IBody; } }
         public float friction { get; private set; }
         public float restitution { get; private set; }
         public float tangentSpeed { get; private set; }
@@ -30,10 +32,10 @@ namespace CrispyPhysics.Internal
 
         protected OperationFlag opFlags;
 
-        public Contact(IInternalBody bodyA, IInternalBody bodyB)
+        public Contact(Body bodyA, Body bodyB)
         {
-            this.bodyA = bodyA;
-            this.bodyB = bodyB;
+            internalBodyA = bodyA;
+            internalBodyB = bodyB;
         }
 
         public bool isTouching()
@@ -48,8 +50,8 @@ namespace CrispyPhysics.Internal
 
             return new WorldManifold(
                 manifold,
-                bodyA.transform, bodyA.shape.radius,
-                bodyB.transform, bodyB.shape.radius);
+                internalBodyA.transform, bodyA.shape.radius,
+                internalBodyB.transform, bodyB.shape.radius);
         }
 
         public static float MixFriction(float frictionA, float frictionB)

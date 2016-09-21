@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace CrispyPhysics.Internal
 {
-    public class PolygonShape : IInternalShape
+    public class PolygonShape : IShape
     {
         public ShapeType type { get { return ShapeType.Polygon; } }
         public float radius { get { return Constants.polygonRadius; } }
@@ -288,8 +288,9 @@ namespace CrispyPhysics.Internal
 
 	        if (index >= 0)
 	        {
-		        output.fraction = lower;
-		        output.normal = Calculus.Mul(transform.rotation, normals[index]);
+                output = new RayCastOuput(
+                    Calculus.Mul(transform.rotation, 
+                    normals[index]), lower);
 		        return true;
 	        }
 

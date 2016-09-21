@@ -4,7 +4,11 @@ using System.Collections.Generic;
 
 namespace CrispyPhysics.Internal
 {
-    public class Body : IInternalBody
+    #region Events Definition
+    public delegate void BodyEventHandler(Body body, EventArgs args);
+    #endregion
+
+    public class Body : IBody
     {
         #region Constructors
         public Body(
@@ -25,7 +29,7 @@ namespace CrispyPhysics.Internal
             this.angularDamping = angularDamping;
             this.gravityScale = gravityScale;
 
-            momentums = new List<IInternalMomentum>();
+            momentums = new List<Momentum>();
             momentums.Add(new Momentum(
                 this.currentTick,
                 Vector2.zero, 0f,
@@ -35,7 +39,7 @@ namespace CrispyPhysics.Internal
 
             currentIndex = 0;
 
-            contacts = new List<IContact>();
+            contacts = new List<Contact>();
         }
 
         public Body(uint currentTick, Vector2 position, float angle, BodyDefintion bodyDef) : this (
@@ -57,8 +61,6 @@ namespace CrispyPhysics.Internal
         public float mass { get; private set; }
         public float invMass { get; private set; }
         private float rotationalInertia, invRotationalInertia;
-
-        private IInternalShape internalShape { get { return shape as IInternalShape; } }
 
         private void SetMass(float mass)
         {
@@ -96,9 +98,9 @@ namespace CrispyPhysics.Internal
             if (type != BodyType.Dynamic)
                 return;
 
-            if (internalShape != null)
+            if (shape != null)
             {
-                MassData massData = internalShape.computeMassData(mass);
+                MassData massData = shape.computeMassData(mass);
                 rotationalInertia =
                         massData.rotationalGravity
                     -   (mass * Calculus.Dot(massData.center, massData.center));
@@ -126,7 +128,7 @@ namespace CrispyPhysics.Internal
         public float torque { get { return current.torque; } }
         public Transformation transform { get { return current.transform; } }
 
-        public List<IContact> contacts { get; private set; }
+        private List<Contact> contacts;
 
         public void ChangeImpulse(Vector2 force, float torque)
         {
@@ -212,15 +214,23 @@ namespace CrispyPhysics.Internal
                 current.linearVelocity,
                 current.angularVelocity + invRotationalInertia * impulse);
         }
+
+        public IEnumerable<Contact> ContactIterator(uint start = 0, uint end = 0)
+        {
+            if (end == 0)
+                end = (uint)contacts.Count;
+            for (int i = (int)start; i < (int)end; i++)
+                yield return contacts[i];
+        }
         #endregion
 
         #region Track
         private uint currentTick;
         private int currentIndex;
-        public IInternalMomentum past { get { return momentums[0]; } }
-        public IInternalMomentum current { get { return momentums[currentIndex]; } }
-        public IInternalMomentum futur { get { return momentums[momentums.Count - 1]; } }
-        private List<IInternalMomentum> momentums;
+        public Momentum past { get { return momentums[0]; } }
+        public Momentum  current{ get { return momentums[currentIndex]; } }
+        public Momentum futur { get { return momentums[momentums.Count - 1]; } }
+        private List<Momentum> momentums;
         public bool islandBound { get; set; }
 
         public void Step(uint steps = 1)
@@ -309,7 +319,7 @@ namespace CrispyPhysics.Internal
 
         public void Foresee(uint steps = 1)
         {
-            IInternalMomentum futurMomentum = new Momentum(
+            Momentum futurMomentum = new Momentum(
                 momentums[momentums.Count - 1].tick + steps,
                 momentums[momentums.Count - 1]);
 

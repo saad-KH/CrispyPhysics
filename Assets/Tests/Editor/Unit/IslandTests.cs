@@ -15,10 +15,11 @@ namespace CrispyPhysics
             Assert.Throws<ArgumentException>(
                 delegate { new Island(0, 0); });
 
-            IInternalBody body1 = Substitute.For<IInternalBody>();
-            IInternalBody body2 = Substitute.For<IInternalBody>();
-            IContact contact1 = Substitute.For<IContact>();
-            IContact contact2 = Substitute.For<IContact>();
+            Body body1 = new Body(0, Vector2.zero, 0f, BodyType.Dynamic, null);
+            Body body2 = new Body(0, Vector2.zero, 0f, BodyType.Dynamic, null);
+
+            Contact contact1 = new Contact(body1, body2);
+            Contact contact2 = new Contact(body1, body2);
 
             Island island = new Island();
 
@@ -38,24 +39,13 @@ namespace CrispyPhysics
         {
             Island island = new Island();
 
-            IInternalMomentum futurMomentum = Substitute.For<IInternalMomentum>();
-
-            futurMomentum.force.Returns(Vector2.one);
-            futurMomentum.torque.Returns(1f);
-            futurMomentum.linearVelocity.Returns(Vector2.zero);
-            futurMomentum.angularVelocity.Returns(0f);
-            futurMomentum.position.Returns(Vector2.zero);
-            futurMomentum.angle.Returns(0f);
-
-            IInternalBody body = Substitute.For<IInternalBody>();
+            Body body = new Body(
+                0, 
+                Vector2.zero, 0f, 
+                BodyType.Dynamic, null,
+                1f, 0.2f, 0.2f, 1f);
+            body.ChangeImpulse(Vector2.one, 1f);
             island.Add(body);
-
-            body.type.Returns(BodyType.Dynamic);
-            body.invMass.Returns(1f);
-            body.linearDamping.Returns(0.2f);
-            body.angularDamping.Returns(0.2f);
-            body.gravityScale.Returns(1f);
-            body.futur.Returns(futurMomentum);
 
             TimeStep step = new TimeStep(
                 1f, 1f, 0f,
@@ -64,22 +54,15 @@ namespace CrispyPhysics
 
             
             island.Solve(step);
-
-            body.Received(1).Foresee(
-                Arg.Is<uint>(x =>  x == 1));
-
-            futurMomentum.Received(1).ChangeSituation(
-                Arg.Is<Vector2>(
-                    v =>    Calculus.Approximately(v.x, 0.833f, 0.001f)
-                        &&  Calculus.Approximately(v.y, -7.333f, 0.001f)), 
-                Arg.Is<float>(x => Calculus.Approximately(x, 0.833f, 0.001f)));
-
-            futurMomentum.Received(1).ChangeVelocity(
-                Arg.Is<Vector2>(
-                    v =>    Calculus.Approximately(v.x, 0.833f, 0.001f)
-                        &&  Calculus.Approximately(v.y, -7.333f, 0.001f)),
-                Arg.Is<float>(x => Calculus.Approximately(x, 0.833f, 0.001f)));
-
+            Assert.That(body.futur.tick == 1);
+            Assert.That(
+                body.futur.position,
+                OwnNUnit.Is.EqualTo(new Vector2(0.833f, -7.333f)).Within(0.001f));
+            Assert.That(body.futur.angle, Is.EqualTo(0.833f).Within(0.001f));
+            Assert.That(
+                body.futur.linearVelocity,
+                OwnNUnit.Is.EqualTo(new Vector2(0.833f, -7.333f)).Within(0.001f));
+            Assert.That(body.futur.angularVelocity, Is.EqualTo(0.833f).Within(0.001f));
         }
     }
 }

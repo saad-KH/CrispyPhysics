@@ -7,8 +7,8 @@ namespace CrispyPhysics.Internal
 {
     public class Island
     {
-        private IInternalBody[] bodies;
-        private IContact[] contacts;
+        private Body[] bodies;
+        private Contact[] contacts;
 
         private Position[] positions;
         private Velocity[] velocities;
@@ -32,32 +32,32 @@ namespace CrispyPhysics.Internal
             bodyCount = 0;
             contactCount = 0;
 
-            bodies = new IInternalBody[this.bodyCapacity];
-            contacts = new IContact[this.contactCapacity];
+            bodies = new Body[this.bodyCapacity];
+            contacts = new Contact[this.contactCapacity];
 
             positions = new Position[this.bodyCapacity];
             velocities = new Velocity[this.contactCapacity];
         }
 
-        public void Add(IInternalBody body)
+        public void Add(Body body)
         {
             if(bodyCount >= bodyCapacity)
                 throw new InvalidOperationException("bodyCapacity is full");
             bodies[bodyCount++] = body;
         }
 
-        public void Add(IContact contact)
+        public void Add(Contact contact)
         {
             if (contactCount >= contactCapacity)
                 throw new InvalidOperationException("contactCapacity is full");
             contacts[contactCount++] = contact;
         }
 
-        public IEnumerable<IInternalBody> BodyIterator(uint start = 0, uint end = 0)
+        public IEnumerable<Body> BodyIterator(uint start = 0, uint end = 0)
         {
             if(end == 0)
                 end = bodyCount;
-            for (uint i=start; i <= end; i++)
+            for (uint i=start; i < end; i++)
                 yield return bodies[i];
         }
 
@@ -65,7 +65,7 @@ namespace CrispyPhysics.Internal
         {
             if(end == 0)
                 end = bodyCount;
-            for (uint i=start; i <= end; i++)
+            for (uint i=start; i < end; i++)
                 yield return contacts[i];
         }
 
@@ -75,15 +75,14 @@ namespace CrispyPhysics.Internal
 
             for(int i=0; i < bodyCount; i++)
             {
-                IInternalBody body = bodies[i];
+                Body body = bodies[i];
                 body.Foresee();
-                IInternalMomentum momentum = body.futur;
+                Momentum momentum = body.futur;
                 
                 Vector2 linearVelocity = momentum.linearVelocity;
                 float angularVelocity = momentum.angularVelocity;
 
-                positions[i].center = momentum.position;
-                positions[i].angle = momentum.angle;
+                positions[i] = new Position(momentum.position, momentum.angle);
 
                 if (body.type == BodyType.Dynamic)
                 {
@@ -99,8 +98,7 @@ namespace CrispyPhysics.Internal
                     angularVelocity *= 1f / (1f + dt * body.angularDamping);
                 }
                 
-                velocities[i].linearVelocity = linearVelocity;
-                velocities[i].angularVelocity = angularVelocity;
+                velocities[i] = new Velocity(linearVelocity, angularVelocity);
             }
 
             //Debug.Assert(false, "Solve Contacts");
@@ -118,10 +116,11 @@ namespace CrispyPhysics.Internal
                 if (rotation * rotation > step.maxRotationSpeed * step.maxRotationSpeed)
                     angularVelocity *= step.maxRotationSpeed / Mathf.Abs(rotation);
 
-                positions[i].center += dt * linearVelocity;
-                positions[i].angle += dt * angularVelocity;
-                velocities[i].linearVelocity = linearVelocity;
-                velocities[i].angularVelocity = angularVelocity;
+                positions[i] = new Position(
+                    positions[i].center + dt * linearVelocity,
+                    positions[i].angle + dt * angularVelocity);
+
+                velocities[i] = new Velocity(linearVelocity, angularVelocity);
             }
 
             /*bool positionSolved = false;
@@ -133,7 +132,7 @@ namespace CrispyPhysics.Internal
 
             for (int i = 0; i < bodyCount; ++i)
             {
-                IInternalMomentum momentum = bodies[i].futur;
+                Momentum momentum = bodies[i].futur;
                 momentum.ChangeSituation(positions[i].center, positions[i].angle);
                 momentum.ChangeVelocity(velocities[i].linearVelocity, velocities[i].angularVelocity);
             }
@@ -144,8 +143,8 @@ namespace CrispyPhysics.Internal
             bodyCount = 0;
             contactCount = 0;
 
-            bodies = new IInternalBody[bodyCapacity];
-            contacts = new IContact[contactCapacity];
+            bodies = new Body[bodyCapacity];
+            contacts = new Contact[contactCapacity];
 
             positions = new Position[bodyCapacity];
             velocities = new Velocity[contactCapacity];

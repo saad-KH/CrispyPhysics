@@ -6,14 +6,14 @@ namespace CrispyPhysics
     #region World Definition
     public struct WorldDefinition
     {
-        public float fixedStep;
-        public float crispyStep;
-        public float crispySize;
-        public Vector2 gravity;
-        public int velocityIterations;
-        public int positionIterations;
-        public float maxTranslationSpeed;
-        public float maxRotationSpeed;
+        public readonly float fixedStep;
+        public readonly float crispyStep;
+        public readonly float crispySize;
+        public readonly Vector2 gravity;
+        public readonly int velocityIterations;
+        public readonly int positionIterations;
+        public readonly float maxTranslationSpeed;
+        public readonly float maxRotationSpeed;
 
         public WorldDefinition(
             float fixedStep, float crispyStep, float crispySize,

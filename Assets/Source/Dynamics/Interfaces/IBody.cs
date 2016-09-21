@@ -13,10 +13,6 @@ namespace CrispyPhysics
     }
     #endregion
 
-    #region Events Definition
-    public delegate void BodyEventHandler(IBody body, EventArgs args);
-    #endregion
-
     #region Body Definition
     public struct BodyDefintion
     {
@@ -63,8 +59,6 @@ namespace CrispyPhysics
         float angularVelocity { get; }
         Vector2 force { get; }
         float torque { get; }
-
-        List<IContact> contacts { get; }
 
         void ChangeImpulse(Vector2 force, float torque);
         void ChangeVelocity(Vector2 linearVelocity, float angularVelocity);

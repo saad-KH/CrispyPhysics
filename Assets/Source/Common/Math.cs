@@ -5,25 +5,14 @@ namespace CrispyPhysics.Internal
     #region Rotation
     public struct Rotation
     {
-        public float sine;
-        public float cosine;
+        public static Rotation identity = new Rotation(0f);
+        public readonly float sine;
+        public readonly float cosine;
 
         public Rotation(float angle)
         {
             sine = Mathf.Sin(angle);
             cosine = Mathf.Cos(angle);
-        }
-
-        public void Set(float angle)
-        {
-            sine = Mathf.Sin(angle);
-            cosine = Mathf.Cos(angle);
-        }
-
-        public void SetIdentity()
-        {
-            sine = 0f;
-            cosine = 0f;
         }
 
         public float GetAngle()
@@ -46,8 +35,12 @@ namespace CrispyPhysics.Internal
     #region Transformation
     public struct Transformation
     {
-        public Vector2 position;
-        public Rotation rotation;
+        public static Transformation identity = new Transformation(
+            Vector2.zero,
+            Rotation.identity);
+
+        public readonly Vector2 position;
+        public readonly Rotation rotation;
 
         public Transformation(Vector2 position, Rotation rotation)
         {
@@ -55,16 +48,10 @@ namespace CrispyPhysics.Internal
             this.rotation = rotation;
         }
 
-        public void SetIdentity()
-        {
-            position = Vector2.zero;
-            rotation.SetIdentity();
-        }
-
-        public void Set(Vector2 position, float angle)
+        public Transformation(Vector2 position, float angle)
         {
             this.position = position;
-            rotation.Set(angle);
+            rotation = new Rotation(angle);
         }
     }
     #endregion

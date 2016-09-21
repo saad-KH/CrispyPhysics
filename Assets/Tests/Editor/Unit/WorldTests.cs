@@ -52,9 +52,9 @@ namespace CrispyPhysics
         {
             World world = new World(0.01f, 0.01f, 0.001f, new Vector2(-10f, -10f));
 
-            IInternalBody body = 
+            Body body = 
                     world.CreateBody(Vector2.zero, 0f, BodyType.Dynamic, null) 
-                as  IInternalBody;
+                as Body;
 
             world.Step();
             Assert.That(world.tick, Is.EqualTo(1));

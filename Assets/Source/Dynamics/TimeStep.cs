@@ -4,14 +4,14 @@ namespace CrispyPhysics.Internal
 {
     public struct TimeStep
     {
-        public float dt;
-        public float invDt;
-        public float dtRatio;
-        public Vector2 gravity;
-        public int velocityIterations;
-        public int positionIterations;
-        public float maxTranslationSpeed;
-        public float maxRotationSpeed;
+        public readonly float dt;
+        public readonly float invDt;
+        public readonly float dtRatio;
+        public readonly Vector2 gravity;
+        public readonly int velocityIterations;
+        public readonly int positionIterations;
+        public readonly float maxTranslationSpeed;
+        public readonly float maxRotationSpeed;
 
         public TimeStep(
             float dt, float invDt, float dtRatio,
@@ -32,20 +32,32 @@ namespace CrispyPhysics.Internal
 
     public struct Position
     {
-        public Vector2 center;
-        public float angle;
+        public readonly Vector2 center;
+        public readonly float angle;
+
+        public Position(Vector2 center, float angle)
+        {
+            this.center = center;
+            this.angle = angle;
+        }
     }
 
     public struct Velocity
     {
-        public Vector2 linearVelocity;
-        public float angularVelocity; 
+        public readonly Vector2 linearVelocity;
+        public readonly float angularVelocity;
+
+        public Velocity(Vector2 linearVelocity, float angularVelocity)
+        {
+            this.linearVelocity = linearVelocity;
+            this.angularVelocity = angularVelocity;
+        }
     }
 
     public struct SolverData
     {
-        public TimeStep step;
-        public Position[] positions;
-        public Velocity[] velocities;
+        public readonly TimeStep step;
+        public readonly Position[] positions;
+        public readonly Velocity[] velocities;
     }
 }

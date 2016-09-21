@@ -56,9 +56,9 @@ namespace CrispyPhysics
                 Is.EqualTo(2f).Within(0.001f));
 
 
-            aabb.Combine(new AABB(
-                new Vector2(1f, 1f),
-                new Vector2(1.5f, 0.5f)));
+            aabb = AABB.Combine(
+                aabb, 
+                new AABB( new Vector2(1f, 1f), new Vector2(1.5f, 0.5f)));
 
             Assert.That(
                 aabb.lowerBound,
@@ -68,7 +68,7 @@ namespace CrispyPhysics
                 OwnNUnit.Is.EqualTo(new Vector2(1.5f, 1.5f)).Within(0.001f));
 
 
-            aabb.Combine(
+            aabb = AABB.Combine(
                 new AABB(new Vector2(0f, 0f), new Vector2(-1f, -1f)),
                 new AABB(new Vector2(1f, 1f), new Vector2(0f, 0f)));
 

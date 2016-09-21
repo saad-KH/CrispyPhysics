@@ -16,17 +16,17 @@ namespace CrispyPhysics
             Assert.That(rot.sine, Is.EqualTo(0.866f).Within(0.001f));
             Assert.That(rot.cosine, Is.EqualTo(0.5f).Within(0.001f));
 
-           rot.Set(Mathf.PI / 4);
+            rot = new Rotation(Mathf.PI / 4);
 
             Assert.That(rot.sine, Is.EqualTo(0.707f).Within(0.001f));
             Assert.That(rot.cosine, Is.EqualTo(0.707f).Within(0.001f));
 
-            rot.SetIdentity();
+            rot = Rotation.identity;
 
             Assert.That(rot.sine, Is.EqualTo(0f).Within(0.001f));
-            Assert.That(rot.cosine, Is.EqualTo(0f).Within(0.001f));
+            Assert.That(rot.cosine, Is.EqualTo(1f).Within(0.001f));
 
-            rot.Set(Mathf.PI / 3);
+            rot = new Rotation(Mathf.PI / 3);
 
             Assert.That(rot.GetAngle(), Is.EqualTo(1.047f).Within(0.001f));
 
@@ -50,19 +50,17 @@ namespace CrispyPhysics
             Assert.That(transform.rotation.sine, Is.EqualTo(0.866f).Within(0.001f));
             Assert.That(transform.rotation.cosine, Is.EqualTo(0.5f).Within(0.001f));
 
-            transform.Set(
-                Vector2.down,
-                Mathf.PI / 4);
+            transform = new Transformation(Vector2.down, Mathf.PI / 4);
 
             Assert.That(transform.position, OwnNUnit.Is.EqualTo(Vector2.down).Within(0.001f));
             Assert.That(transform.rotation.sine, Is.EqualTo(0.707f).Within(0.001f));
             Assert.That(transform.rotation.cosine, Is.EqualTo(0.707f).Within(0.001f));
 
-            transform.SetIdentity();
+            transform = Transformation.identity;
 
             Assert.That(transform.position, OwnNUnit.Is.EqualTo(Vector2.zero).Within(0.001f));
             Assert.That(transform.rotation.sine, Is.EqualTo(0f).Within(0.001f));
-            Assert.That(transform.rotation.cosine, Is.EqualTo(0f).Within(0.001f));
+            Assert.That(transform.rotation.cosine, Is.EqualTo(1f).Within(0.001f));
         }
 
         /*[Test]

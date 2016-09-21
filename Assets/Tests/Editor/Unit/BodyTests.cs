@@ -129,8 +129,8 @@ namespace CrispyPhysics
             Assert.That(body.torque, Is.EqualTo(1f));
             Assert.That(staticBody.force, Is.EqualTo(Vector2.zero));
             Assert.That(staticBody.torque, Is.EqualTo(0f));
-            Assert.That(kinematicBody.force, Is.EqualTo(Vector2.zero));
-            Assert.That(kinematicBody.torque, Is.EqualTo(0f));
+            Assert.That(kinematicBody.force, Is.EqualTo(Vector2.one));
+            Assert.That(kinematicBody.torque, Is.EqualTo(1f));
 
             //Changing Velocity
             body.ChangeVelocity(Vector2.up, 2f);
@@ -141,8 +141,8 @@ namespace CrispyPhysics
             Assert.That(body.angularVelocity, Is.EqualTo(2f));
             Assert.That(staticBody.linearVelocity, Is.EqualTo(Vector2.zero));
             Assert.That(staticBody.angularVelocity, Is.EqualTo(0f));
-            Assert.That(kinematicBody.linearVelocity, Is.EqualTo(Vector2.zero));
-            Assert.That(kinematicBody.angularVelocity, Is.EqualTo(0f));
+            Assert.That(kinematicBody.linearVelocity, Is.EqualTo(Vector2.up));
+            Assert.That(kinematicBody.angularVelocity, Is.EqualTo(2f));
 
             //Changing Situation
             body.ChangeSituation(Vector2.down, -1f);

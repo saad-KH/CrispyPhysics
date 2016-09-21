@@ -3,7 +3,7 @@ using UnityEngine;
 namespace CrispyPhysics.Internal
 {
     #region Momentum Definition
-    public class Momentum : IInternalMomentum
+    public class Momentum : IMomentum
     {
         public uint tick { get; private set; }
         public Vector2 force { get; private set; }
@@ -31,7 +31,7 @@ namespace CrispyPhysics.Internal
             transform = new Transformation(position, new Rotation(angle));
         }
 
-        public Momentum(uint tick, IInternalMomentum source)
+        public Momentum(uint tick, Momentum source)
         {
             this.tick = tick;
             force = source.force;
@@ -55,11 +55,10 @@ namespace CrispyPhysics.Internal
 
         public void ChangeSituation(Vector2 position, float angle)
         {
-            transform.Set(position, angle);
-            //Debug.Assert(false, "Broad Phase");
+            transform = new Transformation(position, new Rotation(angle));
         }
 
-        public bool Same(IInternalMomentum other, float tolerance = 0)
+        public bool Same(Momentum other, float tolerance = 0)
         {
             if  (   !Calculus.Approximately(force, other.force, tolerance)
                 ||  !Calculus.Approximately(torque, other.torque, tolerance)
