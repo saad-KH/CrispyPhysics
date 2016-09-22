@@ -23,6 +23,18 @@ namespace CrispyPhysics.Internal
             this.typeA = typeA;
             this.typeB = typeB;
         }
+
+        public bool Same(ContactFeature other)
+        {
+            if (    indexA != other.indexA
+                ||  indexB != other.indexB
+                ||  typeA != other.typeA
+                ||  typeB != other.typeB)
+                return false;
+
+            return true;
+        }
+
     }
 
     public struct ContactID
@@ -40,6 +52,15 @@ namespace CrispyPhysics.Internal
         {
             this.feature = feature;
             this.key = key;
+        }
+
+        public bool Same(ContactID other)
+        {
+            if (   key != other.key
+                || !feature.Same(other.feature))
+                return false;
+
+            return true;
         }
     }
 
@@ -66,6 +87,17 @@ namespace CrispyPhysics.Internal
             this.localPoint = localPoint;
             this.normalImpulse = normalImpulse;
             this.tangentImpulse = tangentImpulse;
+        }
+
+        public bool Same(ManifoldPoint other, float tolerance = 0f)
+        {
+            if (    !Calculus.Approximately(localPoint, other.localPoint, tolerance)
+                ||  !Calculus.Approximately(normalImpulse, other.normalImpulse, tolerance)
+                ||  !Calculus.Approximately(tangentImpulse, other.tangentImpulse, tolerance)
+                ||  !id.Same(other.id))
+                return false;
+
+            return true;
         }
     };
 
@@ -97,6 +129,23 @@ namespace CrispyPhysics.Internal
             this.type = type;
 
             this.points = points;
+        }
+
+        public bool Same(Manifold other, float tolerance = 0f)
+        {
+            if (    !Calculus.Approximately(localNormal, other.localNormal, tolerance)
+                ||  !Calculus.Approximately(localPoint, other.localPoint, tolerance)
+                ||  type != other.type
+                ||  pointCount != other.pointCount)
+                return false;
+
+            for(int i=0; i < pointCount; i++)
+            {
+                if (!points[i].Same(other.points[i], tolerance))
+                    return false;
+            }
+
+            return true;
         }
     }
 

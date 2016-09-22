@@ -12,14 +12,14 @@ namespace CrispyPhysics.Internal
     {
         #region Constructors
         public Body(
-           uint currentTick,
+           uint tick,
            Vector2 position, float angle,
            BodyType type, IShape shape, float mass = 1f,
            float linearDamping = 0f, float angularDamping = 0f,
            float gravityScale = 1f
            )
         {
-            this.currentTick = currentTick;
+            currentTick = tick;
             this.type = type;
 
             SetMass(mass);
@@ -31,7 +31,7 @@ namespace CrispyPhysics.Internal
 
             momentums = new List<Momentum>();
             momentums.Add(new Momentum(
-                this.currentTick,
+                currentTick,
                 Vector2.zero, 0f,
                 Vector2.zero, 0f,
                 position, angle));

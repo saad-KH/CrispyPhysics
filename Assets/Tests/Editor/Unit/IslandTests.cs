@@ -18,8 +18,8 @@ namespace CrispyPhysics
             Body body1 = new Body(0, Vector2.zero, 0f, BodyType.Dynamic, null);
             Body body2 = new Body(0, Vector2.zero, 0f, BodyType.Dynamic, null);
 
-            Contact contact1 = new Contact(body1, body2);
-            Contact contact2 = new Contact(body1, body2);
+            Contact contact1 = new Contact(0, body1, body2);
+            Contact contact2 = new Contact(0, body1, body2);
 
             Island island = new Island();
 
