@@ -76,7 +76,6 @@ namespace CrispyPhysics.Internal
             for(int i=0; i < bodyCount; i++)
             {
                 Body body = bodies[i];
-                body.Foresee();
                 Momentum momentum = body.futur;
                 
                 Vector2 linearVelocity = momentum.linearVelocity;

@@ -29,10 +29,6 @@ namespace CrispyPhysics
 
 namespace CrispyPhysics.Internal
 {
-    #region Events Definition
-    public delegate IEnumerable<Body> BodyIteratorDelegate(uint start = 0, uint end = 0);
-    #endregion
-
     public class World : IWorld
     {
         #region Constructors
@@ -61,7 +57,15 @@ namespace CrispyPhysics.Internal
             futurTick = 0;
 
             bodies = new List<Body>();
-            contactManager = new ContactManager(new BodyIteratorDelegate(BodyIterator));
+            bodyContacts = new Dictionary<Body, List<Contact>>();
+            contacts = new List<Contact>();
+            contactManager = new ContactManager(
+                new BodyIteratorDelegate(BodyIterator),
+                new NewPairDelegate(NewPair),
+                new ContactIteratorDelegate(ContactIterator),
+                new ContactHandlerDelegate(NotifyContactStartForeseen),
+                new ContactHandlerDelegate(NotifyContactEndForeseen),
+                new ContactHandlerDelegate(NotifyContactForPreSolving));
 
             step = new TimeStep(
                 fixedStep, 1f / fixedStep, 1f,
@@ -76,8 +80,17 @@ namespace CrispyPhysics.Internal
         {}
         #endregion
 
-        #region Body Manager
+        #region Events
+        public event IContactHandlerDelegate ContactStartForeseen;
+        public event IContactHandlerDelegate ContactEndForeseen;
+        public event IContactHandlerDelegate ContactStarted;
+        public event IContactHandlerDelegate ContactEnded;
+        #endregion
+
+        #region Body & Contact Manager
         private List<Body> bodies;
+        private Dictionary<Body, List<Contact>> bodyContacts;
+        private List<Contact> contacts;
         private ContactManager contactManager;
 
         public IBody CreateBody(
@@ -95,7 +108,7 @@ namespace CrispyPhysics.Internal
             );
 
             bodies.Add(newBody);
-            opFlags |= OperationFlag.BodyChange;
+            opFlags |= OperationFlag.BodyListUpdated;
             newBody.FuturCleared += FuturCleared;
 
             return newBody;
@@ -122,18 +135,10 @@ namespace CrispyPhysics.Internal
             if (bodyIndex == -1) return;
 
             //Debug.Assert(false, "Remove Contact");
-            opFlags |= OperationFlag.BodyChange;
+            opFlags |= OperationFlag.BodyListUpdated;
             oldBody.FuturCleared -= FuturCleared;
 
             bodies.RemoveAt(bodyIndex);
-        }
-
-        private IEnumerable<Body> BodyIterator(uint start = 0, uint end = 0)
-        {
-            if(end == 0)
-                end = (uint) bodies.Count;
-            for (int i=(int)start; i < (int)end; i++)
-                yield return bodies[i];
         }
         #endregion
 
@@ -157,7 +162,7 @@ namespace CrispyPhysics.Internal
         private enum OperationFlag
         {
             Locked = 0x0001,
-            BodyChange = 0x0002,
+            BodyListUpdated = 0x0002,
             FuturForeseen = 0x0004,
             Crisped = 0x0008
         }
@@ -177,20 +182,19 @@ namespace CrispyPhysics.Internal
 
             bool clearFutur = 
                     (opFlags & OperationFlag.FuturForeseen) != OperationFlag.FuturForeseen
-                ||  (opFlags & OperationFlag.BodyChange) == OperationFlag.BodyChange;
+                ||  (opFlags & OperationFlag.BodyListUpdated) == OperationFlag.BodyListUpdated;
 
             bool lookForContacts = 
-                (opFlags & OperationFlag.BodyChange) == OperationFlag.BodyChange;
+                (opFlags & OperationFlag.BodyListUpdated) == OperationFlag.BodyListUpdated;
 
             if (clearFutur)
+            {
                 foreach (Body body in bodies)
                     body.ClearFutur();
-            
-            if(lookForContacts)
-                contactManager.FindNewContacts();
 
-
-  
+                foreach (Contact contact in contacts)
+                    contact.ClearFutur();
+            }
 
             if (keepTicks > tick) keepTicks = tick;
             pastTick = (uint)Mathf.Max(tick - keepTicks , pastTick);
@@ -214,7 +218,20 @@ namespace CrispyPhysics.Internal
 
             for (int i = 0; i < iterationsToSolve; i++)
             {
-                //Debug.Assert(false, "Destroy useless contacts");
+                foreach (Body body in bodies)
+                    body.Foresee();
+
+                foreach (Contact contact in contacts)
+                    contact.Foresee();
+
+                if (lookForContacts)
+                {
+                    contactManager.FindNewContacts();
+                    lookForContacts = false;
+                }
+
+                contactManager.Collide();
+
                 Solve(step);
             }
 
@@ -224,13 +241,41 @@ namespace CrispyPhysics.Internal
                 body.ForgetPast(pastTick);
 
                 Debug.Assert(body.current.tick == tick);
-                Debug.Assert(body.past.tick == pastTick);
                 Debug.Assert(body.futur.tick == futurTick);
+            }
+
+            foreach (Contact contact in contacts)
+            {
+                bool wasTouching = contact.current.isTouching;
+                contact.Step(steps);
+                contact.ForgetPast(pastTick);
+
+                Debug.Assert(contact.current.tick == tick);
+                Debug.Assert(contact.futur.tick == futurTick);
+
+                if(wasTouching == false && contact.current.isTouching == true)
+                {
+                    contact.bodyA.NotifyContactStarted(contact, EventArgs.Empty);
+                    contact.bodyB.NotifyContactStarted(contact, EventArgs.Empty);
+
+                    if (ContactStarted != null)
+                        ContactStarted(contact, EventArgs.Empty);
+                }
+
+                if(wasTouching == true && contact.current.isTouching == false)
+                {
+                    contact.bodyA.NotifyContactEnded(contact, EventArgs.Empty);
+                    contact.bodyB.NotifyContactEnded(contact, EventArgs.Empty);
+
+                    if (ContactEnded != null)
+                        ContactEnded(contact, EventArgs.Empty);
+                }
+
             }
 
             opFlags &= ~OperationFlag.Locked;
             //opFlags &= ~OperationFlag.Crisped;
-            opFlags &= ~OperationFlag.BodyChange;
+            opFlags &= ~OperationFlag.BodyListUpdated;
             opFlags |= OperationFlag.FuturForeseen;
 
         }
@@ -252,9 +297,37 @@ namespace CrispyPhysics.Internal
                 body.ForgetPast(pastTick);
 
                 Debug.Assert(body.current.tick == tick);
-                Debug.Assert(body.past.tick == pastTick);
                 Debug.Assert(body.futur.tick == futurTick);
             }
+
+            foreach (Contact contact in contacts)
+            {
+                bool wasTouching = contact.current.isTouching;
+                contact.RollBack(tick);
+                contact.ForgetPast(pastTick);
+
+                Debug.Assert(contact.current.tick == tick);
+                Debug.Assert(contact.futur.tick == futurTick);
+
+                if (wasTouching == false && contact.current.isTouching == true)
+                {
+                    contact.bodyA.NotifyContactStarted(contact, EventArgs.Empty);
+                    contact.bodyB.NotifyContactStarted(contact, EventArgs.Empty);
+
+                    if (ContactStarted != null)
+                        ContactStarted(contact, EventArgs.Empty);
+                }
+
+                if (wasTouching == true && contact.current.isTouching == false)
+                {
+                    contact.bodyA.NotifyContactEnded(contact, EventArgs.Empty);
+                    contact.bodyB.NotifyContactEnded(contact, EventArgs.Empty);
+
+                    if (ContactEnded != null)
+                        ContactEnded(contact, EventArgs.Empty);
+                }
+            }
+
             opFlags &= ~OperationFlag.Locked;
         }
 
@@ -333,7 +406,9 @@ namespace CrispyPhysics.Internal
                 }
             }*/
         }
+        #endregion
 
+        #region Event Handlers & Delegates
         private void FuturCleared(IBody body, EventArgs args)
         {
             if((opFlags & World.OperationFlag.FuturForeseen) == World.OperationFlag.FuturForeseen)
@@ -341,6 +416,82 @@ namespace CrispyPhysics.Internal
                 futurTick = tick;
                 opFlags &= ~World.OperationFlag.FuturForeseen;
             }
+        }
+
+
+        private IEnumerable<Body> BodyIterator(uint start = 0, uint end = 0)
+        {
+            if (end == 0)
+                end = (uint)bodies.Count;
+            for (int i = (int)start; i < (int)end; i++)
+                yield return bodies[i];
+        }
+
+        private void NewPair(Body bodyA, Body bodyB)
+        {
+            if (bodyA == bodyB)
+                return;
+
+            List<Contact> bodyAContacts = null;
+            List<Contact> bodyBContacts = null;
+
+            if (bodyContacts.ContainsKey(bodyA))
+            {
+                bodyAContacts = bodyContacts[bodyA];
+                foreach (Contact contact in bodyAContacts)
+                    if (contact.bodyA == bodyB || contact.bodyB == bodyB)
+                        return;
+            }
+            else
+            {
+                bodyAContacts = new List<Contact>();
+                bodyContacts.Add(bodyA, bodyAContacts);
+            }
+
+            if (bodyContacts.ContainsKey(bodyB))
+                bodyBContacts = bodyContacts[bodyB];
+            else
+            {
+                bodyBContacts = new List<Contact>();
+                bodyContacts.Add(bodyB, bodyBContacts);
+            }
+
+            Debug.Assert(bodyA.futur.tick == bodyB.futur.tick);
+            Contact newContact = ContactFactory.CreateContact(bodyA.futur.tick, bodyA, bodyB);
+            bodyAContacts.Add(newContact);
+            bodyBContacts.Add(newContact);
+            contacts.Add(newContact);
+        }
+
+        private IEnumerable<Contact> ContactIterator(uint start = 0, uint end = 0)
+        {
+            if (end == 0)
+                end = (uint)contacts.Count;
+            for (int i = (int)start; i < (int)end; i++)
+                yield return contacts[i];
+        }
+
+        private void NotifyContactStartForeseen(Contact contact, EventArgs args)
+        {
+            contact.bodyA.NotifyContactStartForeseen(contact, args);
+            contact.bodyB.NotifyContactStartForeseen(contact, args);
+
+            if (ContactStartForeseen != null)
+                ContactStartForeseen(contact, args);
+        }
+
+        private void NotifyContactEndForeseen(Contact contact, EventArgs args)
+        {
+            contact.bodyA.NotifyContactStartForeseen(contact, EventArgs.Empty);
+            contact.bodyB.NotifyContactStartForeseen(contact, EventArgs.Empty);
+
+            if (ContactEndForeseen != null)
+                ContactEndForeseen(contact, args);
+        }
+
+        private void NotifyContactForPreSolving(Contact contact, EventArgs args)
+        {
+            Debug.Assert(false, "Resolve Presolving");
         }
         #endregion
     }

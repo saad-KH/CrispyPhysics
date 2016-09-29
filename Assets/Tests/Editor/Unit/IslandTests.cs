@@ -18,8 +18,8 @@ namespace CrispyPhysics
             Body body1 = new Body(0, Vector2.zero, 0f, BodyType.Dynamic, null);
             Body body2 = new Body(0, Vector2.zero, 0f, BodyType.Dynamic, null);
 
-            Contact contact1 = new Contact(0, body1, body2);
-            Contact contact2 = new Contact(0, body1, body2);
+            Contact contact1 = new CircleContact(0, body1, body2);
+            Contact contact2 = new CircleContact(0, body1, body2);
 
             Island island = new Island();
 
@@ -54,7 +54,7 @@ namespace CrispyPhysics
 
             
             island.Solve(step);
-            Assert.That(body.futur.tick == 1);
+            Assert.That(body.futur.tick == 0);
             Assert.That(
                 body.futur.position,
                 OwnNUnit.Is.EqualTo(new Vector2(0.833f, -7.333f)).Within(0.001f));

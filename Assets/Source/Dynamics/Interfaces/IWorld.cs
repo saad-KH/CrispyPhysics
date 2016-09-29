@@ -35,6 +35,13 @@ namespace CrispyPhysics
     #region Interface Defintion
     public interface IWorld
     {
+        #region Events
+        event IContactHandlerDelegate ContactStartForeseen;
+        event IContactHandlerDelegate ContactEndForeseen;
+        event IContactHandlerDelegate ContactStarted;
+        event IContactHandlerDelegate ContactEnded;
+        #endregion
+
         #region Nature
         float fixedStep { get; }
         float crispyStep { get; }

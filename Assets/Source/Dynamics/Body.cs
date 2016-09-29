@@ -4,21 +4,25 @@ using System.Collections.Generic;
 
 namespace CrispyPhysics.Internal
 {
-    #region Events Definition
-    public delegate void BodyEventHandler(Body body, EventArgs args);
+    #region Delegate Definition
+    public delegate void BodyHandlerDelegate(Body body, EventArgs args);
+    public delegate IEnumerable<Body> BodyIteratorDelegate(uint start = 0, uint end = 0);
     #endregion
 
-    public class Body : IBody
+    public class Body : IBody, IEquatable<IBody>
     {
+        private static int bodyCount = 0;
         #region Constructors
         public Body(
            uint tick,
            Vector2 position, float angle,
            BodyType type, IShape shape, float mass = 1f,
            float linearDamping = 0f, float angularDamping = 0f,
-           float gravityScale = 1f
+           float gravityScale = 1f, float friction = 0f, float restitution = 1f,
+           bool sensor = false
            )
         {
+            id = bodyCount++;
             currentTick = tick;
             this.type = type;
 
@@ -28,6 +32,10 @@ namespace CrispyPhysics.Internal
             this.linearDamping = linearDamping;
             this.angularDamping = angularDamping;
             this.gravityScale = gravityScale;
+            this.friction = friction;
+            this.restitution = restitution;
+
+            this.sensor = sensor;
 
             momentums = new List<Momentum>();
             momentums.Add(new Momentum(
@@ -38,8 +46,6 @@ namespace CrispyPhysics.Internal
 
 
             currentIndex = 0;
-
-            contacts = new List<Contact>();
         }
 
         public Body(uint currentTick, Vector2 position, float angle, BodyDefintion bodyDef) : this (
@@ -47,20 +53,63 @@ namespace CrispyPhysics.Internal
             position, angle,
             bodyDef.type, bodyDef.shape, bodyDef.mass,
             bodyDef.linearDamping, bodyDef.angularDamping,
-            bodyDef.gravityScale)
+            bodyDef.gravityScale, bodyDef.friction, bodyDef.restitution,
+            bodyDef.sensor)
         {}
         #endregion
 
         #region Events
-        public event BodyEventHandler FuturCleared;
+        public event BodyHandlerDelegate FuturCleared;
+        public event IContactHandlerDelegate ContactStartForeseen;
+        public event IContactHandlerDelegate ContactEndForeseen;
+        public event IContactHandlerDelegate ContactStarted;
+        public event IContactHandlerDelegate ContactEnded;
+
+        public void NotifyContactStartForeseen(Contact contact, EventArgs args)
+        {
+            if (ContactStartForeseen != null)
+                ContactStartForeseen(contact, args);
+        }
+
+        public void NotifyContactEndForeseen(Contact contact, EventArgs args)
+        {
+            if (ContactEndForeseen != null)
+                ContactEndForeseen(contact, args);
+        }
+
+        public void NotifyContactStarted(Contact contact, EventArgs args)
+        {
+            if (ContactStarted != null)
+                ContactStarted(contact, args);
+        }
+
+        public void NotifyContactEnded(Contact contact, EventArgs args)
+        {
+            if (ContactEnded != null)
+                ContactEnded(contact, args);
+        }
         #endregion
 
         #region Nature
+        public int id { get; private set; }
         public BodyType type { get; private set; }
         public IShape shape { get; private set; }
         public float mass { get; private set; }
         public float invMass { get; private set; }
         private float rotationalInertia, invRotationalInertia;
+
+        public override int GetHashCode()
+        {
+            return id;
+        }
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as Body);
+        }
+        public bool Equals(IBody obj)
+        {
+            return obj != null && obj.id == this.id;
+        }
 
         private void SetMass(float mass)
         {
@@ -119,6 +168,10 @@ namespace CrispyPhysics.Internal
         public float linearDamping { get; private set; }
         public float angularDamping { get; private set; }
         public float gravityScale { get; private set; }
+        public float friction { get; private set; }
+        public float restitution { get; private set; }
+
+        public bool sensor { get; private set; }
 
         public Vector2 position { get { return current.position; } }
         public float angle { get { return current.angle; } }
@@ -127,8 +180,6 @@ namespace CrispyPhysics.Internal
         public Vector2 force { get { return current.force; } }
         public float torque { get { return current.torque; } }
         public Transformation transform { get { return current.transform; } }
-
-        private List<Contact> contacts;
 
         public void ChangeImpulse(Vector2 force, float torque)
         {
@@ -214,14 +265,6 @@ namespace CrispyPhysics.Internal
                 current.linearVelocity,
                 current.angularVelocity + invRotationalInertia * impulse);
         }
-
-        public IEnumerable<Contact> ContactIterator(uint start = 0, uint end = 0)
-        {
-            if (end == 0)
-                end = (uint)contacts.Count;
-            for (int i = (int)start; i < (int)end; i++)
-                yield return contacts[i];
-        }
         #endregion
 
         #region Track
@@ -280,7 +323,7 @@ namespace CrispyPhysics.Internal
                     new Momentum(
                         currentTick,
                         momentums[currentIndex - 1]));
-            }
+            }    
         }
 
         public void RollBack(uint toTick)

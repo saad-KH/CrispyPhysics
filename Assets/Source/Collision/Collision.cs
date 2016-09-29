@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace CrispyPhysics.Internal
@@ -101,7 +102,7 @@ namespace CrispyPhysics.Internal
         }
     };
 
-    public struct Manifold
+    public class Manifold
     {
         public enum Type
         {
@@ -110,36 +111,53 @@ namespace CrispyPhysics.Internal
             FaceB
         }
 
-        public readonly ManifoldPoint[] points;
-        public readonly Vector2 localNormal; ///< not use for Type::e_points
-        public readonly Vector2 localPoint;  ///< usage depends on manifold type
-        public readonly Type type;
-        public int pointCount { get { return points.Length; } }
+        public Vector2 localNormal { get; private set; } ///< not use for Type::e_points
+        public Vector2 localPoint { get; private set; }  ///< usage depends on manifold type
+        public Type type { get; private set; }
+        public ManifoldPoint[] points { get; private set; }
+        public int pointCount { get; private set; }
 
         public Manifold(
             Type type,
-            Vector2 localPoint, Vector2 localNormal,
-            ManifoldPoint[] points)
+            Vector2 localPoint, Vector2 localNormal)
         {
-            if(points == null)
-                throw new System.ArgumentException("Specified Points should not be null");
-
+            this.type = type;
             this.localNormal = localNormal;
             this.localPoint = localPoint;
+            
+            points = new ManifoldPoint[Constants.maxManifoldPoints];
+            pointCount = 0;
+        }
+        
+        public void Set(
+            Type type,
+            Vector2 localPoint, Vector2 localNormal)
+        {
             this.type = type;
+            this.localNormal = localNormal;
+            this.localPoint = localPoint;
 
-            this.points = points;
+            pointCount = 0;
+        }
+
+        public void AddPoint(ManifoldPoint point)
+        {
+            Debug.Assert(pointCount < Constants.maxManifoldPoints);
+
+            points[pointCount] = point;
+            pointCount++;
         }
 
         public bool Same(Manifold other, float tolerance = 0f)
         {
+            if (other == null) return false;
             if (    !Calculus.Approximately(localNormal, other.localNormal, tolerance)
                 ||  !Calculus.Approximately(localPoint, other.localPoint, tolerance)
                 ||  type != other.type
-                ||  pointCount != other.pointCount)
+                ||  points.Length != other.points.Length)
                 return false;
 
-            for(int i=0; i < pointCount; i++)
+            for(int i=0; i < points.Length; i++)
             {
                 if (!points[i].Same(other.points[i], tolerance))
                     return false;
@@ -149,25 +167,36 @@ namespace CrispyPhysics.Internal
         }
     }
 
-    public struct WorldManifold
+    public class WorldManifold
     {
-        public readonly Vector2 normal;
-        public readonly Vector2[] points;
-        public readonly float[] separations;
+        public Vector2 normal { get; private set; }
+        public Vector2[] points { get; private set; }
+        public float[] separations { get; private set; }
+
+        public WorldManifold()
+        {
+            normal = Vector2.zero;
+            points = new Vector2[Constants.maxManifoldPoints];
+            separations = new float[Constants.maxManifoldPoints];
+        }
+
+        public WorldManifold(
+            Manifold manifold,
+            Transformation transformA, float radiusA,
+            Transformation transformB, float radiusB): this()
+        {
+            Set(manifold, transformA, radiusA, transformB, radiusB);
+        }
+
         /// Evaluate the manifold with supplied transforms. This assumes
         /// modest motion from the original state. This does not change the
         /// point count, impulses, etc. The radii must come from the shapes
         /// that generated the manifold.
-        public WorldManifold(
+        public void Set(
             Manifold manifold,
             Transformation transformA, float radiusA,
             Transformation transformB, float radiusB)
         {
-            normal = Vector2.zero;
-
-            points = new Vector2[Constants.maxManifoldPoints];
-            separations = new float[Constants.maxManifoldPoints];
-
             if (manifold.pointCount == 0)
                 return;
 
@@ -452,11 +481,11 @@ namespace CrispyPhysics.Internal
     #region Collision
     public class Collision
     {
-        public static bool CollideCircles(
-            ref Manifold output,
+        public static Manifold CollideCircles(
             CircleShape circleA, Transformation transformA,
             CircleShape circleB, Transformation transformB)
         {
+
             Vector2 pA = Calculus.Mul(transformA, circleA.position);
             Vector2 pB = Calculus.Mul(transformB, circleB.position);
 
@@ -466,23 +495,20 @@ namespace CrispyPhysics.Internal
             float radius = rA + rB;
 
             if (distSqr > radius * radius)
-                return false;
+                return null;
 
-            ManifoldPoint[] points = new ManifoldPoint[1];
-            points[0] = new ManifoldPoint(
-                new ContactID(0),
-                circleB.position);
-
-            output = new Manifold(
+            Manifold output = new Manifold(
                 Manifold.Type.Circles,
-                circleA.position, Vector2.zero,
-                points);
+                circleA.position, Vector2.zero);
 
-            return true;
+            output.AddPoint(new ManifoldPoint(
+                new ContactID(0),
+                circleB.position));
+
+            return output;
         }
 
-        public static bool CollidePolygionAndCircle(
-            ref Manifold output,
+        public static Manifold CollidePolygionAndCircle(
             PolygonShape polygonA, Transformation transformA,
             CircleShape circleB, Transformation transformB)
         {
@@ -504,7 +530,7 @@ namespace CrispyPhysics.Internal
                 float s = Calculus.Dot(normals[i], cLocal - vertices[i]);
 
                 if (s > radius)
-                    return false;
+                    return null;
 
                 if (s > separation)
                 {
@@ -519,20 +545,19 @@ namespace CrispyPhysics.Internal
             Vector2 v1 = vertices[vertIndex1];
             Vector2 v2 = vertices[vertIndex2];
 
-            ManifoldPoint[] points = new ManifoldPoint[1];
-            points[0] = new ManifoldPoint(
+            ManifoldPoint manifoldPoint = new ManifoldPoint(
                 new ContactID(0),
                 circleB.position);
 
             // If the center is inside the polygon ...
             if (separation < Mathf.Epsilon)
             {
-                output = new Manifold(
+                Manifold output = new Manifold(
                     Manifold.Type.FaceA,
-                    0.5f * (v1 + v2), normals[normalIndex],
-                    points);
+                    0.5f * (v1 + v2), normals[normalIndex]);
 
-                return true;
+                output.AddPoint(manifoldPoint);
+                return output;
             }
 
             // Compute barycentric coordinates
@@ -542,45 +567,44 @@ namespace CrispyPhysics.Internal
             if (u1 <= 0.0f)
             {
                 if ((cLocal - v1).SqrMagnitude() > radius * radius)
-                    return false;
+                    return null;
 
-                output = new Manifold(
+                Manifold output = new Manifold(
                     Manifold.Type.FaceA,
-                   v1, (cLocal - v1).normalized,
-                    points);
+                   v1, (cLocal - v1).normalized);
 
-                return true;
+                output.AddPoint(manifoldPoint);
+                return output;
             }
             else if (u2 <= 0.0f)
             {
                 if ((cLocal - v2).SqrMagnitude() > radius * radius)
-                    return false;
+                    return null;
 
-                output = new Manifold(
+                Manifold output = new Manifold(
                     Manifold.Type.FaceA,
-                    v2, (cLocal - v2).normalized,
-                    points);
+                    v2, (cLocal - v2).normalized);
 
-                return true;
+                output.AddPoint(manifoldPoint);
+                return output;
             }
             else
             {
                 Vector2 faceCenter = 0.5f * (v1 + v2);
                 float s = Calculus.Dot(cLocal - faceCenter, normals[vertIndex1]);
                 if (s > radius)
-                    return false;
+                    return null;
 
-                output = new Manifold(
+                Manifold output = new Manifold(
                     Manifold.Type.FaceA,
-                    faceCenter, normals[vertIndex1],
-                    points);
+                    faceCenter, normals[vertIndex1]);
 
-                return true;
+                output.AddPoint(manifoldPoint);
+                return output;
             }
         }
 
-        public static bool CollideEdgeAndCircle(
-           ref Manifold output,
+        public static Manifold CollideEdgeAndCircle(
            EdgeShape edgeA, Transformation transformA,
            CircleShape circleB, Transformation transformB)
         {
@@ -605,7 +629,7 @@ namespace CrispyPhysics.Internal
                 Vector2 d = Q - P;
                 float dd = Calculus.Dot(d, d);
                 if (dd > radius * radius)
-                    return false;
+                    return null;
 
                 // Is there an edge connected to A?
                 if (edgeA.hasVertex0)
@@ -617,27 +641,21 @@ namespace CrispyPhysics.Internal
 
                     // Is the circle in Region AB of the previous edge?
                     if (u1 > 0.0f)
-                        return false;
+                        return null;
                 }
-                
-                ;
+                Manifold output = new Manifold(
+                    Manifold.Type.Circles,
+                    P, Vector2.zero);
 
-                ManifoldPoint[] points = new ManifoldPoint[1];
-                points[0] = new ManifoldPoint(
+                output.AddPoint(new ManifoldPoint(
                     new ContactID(
                         0,
                         new ContactFeature(
                             0, 0,
                             (byte)ContactFeature.Type.Vertex, 
                             (byte)ContactFeature.Type.Vertex)),
-                    circleB.position);
-
-                output = new Manifold(
-                    Manifold.Type.Circles,
-                    P, Vector2.zero,
-                    points);
-
-                return true;
+                    circleB.position));
+                return output;
             }
 
             // Region B
@@ -647,7 +665,7 @@ namespace CrispyPhysics.Internal
                 Vector2 d = Q - P;
                 float dd = Calculus.Dot(d, d);
                 if (dd > radius * radius)
-                    return false;
+                    return null;
                 
 
                 // Is there an edge connected to B?
@@ -660,25 +678,22 @@ namespace CrispyPhysics.Internal
 
                     // Is the circle in Region AB of the next edge?
                     if (v2 > 0.0f)
-                        return false;
+                        return null;
                 }
 
-                ManifoldPoint[] points = new ManifoldPoint[1];
-                points[0] = new ManifoldPoint(
+                Manifold output = new Manifold(
+                    Manifold.Type.Circles,
+                    P, Vector2.zero);
+
+                output.AddPoint(new ManifoldPoint(
                     new ContactID(
                         0,
                         new ContactFeature(
                             1, 0,
                             (byte)ContactFeature.Type.Vertex,
                             (byte)ContactFeature.Type.Vertex)),
-                    circleB.position);
-
-                output = new Manifold(
-                    Manifold.Type.Circles,
-                    P, Vector2.zero,
-                    points);
-
-                return true;
+                    circleB.position));
+                return output;
             }
 
             // Region AB
@@ -690,29 +705,26 @@ namespace CrispyPhysics.Internal
                 Vector2 d = Q - P;
                 float dd = Calculus.Dot(d, d);
                 if (dd > radius * radius)
-                    return false;
+                    return null;
 
                 Vector2 n = new Vector2(-e.y, e.x);
                 if (Calculus.Dot(n, Q - A) < 0.0f)
                     n.Set(-n.x, -n.y);
                 n.Normalize();
 
-                ManifoldPoint[] points = new ManifoldPoint[1];
-                points[0] = new ManifoldPoint(
+                Manifold output = new Manifold(
+                    Manifold.Type.FaceA,
+                    A, n);
+
+                output.AddPoint(new ManifoldPoint(
                     new ContactID(
                         0,
                         new ContactFeature(
                             0, 0,
                             (byte)ContactFeature.Type.Face,
                             (byte)ContactFeature.Type.Vertex)),
-                    circleB.position);
-
-                output = new Manifold(
-                    Manifold.Type.FaceA,
-                    A, n,
-                    points);
-
-                return true;
+                    circleB.position));
+                return output;
             }
         }
 
