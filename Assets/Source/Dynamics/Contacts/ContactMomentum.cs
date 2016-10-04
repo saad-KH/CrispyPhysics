@@ -1,8 +1,5 @@
-using UnityEngine;
-
 namespace CrispyPhysics.Internal
 {
-    #region Contact Momentum Definition
     public class ContactMomentum
     {
         public uint tick { get; private set; }
@@ -47,5 +44,4 @@ namespace CrispyPhysics.Internal
         }
 
     }
-    #endregion
 }

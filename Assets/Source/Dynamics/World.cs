@@ -10,7 +10,7 @@ namespace CrispyPhysics
     {
         public static IWorld CreateWorld(
             float fixedStep, float crispyStep, float crispySize,
-            Vector2 gravity, int velocityIterations = 8, int positionIterations = 3,
+            Vector2 gravity, uint velocityIterations = 8, uint positionIterations = 3,
             float maxTranslationSpeed = 100, float maxRotationSpeed = 360)
         {
             return new World(
@@ -34,7 +34,7 @@ namespace CrispyPhysics.Internal
         #region Constructors
         public World(
             float fixedStep, float crispyStep, float crispySize,
-            Vector2 gravity, int velocityIterations = 8, int positionIterations = 3,
+            Vector2 gravity, uint velocityIterations = 8, uint positionIterations = 3,
             float maxTranslationSpeed = 100, float maxRotationSpeed = 360)
         {
             if  (   fixedStep < 0
@@ -57,15 +57,14 @@ namespace CrispyPhysics.Internal
             futurTick = 0;
 
             bodies = new List<Body>();
-            bodyContacts = new Dictionary<Body, List<Contact>>();
-            contacts = new List<Contact>();
+            bodyContacts = new Dictionary<Body, HashSet<Contact>>();
+            contacts = new HashSet<Contact>();
             contactManager = new ContactManager(
                 new BodyIteratorDelegate(BodyIterator),
                 new NewPairDelegate(NewPair),
                 new ContactIteratorDelegate(ContactIterator),
                 new ContactHandlerDelegate(NotifyContactStartForeseen),
-                new ContactHandlerDelegate(NotifyContactEndForeseen),
-                new ContactHandlerDelegate(NotifyContactForPreSolving));
+                new ContactHandlerDelegate(NotifyContactEndForeseen));
 
             step = new TimeStep(
                 fixedStep, 1f / fixedStep, 1f,
@@ -88,9 +87,10 @@ namespace CrispyPhysics.Internal
         #endregion
 
         #region Body & Contact Manager
+        private uint bodyCount = 0;
         private List<Body> bodies;
-        private Dictionary<Body, List<Contact>> bodyContacts;
-        private List<Contact> contacts;
+        private Dictionary<Body, HashSet<Contact>> bodyContacts;
+        private HashSet<Contact> contacts;
         private ContactManager contactManager;
 
         public IBody CreateBody(
@@ -99,7 +99,10 @@ namespace CrispyPhysics.Internal
             float linearDamping = 0f, float angularDamping = 0f,
             float gravityScale = 1f)
         {
+            if (bodyCount >= uint.MaxValue)
+                throw new SystemException("Maximum Body Possible to create reached");
             Body newBody = new Body(
+                bodyCount++,
                 tick,
                 position, angle,
                 type, shape, mass,
@@ -124,22 +127,6 @@ namespace CrispyPhysics.Internal
                 bodyDef.linearDamping, bodyDef.angularDamping,
                 bodyDef.gravityScale);
         }
-
-        public void DestroyBody(IBody body)
-        {
-            if (!(body is Body)) return;
-
-            Body oldBody = body as Body;
-
-            int bodyIndex = bodies.IndexOf(oldBody);
-            if (bodyIndex == -1) return;
-
-            //Debug.Assert(false, "Remove Contact");
-            opFlags |= OperationFlag.BodyListUpdated;
-            oldBody.FuturCleared -= FuturCleared;
-
-            bodies.RemoveAt(bodyIndex);
-        }
         #endregion
 
         #region Nature
@@ -148,8 +135,8 @@ namespace CrispyPhysics.Internal
         public float crispySize { get; private set; }
 
         public Vector2 gravity { get; private set; }
-        public int velocityIterations { get; private set; }
-        public int positionIterations { get; private set; }
+        public uint velocityIterations { get; private set; }
+        public uint positionIterations { get; private set; }
 
         public float maxTranslationSpeed { get; private set; }
         public float maxRotationSpeed { get; private set; }
@@ -179,6 +166,8 @@ namespace CrispyPhysics.Internal
         {
             opFlags |= OperationFlag.Locked;
             tick += steps;
+            if (tick >= uint.MaxValue)
+                throw new SystemException("Maximum system steps reached");
 
             bool clearFutur = 
                     (opFlags & OperationFlag.FuturForeseen) != OperationFlag.FuturForeseen
@@ -244,6 +233,7 @@ namespace CrispyPhysics.Internal
                 Debug.Assert(body.futur.tick == futurTick);
             }
 
+            HashSet<Contact> contactsToRemove = new HashSet<Contact>();
             foreach (Contact contact in contacts)
             {
                 bool wasTouching = contact.current.isTouching;
@@ -271,7 +261,27 @@ namespace CrispyPhysics.Internal
                         ContactEnded(contact, EventArgs.Empty);
                 }
 
+                if(contact.IsDroppable())
+                {
+                    contactsToRemove.Add(contact);
+
+                    Debug.Assert(bodyContacts.ContainsKey(contact.bodyA));
+                    HashSet<Contact> bodyAContacts = bodyContacts[contact.bodyA];
+                    Debug.Assert(bodyAContacts.Contains(contact));
+                    bodyAContacts.Remove(contact);
+                    if (bodyAContacts.Count == 0)
+                        bodyContacts.Remove(contact.bodyA);
+
+                    Debug.Assert(bodyContacts.ContainsKey(contact.bodyB));
+                    HashSet<Contact> bodyBContacts = bodyContacts[contact.bodyB];
+                    Debug.Assert(bodyBContacts.Contains(contact));
+                    bodyBContacts.Remove(contact);
+                    if (bodyBContacts.Count == 0)
+                        bodyContacts.Remove(contact.bodyB);
+                }
+
             }
+            contacts.RemoveWhere(contact => contactsToRemove.Contains(contact));
 
             opFlags &= ~OperationFlag.Locked;
             //opFlags &= ~OperationFlag.Crisped;
@@ -300,6 +310,7 @@ namespace CrispyPhysics.Internal
                 Debug.Assert(body.futur.tick == futurTick);
             }
 
+            HashSet<Contact> contactsToRemove = new HashSet<Contact>();
             foreach (Contact contact in contacts)
             {
                 bool wasTouching = contact.current.isTouching;
@@ -326,19 +337,44 @@ namespace CrispyPhysics.Internal
                     if (ContactEnded != null)
                         ContactEnded(contact, EventArgs.Empty);
                 }
+
+                if (contact.IsDroppable())
+                {
+                    contactsToRemove.Add(contact);
+
+                    Debug.Assert(bodyContacts.ContainsKey(contact.bodyA));
+                    HashSet<Contact> bodyAContacts = bodyContacts[contact.bodyA];
+                    Debug.Assert(bodyAContacts.Contains(contact));
+                    bodyAContacts.Remove(contact);
+                    if (bodyAContacts.Count == 0)
+                        bodyContacts.Remove(contact.bodyA);
+
+                    Debug.Assert(bodyContacts.ContainsKey(contact.bodyB));
+                    HashSet<Contact> bodyBContacts = bodyContacts[contact.bodyB];
+                    Debug.Assert(bodyBContacts.Contains(contact));
+                    bodyBContacts.Remove(contact);
+                    if (bodyBContacts.Count == 0)
+                        bodyContacts.Remove(contact.bodyB);
+                }
+
             }
+            contacts.RemoveWhere(contact => contactsToRemove.Contains(contact));
 
             opFlags &= ~OperationFlag.Locked;
         }
 
         private void Solve(TimeStep step)
         {
-            Island island = new Island((uint)bodies.Count);
+            Island island = new Island(
+                (uint)Mathf.Max(bodies.Count, 1),
+                (uint)Mathf.Max(contacts.Count, 1));
 
             foreach (Body body in bodies)
                 body.islandBound = false;
 
             //Debug.Assert(false, "Clear Contacts Island Flags");
+            foreach (Contact contact in contacts)
+                contact.islandBound = false;
 
             Stack<Body> stack = new Stack<Body>(bodies.Count);
             foreach (Body seed in bodies)
@@ -359,19 +395,44 @@ namespace CrispyPhysics.Internal
                     if (body.type == BodyType.Static)
                         continue;
 
-                    //Debug.Assert(false, "Search Contacts associated to body");
-
-                    island.Solve(step);
-
-                    foreach (Body islandBody in island.BodyIterator())
+                    if(bodyContacts.ContainsKey(body))
                     {
-                        if(islandBody.type == BodyType.Static)
-                            islandBody.islandBound = false;
+                        HashSet<Contact> contactOfBody = bodyContacts[body];
+                        foreach(Contact contact in contactOfBody)
+                        {
+                            if (contact.islandBound)
+                                continue;
+                            if (contact.futur.isTouching == false)
+                                continue;
+                            if (contact.bodyA.sensor || contact.bodyB.sensor)
+                                continue;
+
+                            island.Add(contact);
+                            contact.islandBound = true;
+
+                            if(contact.bodyA.islandBound == false)
+                            {
+                                stack.Push(contact.bodyA);
+                                contact.bodyA.islandBound = true;
+                            }
+
+                            if (contact.bodyB.islandBound == false)
+                            {
+                                stack.Push(contact.bodyB);
+                                contact.bodyB.islandBound = true;
+                            }
+                        }
                     }
                 }
+
+                island.Solve(step);
+
+                foreach (Body islandBody in island.BodyIterator())
+                    if (islandBody.type == BodyType.Static)
+                        islandBody.islandBound = false;
             }
 
-            //Debug.Assert(false, "Find New Contacts");
+            contactManager.FindNewContacts();
         }
 
         private void Crisp()
@@ -432,8 +493,8 @@ namespace CrispyPhysics.Internal
             if (bodyA == bodyB)
                 return;
 
-            List<Contact> bodyAContacts = null;
-            List<Contact> bodyBContacts = null;
+            HashSet<Contact> bodyAContacts = null;
+            HashSet<Contact> bodyBContacts = null;
 
             if (bodyContacts.ContainsKey(bodyA))
             {
@@ -444,7 +505,7 @@ namespace CrispyPhysics.Internal
             }
             else
             {
-                bodyAContacts = new List<Contact>();
+                bodyAContacts = new HashSet<Contact>();
                 bodyContacts.Add(bodyA, bodyAContacts);
             }
 
@@ -452,7 +513,7 @@ namespace CrispyPhysics.Internal
                 bodyBContacts = bodyContacts[bodyB];
             else
             {
-                bodyBContacts = new List<Contact>();
+                bodyBContacts = new HashSet<Contact>();
                 bodyContacts.Add(bodyB, bodyBContacts);
             }
 
@@ -463,12 +524,10 @@ namespace CrispyPhysics.Internal
             contacts.Add(newContact);
         }
 
-        private IEnumerable<Contact> ContactIterator(uint start = 0, uint end = 0)
+        private IEnumerable<Contact> ContactIterator()
         {
-            if (end == 0)
-                end = (uint)contacts.Count;
-            for (int i = (int)start; i < (int)end; i++)
-                yield return contacts[i];
+            foreach (Contact contact in contacts)
+                yield return contact;
         }
 
         private void NotifyContactStartForeseen(Contact contact, EventArgs args)
@@ -487,11 +546,6 @@ namespace CrispyPhysics.Internal
 
             if (ContactEndForeseen != null)
                 ContactEndForeseen(contact, args);
-        }
-
-        private void NotifyContactForPreSolving(Contact contact, EventArgs args)
-        {
-            Debug.Assert(false, "Resolve Presolving");
         }
         #endregion
     }

@@ -8,14 +8,14 @@ namespace CrispyPhysics.Internal
         public readonly float invDt;
         public readonly float dtRatio;
         public readonly Vector2 gravity;
-        public readonly int velocityIterations;
-        public readonly int positionIterations;
+        public readonly uint velocityIterations;
+        public readonly uint positionIterations;
         public readonly float maxTranslationSpeed;
         public readonly float maxRotationSpeed;
 
         public TimeStep(
             float dt, float invDt, float dtRatio,
-            Vector2 gravity, int velocityIterations, int positionIterations,
+            Vector2 gravity, uint velocityIterations, uint positionIterations,
             float maxTranslationSpeed, float maxRotationSpeed)
         {
             this.dt = dt;

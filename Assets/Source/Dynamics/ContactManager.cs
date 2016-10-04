@@ -15,29 +15,26 @@ namespace CrispyPhysics.Internal
 
         private ContactHandlerDelegate contactStartForeseen;
         private ContactHandlerDelegate contactEndForeseen;
-        private ContactHandlerDelegate contactForPreSolving;
 
         public ContactManager(
             BodyIteratorDelegate bodyIterator,
             NewPairDelegate newPair,
             ContactIteratorDelegate contactIterator,
             ContactHandlerDelegate contactStartForeseen = null,
-            ContactHandlerDelegate contactEndForeseen = null,
-            ContactHandlerDelegate contactForPreSolving = null)
+            ContactHandlerDelegate contactEndForeseen = null)
         {
     		if (bodyIterator == null)
-                throw new ArgumentOutOfRangeException("BodyIterator should not be null");
+                throw new ArgumentNullException("BodyIterator should not be null");
             if (newPair == null)
-                throw new ArgumentOutOfRangeException("newPair should not be null");
+                throw new ArgumentNullException("newPair should not be null");
             if (contactIterator == null)
-                throw new ArgumentOutOfRangeException("contactIterator should not be null");
+                throw new ArgumentNullException("contactIterator should not be null");
 
             this.bodyIterator =  bodyIterator;
             this.newPair = newPair;
             this.contactIterator = contactIterator;
             this.contactStartForeseen = contactStartForeseen;
             this.contactEndForeseen = contactEndForeseen;
-            this.contactForPreSolving = contactForPreSolving;
         }
 
 
@@ -69,7 +66,6 @@ namespace CrispyPhysics.Internal
             {
                 ContactMomentum futur = contact.futur;
 
-                Manifold oldManifold = futur.manifold;
                 bool wasTouching = futur.isTouching;
 
                 Manifold nextManifold = null;
@@ -94,32 +90,8 @@ namespace CrispyPhysics.Internal
                     nextManifold = contact.Evaluate(
                         bodyA.futur.transform, bodyB.futur.transform);
 
-                    if (nextManifold != null && nextManifold.pointCount > 0
-                        && oldManifold != null && oldManifold.pointCount > 0)
-                    {
+                    if (nextManifold != null && nextManifold.pointCount > 0)
                         touching = true;
-                        for (int i = 0; i < nextManifold.pointCount; i++)
-                        {
-                            ManifoldPoint point = nextManifold.points[i];
-                            float normalImpulse = 0f;
-                            float tangentImpulse = 0f;
-
-                            for (int j = 0; j < oldManifold.pointCount; j++)
-                            {
-                                ManifoldPoint oldPoint = oldManifold.points[j];
-                                if (oldPoint.id.key == point.id.key)
-                                {
-                                    normalImpulse = oldPoint.normalImpulse;
-                                    tangentImpulse = oldPoint.tangentImpulse;
-                                    break;
-                                }
-                            }
-
-                            nextManifold.points[i] = new ManifoldPoint(
-                                point.id,
-                                point.localPoint, normalImpulse, tangentImpulse);
-                        }
-                    }
                 }
 
                 futur.Change(nextManifold, 0f, touching);
@@ -129,9 +101,6 @@ namespace CrispyPhysics.Internal
 
                 if (wasTouching == true && touching == false && contactEndForeseen != null)
                     contactEndForeseen(contact, EventArgs.Empty);
-
-                if (sensor == false && contactForPreSolving != null)
-                    contactForPreSolving(contact, EventArgs.Empty);
             }
         }
 

@@ -100,6 +100,58 @@ namespace CrispyPhysics.Internal
     }
     #endregion*/
 
+    #region Matrices
+    public struct Matrix2x2
+    {
+        public static Matrix2x2 identity = new Matrix2x2(
+            Vector2.right,
+            Vector2.up);
+        public static Matrix2x2 zero = new Matrix2x2(
+            Vector2.zero,
+            Vector2.zero);
+
+        public readonly Vector2 ex;
+        public readonly Vector2 ey;
+
+        public Matrix2x2(Vector2 ex, Vector2 ey)
+        {
+            this.ex = ex;
+            this.ey = ey;
+        }
+
+        public Matrix2x2(float a11, float a12, float a21, float a22)
+        {
+            ex = new Vector2(a11, a21);
+            ey = new Vector2(a12, a22);
+        }
+
+        public Matrix2x2 GetInverse()
+        {
+            float a = ex.x, b = ey.x, c = ex.y, d = ey.y;
+            float det = a * d - b * c;
+            if (det != 0.0f)
+                det = 1.0f / det;
+
+            return new Matrix2x2(
+                det * d, -det * b,
+                -det * c, det * a);
+        }
+
+        public Vector2 Solve(Vector2 b)
+        {
+            float a11 = ex.x, a12 = ey.x, a21 = ex.y, a22 = ey.y;
+            float det = a11 * a22 - a12 * a21;
+            if (det != 0.0f)
+                det = 1.0f / det;
+
+            return new Vector2(
+                det * (a22 * b.x - a12 * b.y),
+                det * (a11 * b.y - a21 * b.x));
+        }
+    }
+    #endregion
+
+
     #region Calculus
     public class Calculus
     {
@@ -165,6 +217,13 @@ namespace CrispyPhysics.Internal
             return new Vector2(x, y);
         }
 
+        public static Vector2 Mul(Matrix2x2 matrix, Vector2 vector)
+        {
+            return new Vector2(
+                matrix.ex.x * vector.x + matrix.ey.x * vector.y,
+                matrix.ex.y * vector.x + matrix.ey.y * vector.y);
+        }
+
         public static float Dot(Vector2 vectorA, Vector2 vectorB)
         {
             return vectorA.x * vectorB.x + vectorA.y * vectorB.y;
@@ -173,6 +232,11 @@ namespace CrispyPhysics.Internal
         public static float Cross(Vector2 vectorA, Vector2 vectorB)
         {
             return vectorA.x * vectorB.y - vectorA.y * vectorB.x;
+        }
+
+        public static Vector2 Cross(float s, Vector2 vector)
+        {
+            return new Vector2(-s * vector.y, s * vector.x);
         }
 
         public static Vector2 Cross(Vector2 vector, float number)

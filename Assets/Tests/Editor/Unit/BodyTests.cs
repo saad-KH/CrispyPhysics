@@ -11,7 +11,7 @@ namespace CrispyPhysics
         [Test]
         public void CreatingBody()
         {
-            Body body = new Body(0, Vector2.zero, 0f, BodyType.Dynamic, null);
+            Body body = new Body(0, 0, Vector2.zero, 0f, BodyType.Dynamic, null);
             Assert.That(body.islandBound == false);
 
             Assert.That(body.type, Is.EqualTo(BodyType.Dynamic));
@@ -39,7 +39,7 @@ namespace CrispyPhysics
                 BodyType.Dynamic, shape, 5f,
                 0.2f, 0.3f, 0.5f);
 
-            Body specifiedBody = new Body(0, Vector2.one, 1f, bodyDef);
+            Body specifiedBody = new Body(0, 0, Vector2.one, 1f, bodyDef);
 
 
             Assert.That(specifiedBody.type, Is.EqualTo(BodyType.Dynamic));
@@ -63,15 +63,15 @@ namespace CrispyPhysics
             Assert.That(specifiedBody.GetInertia(), Is.EqualTo(2.5f));
 
             bodyDef.shape = ShapeFactory.CreateEdge(Vector2.left, Vector2.right);
-            specifiedBody = new Body(0, Vector2.one, 1f, bodyDef);
+            specifiedBody = new Body(0, 0, Vector2.one, 1f, bodyDef);
             Assert.That(specifiedBody.GetInertia(), Is.EqualTo(0f));
 
             bodyDef.shape = ShapeFactory.CreateBox(1f, 1f);
-            specifiedBody = new Body(0, Vector2.one, 1f, bodyDef);
+            specifiedBody = new Body(0, 0, Vector2.one, 1f, bodyDef);
             Assert.That(specifiedBody.GetInertia(), Is.EqualTo(3.333f).Within(0.001f));
 
             bodyDef.type = BodyType.Static;
-            specifiedBody = new Body(0, Vector2.one, 1f, bodyDef);
+            specifiedBody = new Body(0, 0, Vector2.one, 1f, bodyDef);
             Assert.That(specifiedBody.mass, Is.EqualTo(0f).Within(0.001f));
             Assert.That(specifiedBody.invMass, Is.EqualTo(0f).Within(0.001f));
             Assert.That(specifiedBody.GetInertia(), Is.EqualTo(0f).Within(0.001f));
@@ -80,7 +80,7 @@ namespace CrispyPhysics
         [Test]
         public void ShouldBeCollidingBody()
         {
-            Body body = new Body(0, Vector2.zero, 0f, BodyType.Dynamic, null);
+            Body body = new Body(0, 0, Vector2.zero, 0f, BodyType.Dynamic, null);
             IBody dynamicDummy = Substitute.For<IBody>();
             dynamicDummy.type.Returns(BodyType.Dynamic);
 
@@ -95,13 +95,13 @@ namespace CrispyPhysics
             Assert.That(body.ShouldCollide(staticDummy) == true);
             Assert.That(body.ShouldCollide(kineticDummy) == true);
 
-            Body staticBody = new Body(0, Vector2.zero, 0f, BodyType.Static, null);
+            Body staticBody = new Body(0, 0, Vector2.zero, 0f, BodyType.Static, null);
 
             Assert.That(staticBody.ShouldCollide(dynamicDummy) == true);
             Assert.That(staticBody.ShouldCollide(staticDummy) == false);
             Assert.That(staticBody.ShouldCollide(kineticDummy) == false);
 
-            Body kineticBody = new Body(0, Vector2.zero, 0f, BodyType.Static, null);
+            Body kineticBody = new Body(0, 0, Vector2.zero, 0f, BodyType.Static, null);
 
             Assert.That(kineticBody.ShouldCollide(dynamicDummy) == true);
             Assert.That(kineticBody.ShouldCollide(staticDummy) == false);
@@ -112,13 +112,13 @@ namespace CrispyPhysics
         public void ChangingStates()
         {
             Body body = new Body(
-                0, Vector2.zero, 0f,
+                0, 0, Vector2.zero, 0f,
                 BodyType.Dynamic, ShapeFactory.CreateCircle(1f));
             Body staticBody = new Body(
-                0, Vector2.zero, 0f,
+                0, 0, Vector2.zero, 0f,
                 BodyType.Static, ShapeFactory.CreateEdge(Vector2.left, Vector2.right));
             Body kinematicBody = new Body(
-                0, Vector2.zero, 0f,
+                0, 0, Vector2.zero, 0f,
                 BodyType.Kinematic, ShapeFactory.CreateBox(1f, 1f));
             //Changing Impulse
             body.ChangeImpulse(Vector2.one, 1f);
@@ -161,13 +161,13 @@ namespace CrispyPhysics
         public void ApplyingForces()
         {
             Body body = new Body(
-                0, Vector2.zero, 0f,
+                0, 0, Vector2.zero, 0f,
                 BodyType.Dynamic, ShapeFactory.CreateCircle(1f));
             Body staticBody = new Body(
-                0, Vector2.zero, 0f,
+                0, 0, Vector2.zero, 0f,
                 BodyType.Static, ShapeFactory.CreateEdge(Vector2.left, Vector2.right));
             Body kinematicBody = new Body(
-                0, Vector2.zero, 0f,
+                0, 0, Vector2.zero, 0f,
                 BodyType.Kinematic, ShapeFactory.CreateBox(1f, 1f));
 
             //Applying force
@@ -217,13 +217,13 @@ namespace CrispyPhysics
         public void ApplyingImpulses()
         {
             Body body = new Body(
-                0, Vector2.zero, 0f,
+                0, 0, Vector2.zero, 0f,
                 BodyType.Dynamic, ShapeFactory.CreateCircle(1f));
             Body staticBody = new Body(
-                0, Vector2.zero, 0f, 
+                0, 0, Vector2.zero, 0f, 
                 BodyType.Static, ShapeFactory.CreateEdge(Vector2.left, Vector2.right));
             Body kinematicBody = new Body(
-                0, Vector2.zero, 0f, 
+                0, 0, Vector2.zero, 0f, 
                 BodyType.Kinematic, ShapeFactory.CreateBox(1f, 1f));
 
             //Applying Impulse
@@ -275,7 +275,7 @@ namespace CrispyPhysics
         [Test]
         public void Tracking()
         {
-            Body body = new Body(0, Vector2.zero, 0f, BodyType.Dynamic, null);
+            Body body = new Body(0, 0, Vector2.zero, 0f, BodyType.Dynamic, null);
 
             body.Step();
             Assert.That(body.current.tick, Is.EqualTo(1));

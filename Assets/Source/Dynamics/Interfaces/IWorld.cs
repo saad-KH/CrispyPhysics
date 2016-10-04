@@ -10,14 +10,14 @@ namespace CrispyPhysics
         public readonly float crispyStep;
         public readonly float crispySize;
         public readonly Vector2 gravity;
-        public readonly int velocityIterations;
-        public readonly int positionIterations;
+        public readonly uint velocityIterations;
+        public readonly uint positionIterations;
         public readonly float maxTranslationSpeed;
         public readonly float maxRotationSpeed;
 
         public WorldDefinition(
             float fixedStep, float crispyStep, float crispySize,
-            Vector2 gravity, int velocityIterations = 8, int positionIterations = 3,
+            Vector2 gravity, uint velocityIterations = 8, uint positionIterations = 3,
             float maxTranslationSpeed = 100, float maxRotationSpeed = 360)
         {
             this.fixedStep = fixedStep;
@@ -48,8 +48,8 @@ namespace CrispyPhysics
         float crispySize { get; }
 
         Vector2 gravity { get; }
-        int velocityIterations { get; }
-        int positionIterations { get; }
+        uint velocityIterations { get; }
+        uint positionIterations { get; }
 
         float maxTranslationSpeed { get; }
         float maxRotationSpeed { get; }
@@ -60,7 +60,7 @@ namespace CrispyPhysics
         #endregion
 
         #region Body Manager
-        IBody CreateBody(
+        IBody CreateBody( 
             Vector2 position, float angle,
             BodyType type, IShape shape, float mass = 1f,
             float linearDamping = 0f, float angularDamping = 0f,
@@ -69,8 +69,6 @@ namespace CrispyPhysics
         IBody CreateBody(
             Vector2 position, float angle,
             BodyDefintion bodyDef);
-
-        void DestroyBody(IBody body);
         #endregion
 
         #region Tracker

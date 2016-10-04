@@ -22,9 +22,9 @@ namespace CrispyPhysics.Internal
         public Island(uint bodyCapacity = 1, uint contactCapacity = 1)
         {
             if (bodyCapacity == 0)
-                throw new ArgumentException("bodyCapacity should be strictly greater than 0");
+                throw new ArgumentOutOfRangeException("bodyCapacity should be strictly greater than 0");
             if (contactCapacity == 0)
-                throw new ArgumentException("contactCapacity should be strictly greater than 0");
+                throw new ArgumentOutOfRangeException("contactCapacity should be strictly greater than 0");
 
             this.bodyCapacity = bodyCapacity;
             this.contactCapacity = contactCapacity;
@@ -43,7 +43,9 @@ namespace CrispyPhysics.Internal
         {
             if(bodyCount >= bodyCapacity)
                 throw new InvalidOperationException("bodyCapacity is full");
-            bodies[bodyCount++] = body;
+            body.islandIndex = bodyCount;
+            bodies[bodyCount] = body;
+            bodyCount++;
         }
 
         public void Add(Contact contact)
@@ -73,15 +75,13 @@ namespace CrispyPhysics.Internal
         {
             float dt = step.dt;
 
-            for(int i=0; i < bodyCount; i++)
+            for(uint i=0; i < bodyCount; i++)
             {
                 Body body = bodies[i];
                 Momentum momentum = body.futur;
                 
                 Vector2 linearVelocity = momentum.linearVelocity;
                 float angularVelocity = momentum.angularVelocity;
-
-                positions[i] = new Position(momentum.position, momentum.angle);
 
                 if (body.type == BodyType.Dynamic)
                 {
@@ -96,13 +96,25 @@ namespace CrispyPhysics.Internal
                     linearVelocity *= 1f / (1f + dt * body.linearDamping);
                     angularVelocity *= 1f / (1f + dt * body.angularDamping);
                 }
-                
+
+                positions[i] = new Position(momentum.position, momentum.angle);
                 velocities[i] = new Velocity(linearVelocity, angularVelocity);
             }
 
             //Debug.Assert(false, "Solve Contacts");
+            ContactSolver contactSolver = null;
+            if(contactCount > 0)
+            {
+                ContactSolverDefinition contactSolverDef = new ContactSolverDefinition(
+                    step, contacts, contactCount, positions, velocities);
+                contactSolver = new ContactSolver(contactSolverDef);
+                contactSolver.InitializeVelocityConstraints();
 
-            for (int i = 0; i < bodyCount; i++)
+                for (uint i = 0; i < step.velocityIterations; i++)
+                    contactSolver.SolveVelocityConstraints();
+            }
+            
+            for (uint i = 0; i < bodyCount; i++)
             {
                 Vector2 linearVelocity = velocities[i].linearVelocity;
                 float angularVelocity = velocities[i].angularVelocity;
@@ -122,14 +134,12 @@ namespace CrispyPhysics.Internal
                 velocities[i] = new Velocity(linearVelocity, angularVelocity);
             }
 
-            /*bool positionSolved = false;
-            {
-                positionSolved = true;
-            }*/
+            if(contactSolver != null)
+                for(uint i=0; i<step.positionIterations; i++)
+                    if(contactSolver.SolvePositionConstraints())
+                        break;
 
-            //Debug.Assert(false, "Solve Position Constraints");
-
-            for (int i = 0; i < bodyCount; ++i)
+            for (uint i = 0; i < bodyCount; ++i)
             {
                 Momentum momentum = bodies[i].futur;
                 momentum.ChangeSituation(positions[i].center, positions[i].angle);

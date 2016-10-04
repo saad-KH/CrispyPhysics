@@ -58,7 +58,7 @@ namespace CrispyPhysics
         #endregion
 
         #region Nature
-        int id { get; }
+        uint id { get; }
         BodyType type { get; }
         IShape shape { get; }
         float mass { get; }

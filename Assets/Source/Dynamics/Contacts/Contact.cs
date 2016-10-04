@@ -7,7 +7,7 @@ namespace CrispyPhysics.Internal
     #region Delegate Definition
     public delegate void ContactHandlerDelegate(Contact contact, EventArgs args);
     public delegate void NewPairDelegate(Body bodyA, Body bodyB);
-    public delegate IEnumerable<Contact> ContactIteratorDelegate(uint start = 0, uint end = 0);
+    public delegate IEnumerable<Contact> ContactIteratorDelegate();
     #endregion
 
     #region Contact Factory
@@ -16,9 +16,9 @@ namespace CrispyPhysics.Internal
         public static Contact CreateContact(uint tick, Body bodyA, Body bodyB)
         {
             if (bodyA == null)
-                throw new ArgumentNullException("bodyA");
+                throw new ArgumentNullException("bodyA should not be null");
             if (bodyB == null)
-                throw new ArgumentNullException("bodyB");
+                throw new ArgumentNullException("bodyB should not be null");
             if (bodyA.shape == null)
                 throw new ArgumentException("Shape of bodyA should not be null");
             if (bodyB.shape == null)
@@ -53,9 +53,9 @@ namespace CrispyPhysics.Internal
         public Contact(uint tick, Body bodyA, Body bodyB)
         {
             if (bodyA == null)
-                throw new ArgumentNullException("bodyA");
+                throw new ArgumentNullException("bodyA should not be null");
             if (bodyB == null)
-                throw new ArgumentNullException("bodyB");
+                throw new ArgumentNullException("bodyB should not be null");
 
             if (bodyA.shape == null)
                 throw new ArgumentException("Shape of bodyA should not be null");

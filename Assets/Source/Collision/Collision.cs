@@ -111,19 +111,19 @@ namespace CrispyPhysics.Internal
             FaceB
         }
 
-        public Vector2 localNormal { get; private set; } ///< not use for Type::e_points
-        public Vector2 localPoint { get; private set; }  ///< usage depends on manifold type
+        public Vector2 normal { get; private set; } ///< not use for Type::e_points
+        public Vector2 point { get; private set; }  ///< usage depends on manifold type
         public Type type { get; private set; }
         public ManifoldPoint[] points { get; private set; }
-        public int pointCount { get; private set; }
+        public uint pointCount { get; private set; }
 
         public Manifold(
             Type type,
-            Vector2 localPoint, Vector2 localNormal)
+            Vector2 point, Vector2 normal)
         {
             this.type = type;
-            this.localNormal = localNormal;
-            this.localPoint = localPoint;
+            this.normal = normal;
+            this.point = point;
             
             points = new ManifoldPoint[Constants.maxManifoldPoints];
             pointCount = 0;
@@ -131,11 +131,11 @@ namespace CrispyPhysics.Internal
         
         public void Set(
             Type type,
-            Vector2 localPoint, Vector2 localNormal)
+            Vector2 point, Vector2 normal)
         {
             this.type = type;
-            this.localNormal = localNormal;
-            this.localPoint = localPoint;
+            this.normal = normal;
+            this.point = point;
 
             pointCount = 0;
         }
@@ -151,8 +151,8 @@ namespace CrispyPhysics.Internal
         public bool Same(Manifold other, float tolerance = 0f)
         {
             if (other == null) return false;
-            if (    !Calculus.Approximately(localNormal, other.localNormal, tolerance)
-                ||  !Calculus.Approximately(localPoint, other.localPoint, tolerance)
+            if (    !Calculus.Approximately(normal, other.normal, tolerance)
+                ||  !Calculus.Approximately(point, other.point, tolerance)
                 ||  type != other.type
                 ||  points.Length != other.points.Length)
                 return false;
@@ -208,7 +208,7 @@ namespace CrispyPhysics.Internal
 
                         Vector2 pointA = Calculus.Mul(
                             transformA,
-                            manifold.localPoint);
+                            manifold.point);
 
                         Vector2 pointB = Calculus.Mul(
                             transformB,
@@ -230,11 +230,11 @@ namespace CrispyPhysics.Internal
                     {
                         normal = Calculus.Mul(
                             transformA.rotation,
-                            manifold.localNormal);
+                            manifold.normal);
 
                         Vector2 planePoint = Calculus.Mul(
                             transformA,
-                            manifold.localPoint);
+                            manifold.point);
 
                         for (int i = 0; i < manifold.pointCount; i++)
                         {
@@ -254,11 +254,11 @@ namespace CrispyPhysics.Internal
                     {
                         normal = Calculus.Mul(
                             transformB.rotation,
-                            manifold.localNormal);
+                            manifold.normal);
 
                         Vector2 planePoint = Calculus.Mul(
                             transformB,
-                            manifold.localPoint);
+                            manifold.point);
 
                         for (int i = 0; i < manifold.pointCount; ++i)
                         {

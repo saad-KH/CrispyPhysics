@@ -12,11 +12,11 @@ namespace CrispyPhysics
         [Test]
         public void SettingUpIsland()
         {
-            Assert.Throws<ArgumentException>(
+            Assert.Throws<ArgumentOutOfRangeException>(
                 delegate { new Island(0, 0); });
 
-            Body body1 = new Body(0, Vector2.zero, 0f, BodyType.Dynamic, null);
-            Body body2 = new Body(0, Vector2.zero, 0f, BodyType.Dynamic, null);
+            Body body1 = new Body(0, 0, Vector2.zero, 0f, BodyType.Dynamic, null);
+            Body body2 = new Body(1, 0, Vector2.zero, 0f, BodyType.Dynamic, null);
 
             Contact contact1 = new CircleContact(0, body1, body2);
             Contact contact2 = new CircleContact(0, body1, body2);
@@ -40,7 +40,7 @@ namespace CrispyPhysics
             Island island = new Island();
 
             Body body = new Body(
-                0, 
+                0, 0, 
                 Vector2.zero, 0f, 
                 BodyType.Dynamic, null,
                 1f, 0.2f, 0.2f, 1f);

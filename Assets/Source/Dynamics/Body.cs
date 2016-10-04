@@ -11,10 +11,9 @@ namespace CrispyPhysics.Internal
 
     public class Body : IBody, IEquatable<IBody>
     {
-        private static int bodyCount = 0;
         #region Constructors
         public Body(
-           uint tick,
+           uint id, uint tick,
            Vector2 position, float angle,
            BodyType type, IShape shape, float mass = 1f,
            float linearDamping = 0f, float angularDamping = 0f,
@@ -22,7 +21,7 @@ namespace CrispyPhysics.Internal
            bool sensor = false
            )
         {
-            id = bodyCount++;
+            this.id = id;
             currentTick = tick;
             this.type = type;
 
@@ -46,10 +45,12 @@ namespace CrispyPhysics.Internal
 
 
             currentIndex = 0;
+            islandBound = false;
+            islandIndex = 0;
         }
 
-        public Body(uint currentTick, Vector2 position, float angle, BodyDefintion bodyDef) : this (
-            currentTick,
+        public Body(uint id, uint currentTick, Vector2 position, float angle, BodyDefintion bodyDef) : this (
+            id, currentTick,
             position, angle,
             bodyDef.type, bodyDef.shape, bodyDef.mass,
             bodyDef.linearDamping, bodyDef.angularDamping,
@@ -91,16 +92,18 @@ namespace CrispyPhysics.Internal
         #endregion
 
         #region Nature
-        public int id { get; private set; }
+        public uint id { get; private set; }
         public BodyType type { get; private set; }
         public IShape shape { get; private set; }
         public float mass { get; private set; }
         public float invMass { get; private set; }
-        private float rotationalInertia, invRotationalInertia;
+        public Vector2 center { get; private set; }
+        public float rotationalInertia { get; private set; }
+        public float invRotationalInertia { get; private set; }
 
         public override int GetHashCode()
         {
-            return id;
+            return id.GetHashCode();
         }
         public override bool Equals(object obj)
         {
@@ -150,6 +153,7 @@ namespace CrispyPhysics.Internal
             if (shape != null)
             {
                 MassData massData = shape.computeMassData(mass);
+                center = massData.center;
                 rotationalInertia =
                         massData.rotationalGravity
                     -   (mass * Calculus.Dot(massData.center, massData.center));
@@ -275,6 +279,7 @@ namespace CrispyPhysics.Internal
         public Momentum futur { get { return momentums[momentums.Count - 1]; } }
         private List<Momentum> momentums;
         public bool islandBound { get; set; }
+        public uint islandIndex { get; set; }
 
         public void Step(uint steps = 1)
         {
