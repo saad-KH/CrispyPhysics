@@ -63,41 +63,43 @@ namespace CrispyPhysics
             Assert.That(transform.rotation.cosine, Is.EqualTo(1f).Within(0.001f));
         }
 
-        /*[Test]
-        public void UsingSweep()
+        [Test]
+        public void UsingMatrix2x2()
         {
-            Sweep sweep = new Sweep();
-            sweep.Reset(Vector2.zero, 0f);
+            Matrix2x2 matrix = new Matrix2x2(
+                Vector2.up,
+                Vector2.right);
 
-            Assert.That(sweep.center0, Is.EqualTo(Vector2.zero));
-            Assert.That(sweep.angle0, Is.EqualTo(0f));
-            Assert.That(sweep.alpha0, Is.EqualTo(0f));
+            Assert.That(matrix.ex, OwnNUnit.Is.EqualTo(Vector2.up).Within(0.001f));
+            Assert.That(matrix.ey, OwnNUnit.Is.EqualTo(Vector2.right).Within(0.001f));
 
-            sweep.center = new Vector2(1f, 1f);
-            sweep.angle = Mathf.PI / 4;
-            Transformation trans = sweep.GetTransform(0.1f);
+            matrix = new Matrix2x2(0f, 1f, 1f, 0f);
+
+            Assert.That(matrix.ex, OwnNUnit.Is.EqualTo(Vector2.up).Within(0.001f));
+            Assert.That(matrix.ey, OwnNUnit.Is.EqualTo(Vector2.right).Within(0.001f));
+
+            matrix = Matrix2x2.identity;
+
+            Assert.That(matrix.ex, OwnNUnit.Is.EqualTo(Vector2.right).Within(0.001f));
+            Assert.That(matrix.ey, OwnNUnit.Is.EqualTo(Vector2.up).Within(0.001f));
+
+            matrix = Matrix2x2.zero;
+
+            Assert.That(matrix.ex, OwnNUnit.Is.EqualTo(Vector2.zero).Within(0.001f));
+            Assert.That(matrix.ey, OwnNUnit.Is.EqualTo(Vector2.zero).Within(0.001f));
+
+            matrix = new Matrix2x2(1f, 2f, 3f, 4f);
+            Matrix2x2 invMatrix = matrix.GetInverse();
+            Vector2 tester = new Vector2(5f, 6f);
 
             Assert.That(
-                trans.position,
-                OwnNUnit.Is.EqualTo(new Vector2(0.1f, 0.1f)).Within(0.001f));
-            Assert.That(trans.rotation.sine, Is.EqualTo(0.078f).Within(0.001f));
-            Assert.That(trans.rotation.cosine, Is.EqualTo(0.996f).Within(0.001f));
-
-            sweep.Advance(0.5f);
+                matrix.Solve(tester),
+                OwnNUnit.Is.EqualTo(new Vector2(-4f, 4.5f)).Within(0.001f));
 
             Assert.That(
-                sweep.center0,
-                OwnNUnit.Is.EqualTo(new Vector2(0.5f, 0.5f)).Within(0.001f));
-            Assert.That(sweep.angle0, Is.EqualTo(0.392f).Within(0.001f));
-            Assert.That(sweep.alpha0, Is.EqualTo(0.5f).Within(0.001f));
-
-            sweep.angle0 += Mathf.PI * 2f;
-            sweep.angle += Mathf.PI * 4f;
-            sweep.Normalize();
-
-            Assert.That(sweep.angle0, Is.EqualTo(0.392f).Within(0.001f));
-            Assert.That(sweep.angle, Is.EqualTo(0.785f).Within(0.001f));
-        }*/
+                invMatrix.Solve(matrix.Solve(tester)),
+                 OwnNUnit.Is.EqualTo(tester).Within(0.001f));
+        }
 
         [Test]
         public void ComputingWithCalculus()
@@ -156,6 +158,14 @@ namespace CrispyPhysics
                 transMulTVec,
                 OwnNUnit.Is.EqualTo(new Vector2(-0.516f, 0.856f)).Within(0.001f));
 
+            Vector2 matrixMulVector = Calculus.Mul(
+               new Matrix2x2(1f, 2f, 3f, 4f),
+               new Vector2(5f, 6f));
+
+            Assert.That(
+                matrixMulVector,
+                OwnNUnit.Is.EqualTo(new Vector2(17f, 39f)).Within(0.001f));
+
             float vecDotVec = Calculus.Dot(
                 new Vector2(1f, 0f),
                 new Vector2(0.707f, 0.707f));
@@ -169,6 +179,14 @@ namespace CrispyPhysics
                 new Vector2(0.707f, 0.707f));
 
             Assert.That(vecCrossVec, Is.EqualTo(0.707f).Within(0.001f));
+
+            Vector2 numCrossVec = Calculus.Cross(
+                0.707f,
+                new Vector2(1f, 0f));
+
+            Assert.That(
+                 numCrossVec,
+                 OwnNUnit.Is.EqualTo(new Vector2(0f, 0.707f)).Within(0.001f));
 
             Vector2 vecCrossNum = Calculus.Cross(
                 new Vector2(1f, 0f),

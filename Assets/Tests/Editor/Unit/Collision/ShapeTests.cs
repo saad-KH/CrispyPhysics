@@ -5,10 +5,63 @@ using UnityEngine;
 namespace CrispyPhysics
 {
     using Internal;
-    using System;
     [TestFixture]
     public class ShapeTests
     {
+        [Test]
+        public void usingFactory()
+        {
+            IShape circle = ShapeFactory.CreateCircle(1f);
+            Assert.That(circle.type == ShapeType.Circle);
+            Assert.That(circle.radius, Is.EqualTo(1f).Within(0.001f));
+
+            AABB aabb = circle.computeAABB(new Transformation(Vector2.zero, new Rotation(0f)));
+
+            Assert.That(
+                aabb.lowerBound,
+                OwnNUnit.Is.EqualTo(new Vector2(-1f, -1f)).Within(0.001f));
+            Assert.That(
+                aabb.upperBound,
+                OwnNUnit.Is.EqualTo(new Vector2(1f, 1f)).Within(0.001f));
+
+            IShape edge = ShapeFactory.CreateEdge(Vector2.left, Vector2.right);
+            Assert.That(edge.type == ShapeType.Edge);
+            Assert.That(edge.radius, Is.EqualTo(Constants.polygonRadius).Within(0.001f));
+
+            aabb = edge.computeAABB(new Transformation(Vector2.zero, new Rotation(0f)));
+
+            Assert.That(
+                aabb.lowerBound,
+                OwnNUnit.Is.EqualTo(new Vector2(
+                    -1f - Constants.polygonRadius,
+                    0f - Constants.polygonRadius))
+                    .Within(0.001f));
+            Assert.That(
+                aabb.upperBound,
+                OwnNUnit.Is.EqualTo(new Vector2(
+                    1f + Constants.polygonRadius,
+                    0f + Constants.polygonRadius))
+                    .Within(0.001f));
+
+            IShape box = ShapeFactory.CreateBox(1f, 1f);
+            Assert.That(box.type == ShapeType.Polygon);
+            Assert.That(box.radius, Is.EqualTo(Constants.polygonRadius).Within(0.001f));
+
+            aabb = box.computeAABB(new Transformation(Vector2.zero, new Rotation(0f)));
+
+            Assert.That(
+                aabb.lowerBound,
+                OwnNUnit.Is.EqualTo(new Vector2(
+                    -1f - Constants.polygonRadius,
+                    -1f - Constants.polygonRadius))
+                    .Within(0.001f));
+            Assert.That(
+                aabb.upperBound,
+                OwnNUnit.Is.EqualTo(new Vector2(
+                    1f + Constants.polygonRadius,
+                    1f + Constants.polygonRadius))
+                    .Within(0.001f));
+        }
 
         [Test]
         public void usingCircleShape()

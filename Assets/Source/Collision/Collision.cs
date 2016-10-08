@@ -67,32 +67,32 @@ namespace CrispyPhysics.Internal
 
     public struct ManifoldPoint
     {
-        public readonly Vector2 localPoint;      ///< usage depends on manifold type
+        public readonly Vector2 point;      ///< usage depends on manifold type
         public readonly float normalImpulse;  ///< the non-penetration impulse
         public readonly float tangentImpulse; ///< the friction impulse
         public readonly ContactID id;         ///< uniquely identifies a contact point between two shapes
         
-        public ManifoldPoint(ContactID id, Vector2 localPoint)
+        public ManifoldPoint(ContactID id, Vector2 point)
         {
             this.id = id;
-            this.localPoint = localPoint;
+            this.point = point;
             normalImpulse = 0f;
             tangentImpulse = 0f;
         }
 
         public ManifoldPoint
             (ContactID id,
-            Vector2 localPoint, float normalImpulse, float tangentImpulse)
+            Vector2 point, float normalImpulse, float tangentImpulse)
         {
             this.id = id;
-            this.localPoint = localPoint;
+            this.point = point;
             this.normalImpulse = normalImpulse;
             this.tangentImpulse = tangentImpulse;
         }
 
         public bool Same(ManifoldPoint other, float tolerance = 0f)
         {
-            if (    !Calculus.Approximately(localPoint, other.localPoint, tolerance)
+            if (    !Calculus.Approximately(point, other.point, tolerance)
                 ||  !Calculus.Approximately(normalImpulse, other.normalImpulse, tolerance)
                 ||  !Calculus.Approximately(tangentImpulse, other.tangentImpulse, tolerance)
                 ||  !id.Same(other.id))
@@ -172,12 +172,14 @@ namespace CrispyPhysics.Internal
         public Vector2 normal { get; private set; }
         public Vector2[] points { get; private set; }
         public float[] separations { get; private set; }
+        public uint pointCount { get; private set; }
 
         public WorldManifold()
         {
             normal = Vector2.zero;
             points = new Vector2[Constants.maxManifoldPoints];
             separations = new float[Constants.maxManifoldPoints];
+            pointCount = 0;
         }
 
         public WorldManifold(
@@ -204,7 +206,7 @@ namespace CrispyPhysics.Internal
             {
                 case Manifold.Type.Circles:
                     {
-                        normal = Vector2.zero;
+                        normal = new Vector2(1f, 0f);
 
                         Vector2 pointA = Calculus.Mul(
                             transformA,
@@ -212,18 +214,16 @@ namespace CrispyPhysics.Internal
 
                         Vector2 pointB = Calculus.Mul(
                             transformB,
-                            manifold.points[0].localPoint);
+                            manifold.points[0].point);
 
                         if ((pointA - pointB).SqrMagnitude() > Mathf.Epsilon * Mathf.Epsilon)
-                        {
-                            normal = pointB - pointA;
-                            normal.Normalize();
-                        }
+                            normal = (pointB - pointA).normalized;
 
                         Vector2 cA = pointA + radiusA * normal;
                         Vector2 cB = pointB - radiusB * normal;
                         points[0] = 0.5f * (cA + cB);
                         separations[0] = Calculus.Dot(cB - cA, normal);
+                        pointCount = 1;
                     }
                     break;
                 case Manifold.Type.FaceA:
@@ -240,7 +240,7 @@ namespace CrispyPhysics.Internal
                         {
                             Vector2 clipPoint = Calculus.Mul(
                                 transformB,
-                                manifold.points[i].localPoint);
+                                manifold.points[i].point);
 
                             Vector2 cA = clipPoint
                                 + (radiusA - Calculus.Dot(clipPoint - planePoint, normal)) * normal;
@@ -248,6 +248,7 @@ namespace CrispyPhysics.Internal
                             points[i] = 0.5f * (cA + cB);
                             separations[i] = Calculus.Dot(cB - cA, normal);
                         }
+                        pointCount = manifold.pointCount;
                     }
                     break;
                 case Manifold.Type.FaceB:
@@ -264,13 +265,14 @@ namespace CrispyPhysics.Internal
                         {
                             Vector2 clipPoint = Calculus.Mul(
                                 transformA,
-                                manifold.points[i].localPoint);
+                                manifold.points[i].point);
                             Vector2 cB = clipPoint
                                 + (radiusB - Calculus.Dot(clipPoint - planePoint, normal)) * normal;
                             Vector2 cA = clipPoint - radiusA * normal;
                             points[i] = 0.5f * (cA + cB);
                             separations[i] = Calculus.Dot(cA - cB, normal);
                         }
+                        pointCount = manifold.pointCount;
                         // Ensure normal points from A to B.
                         normal = -normal;
                     }
@@ -278,65 +280,6 @@ namespace CrispyPhysics.Internal
             }
         }
     };
-
-    public struct PointState{
-        public enum State
-        {
-            NullState,
-            AddState,
-            PersistState,
-            RemoveState
-        }
-
-        public static void GetPointStates(
-            ref State[] state1, ref State[] state2,
-            Manifold manifold1, Manifold manifold2)
-        {
-            Debug.Assert(state1.Length == state2.Length);
-            Debug.Assert(state1.Length == manifold1.pointCount);
-            Debug.Assert(manifold1.pointCount == manifold2.pointCount);
-
-            for (int i = 0; i < state1.Length; i++)
-                state1[i] = state2[i] = State.NullState;
-
-            for (int i = 0; i < state2.Length; i++)
-                state2[i] = State.NullState;
-
-            // Detect persists and removes.
-            for (int i = 0; i < manifold1.pointCount; i++)
-            {
-                ContactID id = manifold1.points[i].id;
-
-                state1[i] = State.RemoveState;
-
-                for (int j = 0; j < manifold2.pointCount; j++)
-                {
-                    if (manifold2.points[j].id.key == id.key)
-                    {
-                        state1[i] = State.PersistState;
-                        break;
-                    }
-                }
-            }
-
-            // Detect persists and adds.
-            for (int i = 0; i < manifold2.pointCount; ++i)
-            {
-                ContactID id = manifold2.points[i].id;
-
-                state2[i] = State.AddState;
-
-                for (int j = 0; j < manifold1.pointCount; ++j)
-                {
-                    if (manifold1.points[j].id.key == id.key)
-                    {
-                        state2[i] = State.PersistState;
-                        break;
-                    }
-                }
-            }
-        }
-    }
 
     #endregion
     #region Raycast

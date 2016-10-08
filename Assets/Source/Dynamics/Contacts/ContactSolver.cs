@@ -272,7 +272,7 @@ namespace CrispyPhysics.Internal
                 {
                     vc.AddPoint(new VelocityConstraintPoint(
                         Vector2.zero, Vector2.zero, 0f, 0f, 0f, 0f, 0f));
-                    pc.AddPoint(manifold.points[j].localPoint);
+                    pc.AddPoint(manifold.points[j].point);
                 }
             }
         }
@@ -726,7 +726,7 @@ namespace CrispyPhysics.Internal
                 for (uint j = 0; j < vc.pointCount; j++)
                     manifold.points[j] = new ManifoldPoint(
                         manifold.points[j].id, 
-                        manifold.points[j].localPoint,
+                        manifold.points[j].point,
                         vc.points[j].normalImpulse,
                         vc.points[j].tangentImpulse);
             }

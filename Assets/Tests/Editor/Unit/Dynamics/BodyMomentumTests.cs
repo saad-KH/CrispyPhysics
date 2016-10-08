@@ -83,7 +83,7 @@ namespace CrispyPhysics
             Assert.That(sameMomentum.Same(bodyMomentum));
 
             bodyMomentum.ChangeSituation(Vector2.down, Mathf.PI);
-            Assert.That(!sameMomentum.Same(bodyMomentum));
+            Assert.That(sameMomentum.Same(bodyMomentum) == false);
 
         }
 

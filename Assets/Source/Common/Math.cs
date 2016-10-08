@@ -56,50 +56,6 @@ namespace CrispyPhysics.Internal
     }
     #endregion
 
-    /*#region Sweep
-    public struct Sweep
-    {
-        public Vector2 center0, center;
-        public float angle0, angle;
-        public float alpha0;
-
-        public void Reset(Vector2 center, float angle)
-        {
-            this.center = center0 = center;
-            this.angle = angle0 = angle;
-            alpha0 = 0;
-        }
-
-        public Transformation GetTransform(float beta)
-        {
-            Vector2 position = (1.0f - beta) * center0 + beta * center;
-            Rotation rotation = new Rotation(
-                (1.0f - beta) * angle0 + beta * angle
-            );
-
-            return new Transformation(
-                position,
-                rotation);
-        }
-
-        public void Advance(float alpha)
-        {
-            Debug.Assert(alpha0 < 1f);
-            float beta = (alpha - alpha0) / (1f - alpha0);
-            center0 += beta * (center - center0);
-            angle0 += beta * (angle - angle0);
-            alpha0 = alpha;
-        }
-
-        public void Normalize()
-        {
-            float twoPi = 2f * Mathf.PI;
-            angle0 -= twoPi * Mathf.Floor(angle0 / twoPi);
-            angle -= twoPi * Mathf.Floor(angle / twoPi);
-        }
-    }
-    #endregion*/
-
     #region Matrices
     public struct Matrix2x2
     {
