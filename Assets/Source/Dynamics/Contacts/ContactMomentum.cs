@@ -40,7 +40,17 @@ namespace CrispyPhysics.Internal
 
         public bool Same(ContactMomentum other, float tolerance = 0)
         {
-            return manifold.Same(other.manifold, tolerance);
+            if (        isTouching != other.isTouching
+                   ||   !Calculus.Approximately(tangentSpeed, other.tangentSpeed, tolerance))
+                return false;
+
+            if (manifold == null && other.manifold == null)
+                return true;
+
+            if (manifold != null)
+                return manifold.Same(other.manifold, tolerance);
+
+            return true;
         }
 
     }

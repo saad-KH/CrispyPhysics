@@ -11,7 +11,7 @@ namespace CrispyPhysics
         public static IWorld CreateWorld(
             float fixedStep, float crispyStep, float crispySize,
             Vector2 gravity, uint velocityIterations = 8, uint positionIterations = 3,
-            float maxTranslationSpeed = 100, float maxRotationSpeed = 360)
+            float maxTranslationSpeed = 100f, float maxRotationSpeed = 360f)
         {
             return new World(
                 fixedStep, crispyStep, crispySize,
@@ -35,7 +35,7 @@ namespace CrispyPhysics.Internal
         public World(
             float fixedStep, float crispyStep, float crispySize,
             Vector2 gravity, uint velocityIterations = 8, uint positionIterations = 3,
-            float maxTranslationSpeed = 100, float maxRotationSpeed = 360)
+            float maxTranslationSpeed = 100f, float maxRotationSpeed = 360f)
         {
             if  (   fixedStep < 0
                 ||  Calculus.Approximately(fixedStep, 0f))
@@ -112,7 +112,10 @@ namespace CrispyPhysics.Internal
 
             bodies.Add(newBody);
             opFlags |= OperationFlag.BodyListUpdated;
+            futurTick = tick;
+            opFlags &= OperationFlag.FuturForeseen;
             newBody.FuturCleared += FuturCleared;
+            newBody.UserChangedSituation += UserChangedSituation;
 
             return newBody;
         }
@@ -150,8 +153,9 @@ namespace CrispyPhysics.Internal
         {
             Locked = 0x0001,
             BodyListUpdated = 0x0002,
-            FuturForeseen = 0x0004,
-            Crisped = 0x0008
+            UserChangedBody = 0x0004,
+            FuturForeseen = 0x0008,
+            Crisped = 0x00010
         }
 
         private OperationFlag opFlags;
@@ -170,11 +174,11 @@ namespace CrispyPhysics.Internal
                 throw new SystemException("Maximum system steps reached");
 
             bool clearFutur = 
-                    (opFlags & OperationFlag.FuturForeseen) != OperationFlag.FuturForeseen
-                ||  (opFlags & OperationFlag.BodyListUpdated) == OperationFlag.BodyListUpdated;
+                    (opFlags & OperationFlag.FuturForeseen) != OperationFlag.FuturForeseen;
 
             bool lookForContacts = 
-                (opFlags & OperationFlag.BodyListUpdated) == OperationFlag.BodyListUpdated;
+                    (opFlags & OperationFlag.BodyListUpdated) == OperationFlag.BodyListUpdated
+                ||  (opFlags & OperationFlag.UserChangedBody) == OperationFlag.UserChangedBody;
 
             if (clearFutur)
             {
@@ -286,6 +290,7 @@ namespace CrispyPhysics.Internal
             opFlags &= ~OperationFlag.Locked;
             //opFlags &= ~OperationFlag.Crisped;
             opFlags &= ~OperationFlag.BodyListUpdated;
+            opFlags &= ~OperationFlag.UserChangedBody;
             opFlags |= OperationFlag.FuturForeseen;
 
         }
@@ -477,6 +482,12 @@ namespace CrispyPhysics.Internal
                 futurTick = tick;
                 opFlags &= ~World.OperationFlag.FuturForeseen;
             }
+        }
+
+        private void UserChangedSituation(IBody body, EventArgs args)
+        {
+            if ((opFlags & World.OperationFlag.UserChangedBody) == 0)
+                opFlags |= World.OperationFlag.UserChangedBody;
         }
 
 

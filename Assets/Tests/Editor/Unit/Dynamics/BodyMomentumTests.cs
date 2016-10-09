@@ -22,7 +22,7 @@ namespace CrispyPhysics
         {
             Momentum bodyMomentum = CreateBodyMomentum();
 
-            Assert.That(bodyMomentum.tick, Is.EqualTo(0f));
+            Assert.That(bodyMomentum.tick, Is.EqualTo(0));
             Assert.That(bodyMomentum.force, Is.EqualTo(Vector2.zero));
             Assert.That(bodyMomentum.torque, Is.EqualTo(0f));
             Assert.That(bodyMomentum.linearVelocity, Is.EqualTo(Vector2.zero));
@@ -32,7 +32,7 @@ namespace CrispyPhysics
 
             Momentum newBodyMomentum = new Momentum(1, bodyMomentum);
 
-            Assert.That(newBodyMomentum.tick, Is.EqualTo(1f));
+            Assert.That(newBodyMomentum.tick, Is.EqualTo(1));
             Assert.That(newBodyMomentum.force, Is.EqualTo(bodyMomentum.force));
             Assert.That(newBodyMomentum.torque, Is.EqualTo(bodyMomentum.torque));
             Assert.That(newBodyMomentum.linearVelocity, Is.EqualTo(bodyMomentum.linearVelocity));
@@ -86,28 +86,5 @@ namespace CrispyPhysics
             Assert.That(sameMomentum.Same(bodyMomentum) == false);
 
         }
-
-        /*
-        [Test]
-        public void TransposingValues()
-        {
-            BodyMomentum bodyMomentum = CreateBodyMomentum();
-            bodyMomentum.ChangeSituation(Vector2.one, Mathf.PI/4f);
-            Assert.That(
-                bodyMomentum.GetWorldPoint(Vector2.one),
-                OwnNUnit.Is.EqualTo(new Vector2(1f, 2.414f)).Within(0.001f));
-
-            Assert.That(
-                bodyMomentum.GetWorldVector(Vector2.one),
-                OwnNUnit.Is.EqualTo(new Vector2(0f, 1.414f)).Within(0.001f));
-
-            Assert.That(
-                bodyMomentum.GetLocalPoint(Vector2.zero),
-                OwnNUnit.Is.EqualTo(new Vector2(-1.414f, 0f)).Within(0.001f));
-
-            Assert.That(
-                bodyMomentum.GetLocalVector(Vector2.one),
-                OwnNUnit.Is.EqualTo(new Vector2(1.414f, 0f)).Within(0.001f));
-       }*/
     }
 }

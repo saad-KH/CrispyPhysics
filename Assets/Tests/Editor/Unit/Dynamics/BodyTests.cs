@@ -5,6 +5,7 @@ using UnityEngine;
 namespace CrispyPhysics
 {
     using Internal;
+    using System;
     [TestFixture]
     public class BodyTests
     {
@@ -28,16 +29,25 @@ namespace CrispyPhysics
             Assert.That(body.linearDamping, Is.EqualTo(0f));
             Assert.That(body.angularDamping, Is.EqualTo(0f));
             Assert.That(body.gravityScale, Is.EqualTo(1f));
+            Assert.That(body.friction, Is.EqualTo(0f));
+            Assert.That(body.restitution, Is.EqualTo(1f));
+            Assert.That(body.sensor == false);
 
             Assert.That(body.force, Is.EqualTo(Vector2.zero));
             Assert.That(body.torque, Is.EqualTo(0f));
 
+            Assert.That(body.islandBound == false);
+            Assert.That(body.islandIndex, Is.EqualTo(0));
+
             Assert.That(body.GetInertia(), Is.EqualTo(0f));
+
+            Assert.That(body.GetHashCode() == body.GetHashCode());
 
             IShape shape = ShapeFactory.CreateCircle(1f);
             BodyDefintion bodyDef = new BodyDefintion(
                 BodyType.Dynamic, shape, 5f,
-                0.2f, 0.3f, 0.5f);
+                0.2f, 0.3f, 0.5f,
+                0.2f, 0.8f, true);
 
             Body specifiedBody = new Body(0, 0, Vector2.one, 1f, bodyDef);
 
@@ -56,6 +66,9 @@ namespace CrispyPhysics
             Assert.That(specifiedBody.linearDamping, Is.EqualTo(0.2f));
             Assert.That(specifiedBody.angularDamping, Is.EqualTo(0.3f));
             Assert.That(specifiedBody.gravityScale, Is.EqualTo(0.5f));
+            Assert.That(specifiedBody.friction, Is.EqualTo(0.2f));
+            Assert.That(specifiedBody.restitution, Is.EqualTo(0.8f));
+            Assert.That(specifiedBody.sensor == true);
 
             Assert.That(specifiedBody.force, Is.EqualTo(Vector2.zero));
             Assert.That(specifiedBody.torque, Is.EqualTo(0f));
@@ -70,11 +83,66 @@ namespace CrispyPhysics
             specifiedBody = new Body(0, 0, Vector2.one, 1f, bodyDef);
             Assert.That(specifiedBody.GetInertia(), Is.EqualTo(3.333f).Within(0.001f));
 
+            Assert.That(body.GetHashCode() == specifiedBody.GetHashCode());
+
             bodyDef.type = BodyType.Static;
-            specifiedBody = new Body(0, 0, Vector2.one, 1f, bodyDef);
+            specifiedBody = new Body(1, 0, Vector2.one, 1f, bodyDef);
             Assert.That(specifiedBody.mass, Is.EqualTo(0f).Within(0.001f));
             Assert.That(specifiedBody.invMass, Is.EqualTo(0f).Within(0.001f));
             Assert.That(specifiedBody.GetInertia(), Is.EqualTo(0f).Within(0.001f));
+
+            Assert.That(body.GetHashCode() != specifiedBody.GetHashCode());
+        }
+
+        [Test]
+        public void handlingContactEvents()
+        {
+            Body body = new Body(0, 0, Vector2.zero, 0f, BodyType.Dynamic, null);
+
+            IContact sentContact = Substitute.For<IContact>();
+            IContact receivedContact = null;
+            IContactHandlerDelegate contactDelegate = (sender, args) => receivedContact = sentContact;
+
+            receivedContact = null;
+            body.ContactStartForeseen += contactDelegate;
+            body.NotifyContactStartForeseen(sentContact, EventArgs.Empty);
+            Assert.That(receivedContact, Is.EqualTo(sentContact));
+
+            receivedContact = null;
+            body.ContactStartForeseen -= contactDelegate;
+            body.NotifyContactStartForeseen(sentContact, EventArgs.Empty);
+            Assert.That(receivedContact, Is.EqualTo(null));
+
+            receivedContact = null;
+            body.ContactEndForeseen += contactDelegate;
+            body.NotifyContactEndForeseen(sentContact, EventArgs.Empty);
+            Assert.That(receivedContact, Is.EqualTo(sentContact));
+
+            receivedContact = null;
+            body.ContactEndForeseen -= contactDelegate;
+            body.NotifyContactEndForeseen(sentContact, EventArgs.Empty);
+            Assert.That(receivedContact, Is.EqualTo(null));
+
+            receivedContact = null;
+            body.ContactStarted += contactDelegate;
+            body.NotifyContactStarted(sentContact, EventArgs.Empty);
+            Assert.That(receivedContact, Is.EqualTo(sentContact));
+
+            receivedContact = null;
+            body.ContactStarted -= contactDelegate;
+            body.NotifyContactStarted(sentContact, EventArgs.Empty);
+            Assert.That(receivedContact, Is.EqualTo(null));
+
+            receivedContact = null;
+            body.ContactEnded += contactDelegate;
+            body.NotifyContactEnded(sentContact, EventArgs.Empty);
+            Assert.That(receivedContact, Is.EqualTo(sentContact));
+
+            receivedContact = null;
+            body.ContactEnded -= contactDelegate;
+            body.NotifyContactEnded(sentContact, EventArgs.Empty);
+            Assert.That(receivedContact, Is.EqualTo(null));
+
         }
 
         [Test]
@@ -145,16 +213,31 @@ namespace CrispyPhysics
             Assert.That(kinematicBody.angularVelocity, Is.EqualTo(2f));
 
             //Changing Situation
+            bool bodyWasModfified = false;
+            body.UserChangedSituation += (sender, args) => bodyWasModfified = true;
             body.ChangeSituation(Vector2.down, -1f);
-            staticBody.ChangeSituation(Vector2.down, -1f);
-            kinematicBody.ChangeSituation(Vector2.down, -1f);
 
             Assert.That(body.position, Is.EqualTo(Vector2.down));
             Assert.That(body.angle, Is.EqualTo(-1f));
+            Assert.That(bodyWasModfified);
+
+
+            bool staticBodyWasModfified = false;
+            staticBody.UserChangedSituation += (sender, args) => staticBodyWasModfified = true;
+            staticBody.ChangeSituation(Vector2.down, -1f);
+
             Assert.That(staticBody.position, Is.EqualTo(Vector2.down));
             Assert.That(staticBody.angle, Is.EqualTo(-1f));
+            Assert.That(staticBodyWasModfified);
+
+
+            bool kinematicBodyWasModfified = false;
+            kinematicBody.UserChangedSituation += (sender, args) => kinematicBodyWasModfified = true;
+            kinematicBody.ChangeSituation(Vector2.down, -1f);
+
             Assert.That(kinematicBody.position, Is.EqualTo(Vector2.down));
             Assert.That(kinematicBody.angle, Is.EqualTo(-1f));
+            Assert.That(kinematicBodyWasModfified);
         }
 
         [Test]
@@ -327,6 +410,9 @@ namespace CrispyPhysics
             Assert.That(body.past.force, Is.EqualTo(Vector2.zero));
             Assert.That(body.past.torque, Is.EqualTo(0f));
             Assert.That(body.IsForeseen());
+            Assert.That(body.futur.tick, Is.EqualTo(6));
+            Assert.That(body.futur.force, Is.EqualTo(Vector2.down));
+            Assert.That(body.futur.torque, Is.EqualTo(-1f));
 
             body.Step();
             Assert.That(body.current.tick, Is.EqualTo(4));
@@ -419,6 +505,13 @@ namespace CrispyPhysics
             Assert.That(body.current.tick, Is.EqualTo(0));
             Assert.That(body.force, Is.EqualTo(Vector2.down));
             Assert.That(body.torque, Is.EqualTo(-1f));
+            Assert.That(body.past.tick, Is.EqualTo(0));
+            Assert.That(body.past.force, Is.EqualTo(Vector2.down));
+            Assert.That(body.past.torque, Is.EqualTo(-1f));
+            Assert.That(body.IsForeseen());
+            Assert.That(body.futur.tick, Is.EqualTo(4));
+            Assert.That(body.futur.force, Is.EqualTo(Vector2.down));
+            Assert.That(body.futur.torque, Is.EqualTo(-1f));
 
         }
     }

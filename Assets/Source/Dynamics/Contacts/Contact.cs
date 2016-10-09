@@ -72,7 +72,7 @@ namespace CrispyPhysics.Internal
             momentums = new List<ContactMomentum>();
             momentums.Add(new ContactMomentum(currentTick));
 
-
+            islandBound = false;
             currentIndex = 0;
         }
         #endregion
@@ -87,8 +87,8 @@ namespace CrispyPhysics.Internal
 
         public WorldManifold GetWorldManifold()
         {
-            Debug.Assert(bodyA.shape != null);
-            Debug.Assert(bodyB.shape != null);
+            if (current.manifold == null)
+                return null;
 
             return new WorldManifold(
                 current.manifold,
@@ -161,12 +161,14 @@ namespace CrispyPhysics.Internal
             //It will than hold any new momentum change for this tick
             if (momentums[currentIndex].tick != currentTick)
             {
-                currentIndex++;
+                int sourceIndex = currentIndex;
+                if (momentums[currentIndex].tick < currentTick)
+                    currentIndex++;
                 momentums.Insert(
                     currentIndex,
                     new ContactMomentum(
                         currentTick,
-                        momentums[currentIndex - 1]));
+                        momentums[sourceIndex]));
             }
         }
 
@@ -195,12 +197,14 @@ namespace CrispyPhysics.Internal
             //It will than hold any new momentum change for this tick
             if (momentums[currentIndex].tick != currentTick)
             {
-                currentIndex++;
+                int sourceIndex = currentIndex;
+                if (momentums[currentIndex].tick < currentTick)
+                    currentIndex++;
                 momentums.Insert(
                     currentIndex,
                     new ContactMomentum(
                         currentTick,
-                        momentums[currentIndex - 1]));
+                        momentums[sourceIndex]));
             }
         }
 

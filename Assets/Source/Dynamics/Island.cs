@@ -106,7 +106,7 @@ namespace CrispyPhysics.Internal
             if(contactCount > 0)
             {
                 ContactSolverDefinition contactSolverDef = new ContactSolverDefinition(
-                    step, contacts, contactCount, positions, velocities);
+                    step, contactCount, contacts, positions, velocities);
                 contactSolver = new ContactSolver(contactSolverDef);
                 contactSolver.InitializeVelocityConstraints();
 

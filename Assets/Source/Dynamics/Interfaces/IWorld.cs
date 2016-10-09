@@ -18,7 +18,7 @@ namespace CrispyPhysics
         public WorldDefinition(
             float fixedStep, float crispyStep, float crispySize,
             Vector2 gravity, uint velocityIterations = 8, uint positionIterations = 3,
-            float maxTranslationSpeed = 100, float maxRotationSpeed = 360)
+            float maxTranslationSpeed = 100f, float maxRotationSpeed = 360f)
         {
             this.fixedStep = fixedStep;
             this.crispyStep = crispyStep;

@@ -172,14 +172,14 @@ namespace CrispyPhysics.Internal
     public struct ContactSolverDefinition
     {
         public readonly TimeStep step;
-        public readonly Contact[] contacts;
         public readonly uint count;
+        public readonly Contact[] contacts;
         public readonly Position[] positions;
         public readonly Velocity[] velocities;
 
         public ContactSolverDefinition(
-            TimeStep step, Contact[] contacts,
-            uint count, Position[] positions, Velocity[] velocities)
+            TimeStep step, uint count, Contact[] contacts,
+            Position[] positions, Velocity[] velocities)
         {
             this.step = step;
             this.contacts = contacts;
@@ -195,13 +195,13 @@ namespace CrispyPhysics.Internal
     {
         #region Constructors
         public ContactSolver(
-            TimeStep step, Contact[] contacts,
-            uint count, Position[] positions, Velocity[] velocities)
+            TimeStep step,  uint count, Contact[] contacts,
+            Position[] positions, Velocity[] velocities)
         {
-            if (contacts == null)
-                throw new ArgumentNullException("contacts should not be null");
             if (count <= 0)
                 throw new ArgumentOutOfRangeException("Count should be greater than 0");
+            if (contacts == null)
+                throw new ArgumentNullException("contacts should not be null");
             if (positions == null)
                 throw new ArgumentNullException("positions should not be null");
             if (velocities == null)
@@ -220,6 +220,7 @@ namespace CrispyPhysics.Internal
             for (uint i = 0; i < count; i++)
             {
                 Contact contact = contacts[i];
+                Debug.Assert(contact != null);
                 Debug.Assert(contact.futur.manifold != null);
                 Debug.Assert(contact.futur.manifold.pointCount > 0);
                 Debug.Assert(contact.bodyA != null);
@@ -278,7 +279,7 @@ namespace CrispyPhysics.Internal
         }
 
         public ContactSolver(ContactSolverDefinition csDef) : this (
-            csDef.step, csDef.contacts, csDef.count, csDef.positions, csDef.velocities)
+            csDef.step, csDef.count, csDef.contacts, csDef.positions, csDef.velocities)
         {}
         #endregion
 

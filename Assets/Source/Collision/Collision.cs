@@ -199,6 +199,9 @@ namespace CrispyPhysics.Internal
             Transformation transformA, float radiusA,
             Transformation transformB, float radiusB)
         {
+            if (manifold == null)
+                throw new ArgumentNullException("manifold should not be null");
+
             if (manifold.pointCount == 0)
                 return;
 

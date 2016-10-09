@@ -61,30 +61,31 @@ namespace CrispyPhysics.Internal
 
         #region Events
         public event BodyHandlerDelegate FuturCleared;
+        public event BodyHandlerDelegate UserChangedSituation;
         public event IContactHandlerDelegate ContactStartForeseen;
         public event IContactHandlerDelegate ContactEndForeseen;
         public event IContactHandlerDelegate ContactStarted;
         public event IContactHandlerDelegate ContactEnded;
 
-        public void NotifyContactStartForeseen(Contact contact, EventArgs args)
+        public void NotifyContactStartForeseen(IContact contact, EventArgs args)
         {
             if (ContactStartForeseen != null)
                 ContactStartForeseen(contact, args);
         }
 
-        public void NotifyContactEndForeseen(Contact contact, EventArgs args)
+        public void NotifyContactEndForeseen(IContact contact, EventArgs args)
         {
             if (ContactEndForeseen != null)
                 ContactEndForeseen(contact, args);
         }
 
-        public void NotifyContactStarted(Contact contact, EventArgs args)
+        public void NotifyContactStarted(IContact contact, EventArgs args)
         {
             if (ContactStarted != null)
                 ContactStarted(contact, args);
         }
 
-        public void NotifyContactEnded(Contact contact, EventArgs args)
+        public void NotifyContactEnded(IContact contact, EventArgs args)
         {
             if (ContactEnded != null)
                 ContactEnded(contact, args);
@@ -105,10 +106,12 @@ namespace CrispyPhysics.Internal
         {
             return id.GetHashCode();
         }
+
         public override bool Equals(object obj)
         {
             return Equals(obj as Body);
         }
+
         public bool Equals(IBody obj)
         {
             return obj != null && obj.id == this.id;
@@ -129,8 +132,6 @@ namespace CrispyPhysics.Internal
         private void DefineShape(IShape shape)
         {
             this.shape = shape;
-            //Debug.Assert(false, "Search Contacts");
-            //Debug.Assert(false, "Broad Phase");
             if (type == BodyType.Dynamic)
                 CalculateInertia();
         }
@@ -205,7 +206,8 @@ namespace CrispyPhysics.Internal
         {
             ClearFutur();
             momentums[currentIndex].ChangeSituation(position, angle);
-            //Debug.Assert(false, "Broad Phase");
+            if (UserChangedSituation != null)
+                UserChangedSituation(this, EventArgs.Empty);
         }
 
         public void ApplyForce(Vector2 force, Vector2 point)
@@ -322,13 +324,15 @@ namespace CrispyPhysics.Internal
             //It will than hold any new momentum change for this tick
             if (momentums[currentIndex].tick != currentTick)
             {
-                currentIndex++;
+                int sourceIndex = currentIndex;
+                if(momentums[currentIndex].tick < currentTick)
+                    currentIndex++;
                 momentums.Insert(
                     currentIndex,
                     new Momentum(
                         currentTick,
-                        momentums[currentIndex - 1]));
-            }    
+                        momentums[sourceIndex]));
+            }
         }
 
         public void RollBack(uint toTick)
@@ -356,12 +360,14 @@ namespace CrispyPhysics.Internal
             //It will than hold any new momentum change for this tick
             if (momentums[currentIndex].tick != currentTick)
             {
-                currentIndex++;
+                int sourceIndex = currentIndex;
+                if (momentums[currentIndex].tick < currentTick)
+                    currentIndex++;
                 momentums.Insert(
                     currentIndex,
                     new Momentum(
                         currentTick,
-                        momentums[currentIndex - 1]));
+                        momentums[sourceIndex]));
             }
         }
 
