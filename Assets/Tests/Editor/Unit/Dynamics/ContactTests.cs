@@ -26,7 +26,7 @@ namespace CrispyPhysics
 
             IShape shapeA = ShapeFactory.CreateCircle(1f);
             bodyA = new Body(
-                0, 0, Vector2.zero, 0f, BodyType.Dynamic, shapeA,
+                3, 0, Vector2.zero, 0f, BodyType.Dynamic, shapeA,
                 1f, 0f, 0f, 1f, 0.2f, 0.8f, false);
 
             Assert.Throws<ArgumentException>(
@@ -34,7 +34,7 @@ namespace CrispyPhysics
 
             IShape shapeB = ShapeFactory.CreateCircle(1f);
             bodyB = new Body(
-                0, 0, Vector2.zero, 0f, BodyType.Dynamic, shapeB,
+                4, 0, Vector2.zero, 0f, BodyType.Dynamic, shapeB,
                 1f, 0f, 0f, 1f, 0.4f, 0.6f, false);
 
             Contact contact = ContactFactory.CreateContact(0, bodyA, bodyB);
@@ -52,18 +52,36 @@ namespace CrispyPhysics
 
 
             shapeB = ShapeFactory.CreateEdge(Vector2.left, Vector2.right);
-            bodyB = new Body( 0, 0, Vector2.zero, 0f, BodyType.Dynamic, shapeB);
+            bodyB = new Body( 5, 0, Vector2.zero, 0f, BodyType.Dynamic, shapeB);
             contact = ContactFactory.CreateContact(0, bodyA, bodyB);
             Assert.That(contact is EdgeAndCircleContact);
+            Assert.That(contact.bodyA, Is.EqualTo(bodyB));
+            Assert.That(contact.firstBody, Is.EqualTo(bodyB));
+            Assert.That(contact.bodyB, Is.EqualTo(bodyA));
+            Assert.That(contact.secondBody, Is.EqualTo(bodyA));
+
             contact = ContactFactory.CreateContact(0, bodyB, bodyA);
             Assert.That(contact is EdgeAndCircleContact);
+            Assert.That(contact.bodyA, Is.EqualTo(bodyB));
+            Assert.That(contact.firstBody, Is.EqualTo(bodyB));
+            Assert.That(contact.bodyB, Is.EqualTo(bodyA));
+            Assert.That(contact.secondBody, Is.EqualTo(bodyA));
 
             shapeB = ShapeFactory.CreateBox(1f, 1f);
-            bodyB = new Body(0, 0, Vector2.zero, 0f, BodyType.Dynamic, shapeB);
+            bodyB = new Body(6, 0, Vector2.zero, 0f, BodyType.Dynamic, shapeB);
             contact = ContactFactory.CreateContact(0, bodyA, bodyB);
             Assert.That(contact is PolygonAndCircleContact);
+            Assert.That(contact.bodyA, Is.EqualTo(bodyB));
+            Assert.That(contact.firstBody, Is.EqualTo(bodyB));
+            Assert.That(contact.bodyB, Is.EqualTo(bodyA));
+            Assert.That(contact.secondBody, Is.EqualTo(bodyA));
+
             contact = ContactFactory.CreateContact(0, bodyB, bodyA);
             Assert.That(contact is PolygonAndCircleContact);
+            Assert.That(contact.bodyA, Is.EqualTo(bodyB));
+            Assert.That(contact.firstBody, Is.EqualTo(bodyB));
+            Assert.That(contact.bodyB, Is.EqualTo(bodyA));
+            Assert.That(contact.secondBody, Is.EqualTo(bodyA));
         }
 
         [Test]
@@ -312,7 +330,7 @@ namespace CrispyPhysics
                 0, 0, Vector2.zero, 0f, BodyType.Dynamic, circle,
                 1f, 0f, 0f, 1f, 0.2f, 0.8f, false);
             Body bodyB = new Body(
-                0, 0, Vector2.zero, 0f, BodyType.Dynamic, otherCircle,
+                1, 0, Vector2.zero, 0f, BodyType.Dynamic, otherCircle,
                 1f, 0f, 0f, 1f, 0.4f, 0.6f, false);
 
             Contact contact = ContactFactory.CreateContact(0, bodyA, bodyB);
@@ -345,13 +363,13 @@ namespace CrispyPhysics
             contact = ContactFactory.CreateContact(0, bodyA, bodyB);
 
             mf = contact.Evaluate(
-                new Transformation(new Vector2(1f, 1f), 0f),
-                new Transformation(new Vector2(-1f, 1f), 0f));
+                new Transformation(new Vector2(-1f, 1f), 0f),
+                new Transformation(new Vector2(1f, 1f), 0f));
 
             Assert.That(mf != null);
             Assert.That(mf.type, Is.EqualTo(Manifold.Type.FaceA));
-            Assert.That(mf.point, Is.EqualTo(Vector2.left));
-            Assert.That(mf.normal, Is.EqualTo(Vector2.left));
+            Assert.That(mf.point, Is.EqualTo(Vector2.right));
+            Assert.That(mf.normal, Is.EqualTo(Vector2.right));
             Assert.That(mf.pointCount, Is.EqualTo(1));
             Assert.That(mf.points[0].point, Is.EqualTo(Vector2.zero));
 
@@ -370,21 +388,34 @@ namespace CrispyPhysics
             contact = ContactFactory.CreateContact(0, bodyA, bodyB);
 
             mf = contact.Evaluate(
-                new Transformation(new Vector2(1f, 1f), 0f),
-                new Transformation(new Vector2(0f, 1f), 0f));
+                new Transformation(new Vector2(0f, 1f), 0f),
+                new Transformation(new Vector2(1f, 1f), 0f));
 
             Assert.That(mf != null);
             Assert.That(mf.type, Is.EqualTo(Manifold.Type.FaceA));
             Assert.That(mf.point, Is.EqualTo(new Vector2(0f, -1f)));
-            Assert.That(mf.normal, Is.EqualTo(Vector2.left));
+            Assert.That(mf.normal, Is.EqualTo(Vector2.right));
             Assert.That(mf.pointCount, Is.EqualTo(1));
             Assert.That(mf.points[0].point, Is.EqualTo(Vector2.zero));
             Assert.That(mf.points[0].id.feature.indexA, Is.EqualTo(0));
             Assert.That(mf.points[0].id.feature.typeA, Is.EqualTo((byte)ContactFeature.Type.Face));
 
             mf = contact.Evaluate(
-               new Transformation(new Vector2(1f, 1f), 0f),
-               new Transformation(new Vector2(0f, 2f), 0f));
+               new Transformation(new Vector2(0f, 2f), 0f),
+               new Transformation(new Vector2(1, 1f), 0f));
+
+            Assert.That(mf != null);
+            Assert.That(mf.type, Is.EqualTo(Manifold.Type.Circles));
+            Assert.That(mf.point, Is.EqualTo(new Vector2(0f, -1f)));
+            Assert.That(mf.normal, Is.EqualTo(Vector2.zero));
+            Assert.That(mf.pointCount, Is.EqualTo(1));
+            Assert.That(mf.points[0].point, Is.EqualTo(Vector2.zero));
+            Assert.That(mf.points[0].id.feature.indexA, Is.EqualTo(0));
+            Assert.That(mf.points[0].id.feature.typeA, Is.EqualTo((byte)ContactFeature.Type.Vertex));
+
+            mf = contact.Evaluate(
+               new Transformation(new Vector2(0f, 0f), 0f),
+               new Transformation(new Vector2(1f, 1f), 0f));
 
             Assert.That(mf != null);
             Assert.That(mf.type, Is.EqualTo(Manifold.Type.Circles));
@@ -396,21 +427,8 @@ namespace CrispyPhysics
             Assert.That(mf.points[0].id.feature.typeA, Is.EqualTo((byte)ContactFeature.Type.Vertex));
 
             mf = contact.Evaluate(
-               new Transformation(new Vector2(1f, 1f), 0f),
-               new Transformation(new Vector2(0f, 0f), 0f));
-
-            Assert.That(mf != null);
-            Assert.That(mf.type, Is.EqualTo(Manifold.Type.Circles));
-            Assert.That(mf.point, Is.EqualTo(new Vector2(0f, -1f)));
-            Assert.That(mf.normal, Is.EqualTo(Vector2.zero));
-            Assert.That(mf.pointCount, Is.EqualTo(1));
-            Assert.That(mf.points[0].point, Is.EqualTo(Vector2.zero));
-            Assert.That(mf.points[0].id.feature.indexA, Is.EqualTo(0));
-            Assert.That(mf.points[0].id.feature.typeA, Is.EqualTo((byte)ContactFeature.Type.Vertex));
-
-            mf = contact.Evaluate(
-               new Transformation(new Vector2(2f, 1f), 0f),
-               new Transformation(new Vector2(-1f, 1f), 0f));
+               new Transformation(new Vector2(-1f, 1f), 0f),
+               new Transformation(new Vector2(2f, 1f), 0f));
 
             Assert.That(mf == null);
         }

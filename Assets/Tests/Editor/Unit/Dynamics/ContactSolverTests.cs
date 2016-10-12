@@ -131,6 +131,37 @@ namespace CrispyPhysics
             Assert.Throws<ArgumentNullException>(
                 delegate { new ContactSolver(ts, 1, contacts, positions, null); });
 
+
+            IShape circleShape = new CircleShape(Vector2.zero, 1f);
+            IShape edgeShape = new EdgeShape(Vector2.left, Vector2.right);
+
+            Body circleBody = new Body(
+                0, 0, new Vector2(0.5f, 1f), 0f, BodyType.Dynamic, circleShape,
+                1f, 0f, 0f, 1f, 0.2f, 0.8f, false);
+
+            circleBody.futur.ChangeVelocity(Vector2.one * -1, 0.5f);
+
+            Body edgeBody = new Body(
+               0, 0, Vector2.zero, 0f, BodyType.Static, edgeShape,
+               1f, 0f, 0f, 1f, 0.4f, 0.6f, false);
+
+            Contact contact = ContactFactory.CreateContact(0, circleBody, edgeBody);
+            Manifold mf = contact.Evaluate(contact.bodyA.futur.transform, contact.bodyB.futur.transform);
+            contact.futur.Change(mf, 0f, true);
+
+            contacts[0] = contact;
+
+            circleBody.islandIndex = 0;
+            edgeBody.islandIndex = 1;
+
+            positions[0] = new Position(circleBody.futur.position, circleBody.futur.angle);
+            positions[1] = new Position(edgeBody.futur.position, edgeBody.futur.angle);
+
+            velocities[0] = new Velocity(circleBody.futur.linearVelocity, circleBody.futur.angularVelocity);
+            velocities[1] = new Velocity(edgeBody.futur.linearVelocity, edgeBody.futur.angularVelocity);
+
+
+
             ContactSolver cs = new ContactSolver(ts, 1, contacts, positions, velocities);
 
             Assert.That(cs.step, Is.EqualTo(ts));
@@ -142,6 +173,59 @@ namespace CrispyPhysics
             Assert.That(cs.positionConstraints.Length, Is.EqualTo(1));
             Assert.That(cs.velocityConstraints != null);
             Assert.That(cs.velocityConstraints.Length, Is.EqualTo(1));
+
+            Assert.That(cs.positionConstraints[0].centerA, Is.EqualTo(Vector2.zero));
+            Assert.That(cs.positionConstraints[0].centerB, Is.EqualTo(Vector2.zero));
+            Assert.That(cs.positionConstraints[0].indexA, Is.EqualTo(1));
+            Assert.That(cs.positionConstraints[0].indexB, Is.EqualTo(0));
+            Assert.That(cs.positionConstraints[0].invIA, Is.EqualTo(0f));
+            Assert.That(cs.positionConstraints[0].invIB, Is.EqualTo(2f));
+            Assert.That(cs.positionConstraints[0].invMassA, Is.EqualTo(0f));
+            Assert.That(cs.positionConstraints[0].invMassB, Is.EqualTo(1f));
+            Assert.That(cs.positionConstraints[0].normal, Is.EqualTo(Vector2.up));
+            Assert.That(cs.positionConstraints[0].point, Is.EqualTo(Vector2.left));
+            Assert.That(cs.positionConstraints[0].pointCount, Is.EqualTo(1));
+            Assert.That(cs.positionConstraints[0].points[0], Is.EqualTo(Vector2.zero));
+            Assert.That(cs.positionConstraints[0].radiusA, Is.EqualTo(Constants.polygonRadius));
+            Assert.That(cs.positionConstraints[0].radiusB, Is.EqualTo(1f));
+
+            Assert.That(cs.velocityConstraints[0].contactIndex, Is.EqualTo(0));
+            Assert.That(cs.velocityConstraints[0].normal, Is.EqualTo(Vector2.zero));
+            Assert.That(cs.velocityConstraints[0].normalMass, Is.EqualTo(Matrix2x2.zero));
+            Assert.That(cs.velocityConstraints[0].K, Is.EqualTo(Matrix2x2.zero));
+            Assert.That(cs.velocityConstraints[0].indexA, Is.EqualTo(1));
+            Assert.That(cs.velocityConstraints[0].indexB, Is.EqualTo(0));
+            Assert.That(cs.velocityConstraints[0].invIA, Is.EqualTo(0f));
+            Assert.That(cs.velocityConstraints[0].invIB, Is.EqualTo(2f));
+            Assert.That(cs.velocityConstraints[0].invMassA, Is.EqualTo(0f));
+            Assert.That(cs.velocityConstraints[0].invMassB, Is.EqualTo(1f));
+            Assert.That(
+                cs.velocityConstraints[0].friction, 
+                Is.EqualTo(Mathf.Sqrt(circleBody.friction * edgeBody.friction)).Within(0.001f));
+            Assert.That(cs.velocityConstraints[0].restitution, Is.EqualTo(0.8f));
+            Assert.That(cs.velocityConstraints[0].tangentSpeed, Is.EqualTo(0f));
+            Assert.That(cs.velocityConstraints[0].pointCount, Is.EqualTo(1));
+            Assert.That(cs.velocityConstraints[0].points[0].rA, Is.EqualTo(Vector2.zero));
+            Assert.That(cs.velocityConstraints[0].points[0].rB, Is.EqualTo(Vector2.zero));
+            Assert.That(cs.velocityConstraints[0].points[0].normalImpulse, Is.EqualTo(0f));
+            Assert.That(cs.velocityConstraints[0].points[0].tangentImpulse, Is.EqualTo(0f));
+            Assert.That(cs.velocityConstraints[0].points[0].normalMass, Is.EqualTo(0f));
+            Assert.That(cs.velocityConstraints[0].points[0].tangentMass, Is.EqualTo(0f));
+            Assert.That(cs.velocityConstraints[0].points[0].velocityBias, Is.EqualTo(0f));
+
+            cs.InitializeVelocityConstraints();
+
+            Assert.That(
+                cs.velocityConstraints[0].points[0].rA, 
+                OwnNUnit.Is.EqualTo(new Vector2(0.5f, 0.005f)).Within(0.001f));
+            Assert.That(
+                cs.velocityConstraints[0].points[0].rB,
+                OwnNUnit.Is.EqualTo(new Vector2(0.0f, -0.995f)).Within(0.001f));
+            Assert.That(cs.velocityConstraints[0].points[0].normalImpulse, Is.EqualTo(0f));
+            Assert.That(cs.velocityConstraints[0].points[0].tangentImpulse, Is.EqualTo(0f));
+            Assert.That(cs.velocityConstraints[0].points[0].normalMass, Is.EqualTo(1f));
+            Assert.That(cs.velocityConstraints[0].points[0].tangentMass, Is.EqualTo(0.335f).Within(0.001f));
+            Assert.That(cs.velocityConstraints[0].points[0].velocityBias, Is.EqualTo(0f));
         }
     }
 }
