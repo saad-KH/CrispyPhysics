@@ -227,5 +227,74 @@ namespace CrispyPhysics
             Assert.That(cs.velocityConstraints[0].points[0].tangentMass, Is.EqualTo(0.335f).Within(0.001f));
             Assert.That(cs.velocityConstraints[0].points[0].velocityBias, Is.EqualTo(0f));
         }
+
+        [Test]
+        public void usingContactSolver()
+        {
+            TimeStep ts = new TimeStep(0.01f, 100f, 1f, new Vector2(0f, -10f), 8, 3, 100f, 360f);
+            Contact[] contacts = new Contact[1];
+            Position[] positions = new Position[2];
+            Velocity[] velocities = new Velocity[2];
+
+            IShape circleShape = new CircleShape(Vector2.zero, 1f);
+            IShape edgeShape = new EdgeShape(Vector2.left, Vector2.right);
+
+            Body circleBody = new Body(
+                0, 0, new Vector2(0.5f, 1f), 0f, BodyType.Dynamic, circleShape,
+                1f, 0f, 0f, 1f, 0.2f, 0.8f, false);
+
+            circleBody.futur.ChangeVelocity(Vector2.one * -10, 0.5f);
+
+            Body edgeBody = new Body(
+               0, 0, Vector2.zero, 0f, BodyType.Static, edgeShape,
+               1f, 0f, 0f, 1f, 0.4f, 0.6f, false);
+
+            Contact contact = ContactFactory.CreateContact(0, circleBody, edgeBody);
+            Manifold mf = contact.Evaluate(contact.bodyA.futur.transform, contact.bodyB.futur.transform);
+            contact.futur.Change(mf, 0f, true);
+
+            contacts[0] = contact;
+
+            circleBody.islandIndex = 0;
+            edgeBody.islandIndex = 1;
+
+            positions[0] = new Position(circleBody.futur.position, circleBody.futur.angle);
+            positions[1] = new Position(edgeBody.futur.position, edgeBody.futur.angle);
+
+            velocities[0] = new Velocity(circleBody.futur.linearVelocity, circleBody.futur.angularVelocity);
+            velocities[1] = new Velocity(edgeBody.futur.linearVelocity, edgeBody.futur.angularVelocity);
+
+
+
+            ContactSolver cs = new ContactSolver(ts, 1, contacts, positions, velocities);
+
+            cs.InitializeVelocityConstraints();
+
+            for (uint i = 0; i < ts.velocityIterations; i++)
+                cs.SolveVelocityConstraints();
+
+            Assert.That(
+                velocities[0].linearVelocity,
+                OwnNUnit.Is.EqualTo(new Vector2(-6.8112f, 8.0f)).Within(0.001f));
+
+            Assert.That(velocities[0].angularVelocity, Is.EqualTo(6.845f).Within(0.001f));
+
+            Assert.That(velocities[1].linearVelocity, Is.EqualTo(Vector2.zero));
+
+            Assert.That(velocities[1].angularVelocity, Is.EqualTo(0f));
+
+            for (uint i = 0; i < ts.positionIterations; i++)
+                cs.SolvePositionConstraints();
+
+            Assert.That(
+                positions[0].center,
+                OwnNUnit.Is.EqualTo(new Vector2(0.5f, 1.002f)).Within(0.001f));
+
+            Assert.That(positions[0].angle, Is.EqualTo(0f).Within(0.001f));
+
+            Assert.That(positions[1].center, Is.EqualTo(Vector2.zero));
+
+            Assert.That(positions[1].angle, Is.EqualTo(0f));
+        }
     }
 }
