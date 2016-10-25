@@ -1,6 +1,5 @@
 using UnityEngine;
 using System;
-using System.Collections.Generic;
 
 namespace CrispyPhysics.Internal
 {
@@ -43,11 +42,15 @@ namespace CrispyPhysics.Internal
 
     		foreach(Body body in bodyIterator())
     		{
+                i++;
                 if (body.shape == null)
                     continue;
+                    
 
                 AABB aabb = body.shape.computeAABB(body.futur.transform);
-    			foreach(Body pairBody in bodyIterator(i + 1)){
+    			foreach(Body pairBody in bodyIterator(i)){
+                    if (pairBody == body)
+                        continue;
                     if (pairBody.shape == null)
                         continue;
 
@@ -56,7 +59,7 @@ namespace CrispyPhysics.Internal
                     if(Collision.TestOverlap(aabb, pairAabb))
                         newPair(body, pairBody);
                 }
-    			i++;
+
     		}
     	}
 
