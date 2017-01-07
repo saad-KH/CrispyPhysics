@@ -34,3 +34,5 @@ UnityTestTools.meta
 #Sublime
 *.sublime-workspace
 *.sublime-project
+.vscode/launch.json
+.vscode/settings.json

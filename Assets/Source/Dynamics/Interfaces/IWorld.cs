@@ -60,11 +60,13 @@ namespace CrispyPhysics
         #endregion
 
         #region Body Manager
-        IBody CreateBody( 
+        IBody CreateBody(
             Vector2 position, float angle,
             BodyType type, IShape shape, float mass = 1f,
             float linearDamping = 0f, float angularDamping = 0f,
-            float gravityScale = 1f);
+            float gravityScale = 1f,
+            float friction = 0f, float restitution = 1f,
+            bool sensor = false);
 
         IBody CreateBody(
             Vector2 position, float angle,

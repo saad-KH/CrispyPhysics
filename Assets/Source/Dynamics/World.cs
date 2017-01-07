@@ -97,7 +97,9 @@ namespace CrispyPhysics.Internal
             Vector2 position, float angle,
             BodyType type, IShape shape, float mass = 1f,
             float linearDamping = 0f, float angularDamping = 0f,
-            float gravityScale = 1f)
+            float gravityScale = 1f,
+            float friction = 0f, float restitution = 1f,
+            bool sensor = false)
         {
             if (bodyCount >= uint.MaxValue)
                 throw new SystemException("Maximum Body Possible to create reached");
@@ -107,13 +109,15 @@ namespace CrispyPhysics.Internal
                 position, angle,
                 type, shape, mass,
                 linearDamping, angularDamping,
-                gravityScale
+                gravityScale,
+                friction, restitution,
+                sensor
             );
 
             bodies.Add(newBody);
             opFlags |= OperationFlag.BodyListUpdated;
             futurTick = tick;
-            opFlags &= OperationFlag.FuturForeseen;
+            opFlags &= ~OperationFlag.FuturForeseen;
             newBody.FuturCleared += FuturCleared;
             newBody.UserChangedSituation += UserChangedSituation;
 
@@ -128,7 +132,9 @@ namespace CrispyPhysics.Internal
                 position, angle,
                 bodyDef.type, bodyDef.shape, bodyDef.mass,
                 bodyDef.linearDamping, bodyDef.angularDamping,
-                bodyDef.gravityScale);
+                bodyDef.gravityScale, 
+                bodyDef.friction, bodyDef.restitution, 
+                bodyDef.sensor);
         }
         #endregion
 
@@ -194,28 +200,27 @@ namespace CrispyPhysics.Internal
 
             uint iterationsToSolve = 0;
             if (futurTick < tick)
-            {
-                iterationsToSolve = steps;
-                futurTick = tick;
-            }
-
-            uint iterationsToForesee = 0;
-            if (tick + foreseeTicks > futurTick)
-                iterationsToForesee = (uint) 
+                iterationsToSolve =  
+                        tick 
+                    -   futurTick
+                    +   (uint) Mathf.Min(foreseeTicks, bufferingTicks);
+            else
+                iterationsToSolve = (uint) 
                     Mathf.Min(
                         tick + foreseeTicks - futurTick,
                         bufferingTicks);
-
-            futurTick  += iterationsToForesee;
-            iterationsToSolve += iterationsToForesee;
-
+            
             for (int i = 0; i < iterationsToSolve; i++)
             {
+                futurTick++;
+                
                 foreach (Body body in bodies)
-                    body.Foresee();
+                    if(body.futur.tick < futurTick)
+                        body.Foresee(futurTick - body.futur.tick);
 
                 foreach (Contact contact in contacts)
-                    contact.Foresee();
+                    if(contact.futur.tick < futurTick)
+                        contact.Foresee(futurTick - contact.futur.tick);
 
                 if (lookForContacts)
                 {
@@ -230,22 +235,27 @@ namespace CrispyPhysics.Internal
 
             foreach (Body body in bodies)
             {
-                body.Step(steps);
+                if(body.current.tick < tick)
+                    body.Step(tick - body.current.tick);
+
                 body.ForgetPast(pastTick);
 
-                Debug.Assert(body.current.tick == tick);
-                Debug.Assert(body.futur.tick == futurTick);
+                Debug.Assert(body.current.tick >= tick);
+                Debug.Assert(body.futur.tick >= futurTick);
             }
 
             HashSet<Contact> contactsToRemove = new HashSet<Contact>();
             foreach (Contact contact in contacts)
             {
                 bool wasTouching = contact.current.isTouching;
-                contact.Step(steps);
+
+                if(contact.current.tick < tick)
+                    contact.Step(tick - contact.current.tick);
+                
                 contact.ForgetPast(pastTick);
 
-                Debug.Assert(contact.current.tick == tick);
-                Debug.Assert(contact.futur.tick == futurTick);
+                Debug.Assert(contact.current.tick >= tick);
+                Debug.Assert(contact.futur.tick >= futurTick);
 
                 if(wasTouching == false && contact.current.isTouching == true)
                 {

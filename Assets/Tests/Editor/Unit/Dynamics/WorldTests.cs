@@ -53,7 +53,15 @@ namespace CrispyPhysics
             World world = new World(0.01f, 0.01f, 0.001f, new Vector2(-10f, -10f));
 
             Body body = 
-                    world.CreateBody(Vector2.zero, 0f, BodyType.Dynamic, null) 
+                    world.CreateBody(Vector2.zero, 0f, BodyType.Dynamic, 
+                    ShapeFactory.CreateCircle(1f),
+                    1f, 0.2f, 0.2f, 1f, 0.2f, 0.95f)
+                as Body;
+
+            Body colliderBody =
+                    world.CreateBody(new Vector2(-2.5f, -2.5f), 0f, BodyType.Static,
+                    ShapeFactory.CreateEdge(new Vector2(-2f, 2f), new Vector2(2f, -2f)),
+                    1, 0, 0, 1, 0, 0.8f)
                 as Body;
 
             world.Step();
@@ -81,26 +89,50 @@ namespace CrispyPhysics
             Assert.That(body.current.tick, Is.EqualTo(100));
             Assert.That(
                 body.linearVelocity,
-                OwnNUnit.Is.EqualTo(new Vector2(-10f,-10f)).Within(0.001f));
+                OwnNUnit.Is.EqualTo(new Vector2(1.473f, 1.473f)).Within(0.001f));
             Assert.That(
                 body.position,
-                OwnNUnit.Is.EqualTo(new Vector2(-5.049f, -5.049f)).Within(0.001f));
+                OwnNUnit.Is.EqualTo(new Vector2(-0.457f, -0.457f)).Within(0.001f));
 
             Assert.That(body.past.tick, Is.EqualTo(world.pastTick));
             Assert.That(
                 body.past.linearVelocity,
-                OwnNUnit.Is.EqualTo(new Vector2(-4.999f, -4.999f)).Within(0.001f));
+                OwnNUnit.Is.EqualTo(new Vector2(-4.753f, -4.753f)).Within(0.001f));
             Assert.That(
                 body.past.position,
-                OwnNUnit.Is.EqualTo(new Vector2(-1.274f, -1.274f)).Within(0.001f));
+                OwnNUnit.Is.EqualTo(new Vector2(-1.231f, -1.231f)).Within(0.001f));
 
             Assert.That(body.futur.tick, Is.EqualTo(world.futurTick));
             Assert.That(
                 body.futur.linearVelocity,
-                OwnNUnit.Is.EqualTo(new Vector2(-15f, -15f)).Within(0.001f));
+                OwnNUnit.Is.EqualTo(new Vector2(-3.419f, -3.419f)).Within(0.001f));
             Assert.That(
                 body.futur.position,
-                OwnNUnit.Is.EqualTo(new Vector2(-11.325f, -11.325f)).Within(0.001f));
+                OwnNUnit.Is.EqualTo(new Vector2(-0.988f, -0.988f)).Within(0.001f));
+
+            Assert.That(colliderBody.current.tick, Is.EqualTo(100));
+            Assert.That(
+                colliderBody.linearVelocity,
+                OwnNUnit.Is.EqualTo(new Vector2(0f, 0f)).Within(0.001f));
+            Assert.That(
+                colliderBody.position,
+                OwnNUnit.Is.EqualTo(new Vector2(-2.5f, -2.5f)).Within(0.001f));
+
+            Assert.That(colliderBody.past.tick, Is.EqualTo(world.pastTick));
+            Assert.That(
+                colliderBody.past.linearVelocity,
+                OwnNUnit.Is.EqualTo(new Vector2(0f, 0f)).Within(0.001f));
+            Assert.That(
+                colliderBody.past.position,
+                OwnNUnit.Is.EqualTo(new Vector2(-2.5f, -2.5f)).Within(0.001f));
+
+            Assert.That(colliderBody.futur.tick, Is.EqualTo(world.futurTick));
+            Assert.That(
+                colliderBody.linearVelocity,
+                 OwnNUnit.Is.EqualTo(new Vector2(0f, 0f)).Within(0.001f));
+            Assert.That(
+                colliderBody.futur.position,
+                OwnNUnit.Is.EqualTo(new Vector2(-2.5f, -2.5f)).Within(0.001f));
 
             world.RollBack(50);
             Assert.That(world.tick, Is.EqualTo(50));
@@ -110,26 +142,26 @@ namespace CrispyPhysics
             Assert.That(body.current.tick, Is.EqualTo(50));
             Assert.That(
                 body.current.linearVelocity,
-                OwnNUnit.Is.EqualTo(new Vector2(-4.999f, -4.999f)).Within(0.001f));
+                OwnNUnit.Is.EqualTo(new Vector2(-4.753f, -4.753f)).Within(0.001f));
             Assert.That(
                 body.current.position,
-                OwnNUnit.Is.EqualTo(new Vector2(-1.274f, -1.274f)).Within(0.001f));
+                OwnNUnit.Is.EqualTo(new Vector2(-1.231f, -1.231f)).Within(0.001f));
 
             Assert.That(body.past.tick, Is.EqualTo(50));
             Assert.That(
                 body.past.linearVelocity,
-                OwnNUnit.Is.EqualTo(new Vector2(-4.999f, -4.999f)).Within(0.001f));
+                OwnNUnit.Is.EqualTo(new Vector2(-4.753f, -4.753f)).Within(0.001f));
             Assert.That(
                 body.past.position,
-                OwnNUnit.Is.EqualTo(new Vector2(-1.274f, -1.274f)).Within(0.001f));
+                OwnNUnit.Is.EqualTo(new Vector2(-1.231f, -1.231f)).Within(0.001f));
 
             Assert.That(body.futur.tick, Is.EqualTo(150));
             Assert.That(
                 body.futur.linearVelocity,
-                OwnNUnit.Is.EqualTo(new Vector2(-15f, -15f)).Within(0.001f));
+                OwnNUnit.Is.EqualTo(new Vector2(-3.419f, -3.419f)).Within(0.001f));
             Assert.That(
                 body.futur.position,
-                OwnNUnit.Is.EqualTo(new Vector2(-11.325f, -11.325f)).Within(0.001f));
+                OwnNUnit.Is.EqualTo(new Vector2(-0.988f, -0.988f)).Within(0.001f));
 
             world.Step(100);
             Assert.That(world.tick, Is.EqualTo(150));
@@ -139,26 +171,26 @@ namespace CrispyPhysics
             Assert.That(body.current.tick, Is.EqualTo(150));
             Assert.That(
                 body.current.linearVelocity,
-                OwnNUnit.Is.EqualTo(new Vector2(-15f, -15f)).Within(0.001f));
+                OwnNUnit.Is.EqualTo(new Vector2(-3.419f, -3.419f)).Within(0.001f));
             Assert.That(
                 body.current.position,
-                OwnNUnit.Is.EqualTo(new Vector2(-11.325f, -11.325f)).Within(0.001f));
+                OwnNUnit.Is.EqualTo(new Vector2(-0.988f, -0.988f)).Within(0.001f));
 
             Assert.That(body.past.tick, Is.EqualTo(150));
             Assert.That(
                 body.past.linearVelocity,
-                OwnNUnit.Is.EqualTo(new Vector2(-15f, -15f)).Within(0.001f));
+                OwnNUnit.Is.EqualTo(new Vector2(-3.419f, -3.419f)).Within(0.001f));
             Assert.That(
                 body.past.position,
-                OwnNUnit.Is.EqualTo(new Vector2(-11.325f, -11.325f)).Within(0.001f));
+                OwnNUnit.Is.EqualTo(new Vector2(-0.988f, -0.988f)).Within(0.001f));
 
             Assert.That(body.futur.tick, Is.EqualTo(150));
             Assert.That(
                 body.futur.linearVelocity,
-                OwnNUnit.Is.EqualTo(new Vector2(-15f, -15f)).Within(0.001f));
+                OwnNUnit.Is.EqualTo(new Vector2(-3.419f, -3.419f)).Within(0.001f));
             Assert.That(
                 body.futur.position,
-                OwnNUnit.Is.EqualTo(new Vector2(-11.325f, -11.325f)).Within(0.001f));
+                OwnNUnit.Is.EqualTo(new Vector2(-0.988f, -0.988f)).Within(0.001f));
         }
 
         /*

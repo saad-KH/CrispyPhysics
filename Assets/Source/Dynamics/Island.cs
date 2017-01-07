@@ -156,7 +156,7 @@ namespace CrispyPhysics.Internal
             contacts = new Contact[contactCapacity];
 
             positions = new Position[bodyCapacity];
-            velocities = new Velocity[contactCapacity];
+            velocities = new Velocity[bodyCapacity];
 
         }
 
