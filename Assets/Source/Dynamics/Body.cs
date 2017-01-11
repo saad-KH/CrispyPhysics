@@ -468,13 +468,33 @@ namespace CrispyPhysics.Internal
 
         public int IndexForTick(uint tick)
         {
-            int index = (tick >= currentTick) ? currentIndex: 0;
-            while (index < momentums.Count)
-                if (momentums[index].tick == tick) return index;
-                else if (momentums[index].tick > tick) return index - 1;
-                else index++;
+            for (int i = (tick >= currentTick) ? currentIndex : 0; i < momentums.Count; i++)
+                if (momentums[i].tick == tick) return i;
+                else if (momentums[i].tick > tick) return i - 1;
 
             return -1;
+        }
+
+        public IEnumerable<IMomentum> MomentumIterator(uint startingTick = 0, uint endingTick = 0)
+        {
+            if (endingTick == 0)
+                endingTick = futur.tick;
+
+            if(startingTick <= endingTick)
+            {
+                for (int i = (startingTick >= currentTick) ? currentIndex : 0; i < momentums.Count; i++)
+                    if (momentums[i].tick >= startingTick && momentums[i].tick <= endingTick)
+                        yield return momentums[i];
+                    else if (momentums[i].tick > endingTick) break;
+            }
+            else
+            {
+                for (int i = (startingTick >= currentTick) ? momentums.Count - 1 : currentIndex; i >= 0; i--)
+                    if (momentums[i].tick <= startingTick && momentums[i].tick >= endingTick)
+                        yield return momentums[i];
+                    else if (momentums[i].tick < endingTick) break;
+            }
+                
         }
 
         #endregion

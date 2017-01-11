@@ -91,6 +91,10 @@ namespace CrispyPhysics
         void ApplyLinearImpulseToCenter(Vector2 impulse);
         void ApplyAngularImpulse(float impulse);
         #endregion
+
+        #region Tracks
+        IEnumerable<IMomentum> MomentumIterator(uint startingTick = 0, uint endingTick = 0);
+        #endregion
     }
     #endregion
 }

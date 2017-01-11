@@ -453,6 +453,115 @@ namespace CrispyPhysics
             Assert.That(body.torque, Is.EqualTo(1f));
             Assert.That(body.IsForeseen());
 
+            int i = 0;
+            foreach (IMomentum momentum in body.MomentumIterator(0, 6))
+            {
+                if (i == 0)
+                {
+                    Assert.That(momentum.tick, Is.EqualTo(0));
+                    Assert.That(momentum.force, Is.EqualTo(Vector2.zero));
+                    Assert.That(momentum.torque, Is.EqualTo(0f));
+                }
+                else if (i == 1)
+                {
+                    Assert.That(momentum.tick, Is.EqualTo(3));
+                    Assert.That(momentum.force, Is.EqualTo(Vector2.one));
+                    Assert.That(momentum.torque, Is.EqualTo(1f));
+                }
+                else if (i == 2)
+                {
+                    Assert.That(momentum.tick, Is.EqualTo(4));
+                    Assert.That(momentum.force, Is.EqualTo(Vector2.one));
+                    Assert.That(momentum.torque, Is.EqualTo(1f));
+                }
+                else if (i == 3)
+                {
+                    Assert.That(momentum.tick, Is.EqualTo(6));
+                    Assert.That(momentum.force, Is.EqualTo(Vector2.down));
+                    Assert.That(momentum.torque, Is.EqualTo(-1f));
+                }
+                i++;
+            }
+
+            i = 0;
+            foreach (IMomentum momentum in body.MomentumIterator(3, 6))
+            {
+                if (i == 0)
+                {
+                    Assert.That(momentum.tick, Is.EqualTo(3));
+                    Assert.That(momentum.force, Is.EqualTo(Vector2.one));
+                    Assert.That(momentum.torque, Is.EqualTo(1f));
+                }
+                else if (i == 1)
+                {
+                    Assert.That(momentum.tick, Is.EqualTo(4));
+                    Assert.That(momentum.force, Is.EqualTo(Vector2.one));
+                    Assert.That(momentum.torque, Is.EqualTo(1f));
+                }
+                else if (i == 2)
+                {
+                    Assert.That(momentum.tick, Is.EqualTo(6));
+                    Assert.That(momentum.force, Is.EqualTo(Vector2.down));
+                    Assert.That(momentum.torque, Is.EqualTo(-1f));
+                }
+                i++;
+            }
+
+            i = 0;
+            foreach (IMomentum momentum in body.MomentumIterator(6, 0))
+            {
+                if (i == 3)
+                {
+                    Assert.That(momentum.tick, Is.EqualTo(0));
+                    Assert.That(momentum.force, Is.EqualTo(Vector2.zero));
+                    Assert.That(momentum.torque, Is.EqualTo(0f));
+                }
+                else if (i == 2)
+                {
+                    Assert.That(momentum.tick, Is.EqualTo(3));
+                    Assert.That(momentum.force, Is.EqualTo(Vector2.one));
+                    Assert.That(momentum.torque, Is.EqualTo(1f));
+                }
+                else if (i == 1)
+                {
+                    Assert.That(momentum.tick, Is.EqualTo(4));
+                    Assert.That(momentum.force, Is.EqualTo(Vector2.one));
+                    Assert.That(momentum.torque, Is.EqualTo(1f));
+                }
+                else if (i == 0)
+                {
+                    Assert.That(momentum.tick, Is.EqualTo(6));
+                    Assert.That(momentum.force, Is.EqualTo(Vector2.down));
+                    Assert.That(momentum.torque, Is.EqualTo(-1f));
+                }
+                i++;
+            }
+
+            i = 0;
+            foreach (IMomentum momentum in body.MomentumIterator(6, 3))
+            {
+                if (i == 2)
+                {
+                    Assert.That(momentum.tick, Is.EqualTo(3));
+                    Assert.That(momentum.force, Is.EqualTo(Vector2.one));
+                    Assert.That(momentum.torque, Is.EqualTo(1f));
+                }
+                else if (i == 1)
+                {
+                    Assert.That(momentum.tick, Is.EqualTo(4));
+                    Assert.That(momentum.force, Is.EqualTo(Vector2.one));
+                    Assert.That(momentum.torque, Is.EqualTo(1f));
+                }
+                else if (i == 0)
+                {
+                    Assert.That(momentum.tick, Is.EqualTo(6));
+                    Assert.That(momentum.force, Is.EqualTo(Vector2.down));
+                    Assert.That(momentum.torque, Is.EqualTo(-1f));
+                }
+                i++;
+            }
+
+
             body.Step();
             Assert.That(body.current.tick, Is.EqualTo(5));
             Assert.That(body.force, Is.EqualTo(Vector2.one));
