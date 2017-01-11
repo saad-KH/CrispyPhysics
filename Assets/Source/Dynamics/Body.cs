@@ -5,7 +5,7 @@ using System.Collections.Generic;
 namespace CrispyPhysics.Internal
 {
     #region Delegate Definition
-    public delegate void BodyHandlerDelegate(Body body, EventArgs args);
+    public delegate void BodyHandlerDelegate(Body body, uint fromTick);
     public delegate IEnumerable<Body> BodyIteratorDelegate(uint start = 0, uint end = 0);
     #endregion
 
@@ -60,8 +60,7 @@ namespace CrispyPhysics.Internal
         #endregion
 
         #region Events
-        public event BodyHandlerDelegate FuturCleared;
-        public event BodyHandlerDelegate UserChangedSituation;
+        public event BodyHandlerDelegate ExternalChange;
         public event IContactHandlerDelegate ContactStartForeseen;
         public event IContactHandlerDelegate ContactEndForeseen;
         public event IContactHandlerDelegate ContactStarted;
@@ -189,75 +188,87 @@ namespace CrispyPhysics.Internal
         public void ChangeImpulse(Vector2 force, float torque)
         {
             if (type == BodyType.Static) return;
-
-            ClearFutur();
+            
             momentums[currentIndex].ChangeImpulse(force, torque);
+
+            if (ExternalChange != null)
+                ExternalChange(this, currentTick);
         }
 
         public void ChangeVelocity(Vector2 linearVelocity, float angularVelocity)
         {
             if (type == BodyType.Static) return;
 
-            ClearFutur();
             momentums[currentIndex].ChangeVelocity(linearVelocity, angularVelocity);
+
+            if (ExternalChange != null)
+                ExternalChange(this, currentTick);
         }
 
         public void ChangeSituation(Vector2 position, float angle)
         {
-            ClearFutur();
             momentums[currentIndex].ChangeSituation(position, angle);
-            if (UserChangedSituation != null)
-                UserChangedSituation(this, EventArgs.Empty);
+
+            if (ExternalChange != null)
+                ExternalChange(this, currentTick);
         }
 
         public void ApplyForce(Vector2 force, Vector2 point)
         {
             if (type != BodyType.Dynamic) return;
 
-            ClearFutur();
-
             momentums[currentIndex].ChangeImpulse(
                 current.force + force,
                 current.torque + Calculus.Cross(point - current.position, force));
+
+            if (ExternalChange != null)
+                ExternalChange(this, currentTick);
         }
 
         public void ApplyForceToCenter(Vector2 force)
         {
             if (type != BodyType.Dynamic) return;
 
-            ClearFutur();
             momentums[currentIndex].ChangeImpulse(current.force + force, current.torque);
+
+            if (ExternalChange != null)
+                ExternalChange(this, currentTick);
         }
 
         public void ApplyTorque(float torque)
         {
             if (type != BodyType.Dynamic) return;
 
-            ClearFutur();
             momentums[currentIndex].ChangeImpulse(current.force, current.torque + torque);
+
+            if (ExternalChange != null)
+                ExternalChange(this, currentTick);
         }
 
         public void ApplyLinearImpulse(Vector2 impulse, Vector2 point)
         {
             if (type != BodyType.Dynamic) return;
-            ClearFutur();
 
             momentums[currentIndex].ChangeVelocity(
                 current.linearVelocity + invMass * impulse,
                 current.angularVelocity +
                     (invRotationalInertia
                     * Calculus.Cross(point - current.position, impulse)));
+
+            if (ExternalChange != null)
+                ExternalChange(this, currentTick);
         }
 
         public void ApplyLinearImpulseToCenter(Vector2 impulse)
         {
             if (type != BodyType.Dynamic) return;
 
-            ClearFutur();
-
             momentums[currentIndex].ChangeVelocity(
                 current.linearVelocity + invMass * impulse,
                 current.angularVelocity);
+
+            if (ExternalChange != null)
+                ExternalChange(this, currentTick);
 
         }
 
@@ -265,11 +276,12 @@ namespace CrispyPhysics.Internal
         {
             if (type != BodyType.Dynamic) return;
 
-            ClearFutur();
-
             momentums[currentIndex].ChangeVelocity(
                 current.linearVelocity,
                 current.angularVelocity + invRotationalInertia * impulse);
+
+            if (ExternalChange != null)
+                ExternalChange(this, currentTick);
         }
         #endregion
 
@@ -438,12 +450,31 @@ namespace CrispyPhysics.Internal
 
         public void ClearFutur()
         {
-            if (currentIndex < momentums.Count)
-            {
-                momentums.RemoveRange(currentIndex + 1, momentums.Count - (currentIndex + 1));
-                if (FuturCleared != null)
-                    FuturCleared(this, EventArgs.Empty);
-            }
+            ClearFutur(currentTick + 1);
+        }
+
+        public void ClearFutur(uint fromTick)
+        {
+            if(fromTick <= currentTick)
+                throw new ArgumentOutOfRangeException("Tick to be cleared should be above the current tick");
+
+            int indexForTick = IndexForTick(fromTick);
+            if (indexForTick == currentIndex)
+                indexForTick++;
+
+            if (indexForTick >= 0 && indexForTick < momentums.Count)
+                momentums.RemoveRange(indexForTick, momentums.Count - indexForTick);
+        }
+
+        public int IndexForTick(uint tick)
+        {
+            int index = (tick >= currentTick) ? currentIndex: 0;
+            while (index < momentums.Count)
+                if (momentums[index].tick == tick) return index;
+                else if (momentums[index].tick > tick) return index - 1;
+                else index++;
+
+            return -1;
         }
 
         #endregion

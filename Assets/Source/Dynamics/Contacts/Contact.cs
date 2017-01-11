@@ -275,8 +275,31 @@ namespace CrispyPhysics.Internal
 
         public void ClearFutur()
         {
-            if (currentIndex < momentums.Count)
-                momentums.RemoveRange(currentIndex + 1, momentums.Count - (currentIndex + 1));
+            ClearFutur(currentTick + 1);
+        }
+
+        public void ClearFutur(uint fromTick)
+        {
+            if (fromTick <= currentTick)
+                throw new ArgumentOutOfRangeException("Tick to be cleared should be above the current tick");
+
+            int indexForTick = IndexForTick(fromTick);
+            if (indexForTick == currentIndex)
+                indexForTick++;
+
+            if (indexForTick < momentums.Count)
+                momentums.RemoveRange(indexForTick, momentums.Count - indexForTick);
+        }
+
+        public int IndexForTick(uint tick)
+        {
+            int index = (tick >= currentTick) ? currentIndex : 0;
+            while (index < momentums.Count)
+                if (momentums[index].tick == tick) return index;
+                else if (momentums[index].tick > tick) return index - 1;
+                else index++;
+
+            return -1;
         }
 
         public bool IsDroppable()

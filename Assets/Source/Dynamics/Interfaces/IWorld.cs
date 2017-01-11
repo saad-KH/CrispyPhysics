@@ -7,8 +7,6 @@ namespace CrispyPhysics
     public struct WorldDefinition
     {
         public readonly float fixedStep;
-        public readonly float crispyStep;
-        public readonly float crispySize;
         public readonly Vector2 gravity;
         public readonly uint velocityIterations;
         public readonly uint positionIterations;
@@ -16,13 +14,11 @@ namespace CrispyPhysics
         public readonly float maxRotationSpeed;
 
         public WorldDefinition(
-            float fixedStep, float crispyStep, float crispySize,
+            float fixedStep,
             Vector2 gravity, uint velocityIterations = 8, uint positionIterations = 3,
             float maxTranslationSpeed = 100f, float maxRotationSpeed = 360f)
         {
             this.fixedStep = fixedStep;
-            this.crispyStep = crispyStep;
-            this.crispySize = crispySize;
             this.gravity = gravity;
             this.velocityIterations = velocityIterations;
             this.positionIterations = positionIterations;
@@ -44,8 +40,6 @@ namespace CrispyPhysics
 
         #region Nature
         float fixedStep { get; }
-        float crispyStep { get; }
-        float crispySize { get; }
 
         Vector2 gravity { get; }
         uint velocityIterations { get; }

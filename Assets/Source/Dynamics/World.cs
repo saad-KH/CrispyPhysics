@@ -9,12 +9,12 @@ namespace CrispyPhysics
     public class WorldFactory
     {
         public static IWorld CreateWorld(
-            float fixedStep, float crispyStep, float crispySize,
+            float fixedStep,
             Vector2 gravity, uint velocityIterations = 8, uint positionIterations = 3,
             float maxTranslationSpeed = 100f, float maxRotationSpeed = 360f)
         {
             return new World(
-                fixedStep, crispyStep, crispySize,
+                fixedStep,
                 gravity, velocityIterations, positionIterations,
                 maxTranslationSpeed, maxRotationSpeed);
         }
@@ -33,7 +33,7 @@ namespace CrispyPhysics.Internal
     {
         #region Constructors
         public World(
-            float fixedStep, float crispyStep, float crispySize,
+            float fixedStep,
             Vector2 gravity, uint velocityIterations = 8, uint positionIterations = 3,
             float maxTranslationSpeed = 100f, float maxRotationSpeed = 360f)
         {
@@ -42,8 +42,6 @@ namespace CrispyPhysics.Internal
                 throw new ArgumentOutOfRangeException("Fixed Step should be stricly greater than 0");
             
             this.fixedStep = fixedStep;
-            this.crispyStep = Mathf.Max(crispyStep, this.fixedStep);
-            this.crispySize = Mathf.Max(crispySize, 0f);
 
             this.gravity = gravity;
             this.velocityIterations = velocityIterations;
@@ -73,7 +71,7 @@ namespace CrispyPhysics.Internal
         }
 
         public World(WorldDefinition worldDef) : this(
-            worldDef.fixedStep, worldDef.crispyStep, worldDef.crispySize,
+            worldDef.fixedStep,
             worldDef.gravity, worldDef.velocityIterations, worldDef.positionIterations,
             worldDef.maxTranslationSpeed, worldDef.maxRotationSpeed)
         {}
@@ -115,11 +113,9 @@ namespace CrispyPhysics.Internal
             );
 
             bodies.Add(newBody);
-            opFlags |= OperationFlag.BodyListUpdated;
+            opFlags |= OperationFlag.ExternalChange;
             futurTick = tick;
-            opFlags &= ~OperationFlag.FuturForeseen;
-            newBody.FuturCleared += FuturCleared;
-            newBody.UserChangedSituation += UserChangedSituation;
+            newBody.ExternalChange += ExternalChange;
 
             return newBody;
         }
@@ -140,8 +136,6 @@ namespace CrispyPhysics.Internal
 
         #region Nature
         public float fixedStep { get; private set; }
-        public float crispyStep { get; private set; }
-        public float crispySize { get; private set; }
 
         public Vector2 gravity { get; private set; }
         public uint velocityIterations { get; private set; }
@@ -158,10 +152,7 @@ namespace CrispyPhysics.Internal
         private enum OperationFlag
         {
             Locked = 0x0001,
-            BodyListUpdated = 0x0002,
-            UserChangedBody = 0x0004,
-            FuturForeseen = 0x0008,
-            Crisped = 0x00010
+            ExternalChange = 0x0002
         }
 
         private OperationFlag opFlags;
@@ -179,20 +170,15 @@ namespace CrispyPhysics.Internal
             if (tick >= uint.MaxValue)
                 throw new SystemException("Maximum system steps reached");
 
-            bool clearFutur = 
-                    (opFlags & OperationFlag.FuturForeseen) != OperationFlag.FuturForeseen;
+            bool externalChange = (opFlags & OperationFlag.ExternalChange) == OperationFlag.ExternalChange;
 
-            bool lookForContacts = 
-                    (opFlags & OperationFlag.BodyListUpdated) == OperationFlag.BodyListUpdated
-                ||  (opFlags & OperationFlag.UserChangedBody) == OperationFlag.UserChangedBody;
-
-            if (clearFutur)
+            if (externalChange)
             {
                 foreach (Body body in bodies)
-                    body.ClearFutur();
+                    body.ClearFutur(futurTick + 1);
 
                 foreach (Contact contact in contacts)
-                    contact.ClearFutur();
+                    contact.ClearFutur(futurTick + 1);
             }
 
             if (keepTicks > tick) keepTicks = tick;
@@ -209,7 +195,8 @@ namespace CrispyPhysics.Internal
                     Mathf.Min(
                         tick + foreseeTicks - futurTick,
                         bufferingTicks);
-            
+
+            bool lookForContact = externalChange;
             for (int i = 0; i < iterationsToSolve; i++)
             {
                 futurTick++;
@@ -222,10 +209,10 @@ namespace CrispyPhysics.Internal
                     if(contact.futur.tick < futurTick)
                         contact.Foresee(futurTick - contact.futur.tick);
 
-                if (lookForContacts)
+                if (lookForContact)
                 {
                     contactManager.FindNewContacts();
-                    lookForContacts = false;
+                    lookForContact = false;
                 }
 
                 contactManager.Collide();
@@ -298,11 +285,7 @@ namespace CrispyPhysics.Internal
             contacts.RemoveWhere(contact => contactsToRemove.Contains(contact));
 
             opFlags &= ~OperationFlag.Locked;
-            //opFlags &= ~OperationFlag.Crisped;
-            opFlags &= ~OperationFlag.BodyListUpdated;
-            opFlags &= ~OperationFlag.UserChangedBody;
-            opFlags |= OperationFlag.FuturForeseen;
-
+            opFlags &= ~OperationFlag.ExternalChange;
         }
 
         public void RollBack(uint toTick, uint keepTicks = 0)
@@ -387,7 +370,6 @@ namespace CrispyPhysics.Internal
             foreach (Body body in bodies)
                 body.islandBound = false;
 
-            //Debug.Assert(false, "Clear Contacts Island Flags");
             foreach (Contact contact in contacts)
                 contact.islandBound = false;
 
@@ -449,7 +431,9 @@ namespace CrispyPhysics.Internal
 
             contactManager.FindNewContacts();
         }
+        #endregion
 
+        #region Crisp
         private void Crisp()
         {
             /*if(tick >= actionTick)
@@ -485,19 +469,14 @@ namespace CrispyPhysics.Internal
         #endregion
 
         #region Event Handlers & Delegates
-        private void FuturCleared(IBody body, EventArgs args)
-        {
-            if((opFlags & World.OperationFlag.FuturForeseen) == World.OperationFlag.FuturForeseen)
-            {
-                futurTick = tick;
-                opFlags &= ~World.OperationFlag.FuturForeseen;
-            }
-        }
 
-        private void UserChangedSituation(IBody body, EventArgs args)
+        private void ExternalChange(IBody body, uint fromTick)
         {
-            if ((opFlags & World.OperationFlag.UserChangedBody) == 0)
-                opFlags |= World.OperationFlag.UserChangedBody;
+            if ((opFlags & World.OperationFlag.ExternalChange) == 0)
+            {
+                futurTick = (uint)Mathf.Max(tick, Mathf.Min(futurTick, fromTick));
+                opFlags |= World.OperationFlag.ExternalChange;
+            }
         }
 
 
