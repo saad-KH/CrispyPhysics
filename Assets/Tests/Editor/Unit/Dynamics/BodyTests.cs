@@ -36,6 +36,8 @@ namespace CrispyPhysics
             Assert.That(body.force, Is.EqualTo(Vector2.zero));
             Assert.That(body.torque, Is.EqualTo(0f));
 
+            Assert.That(body.enduringContact == false);
+
             Assert.That(body.islandBound == false);
             Assert.That(body.islandIndex, Is.EqualTo(0));
 
@@ -72,6 +74,8 @@ namespace CrispyPhysics
 
             Assert.That(specifiedBody.force, Is.EqualTo(Vector2.zero));
             Assert.That(specifiedBody.torque, Is.EqualTo(0f));
+
+            Assert.That(specifiedBody.enduringContact == false);
 
             Assert.That(specifiedBody.GetInertia(), Is.EqualTo(2.5f));
 
@@ -560,6 +564,18 @@ namespace CrispyPhysics
                 }
                 i++;
             }
+
+            Assert.That(body.IndexForTick(5), Is.EqualTo(2));
+
+            IMomentum fetchedMomentum = body.MomentumForTick(5);
+            Assert.That(fetchedMomentum.tick, Is.EqualTo(4));
+            Assert.That(fetchedMomentum.force, Is.EqualTo(Vector2.one));
+            Assert.That(fetchedMomentum.torque, Is.EqualTo(1f));
+
+            Momentum emergedMomentum = body.EmergeMomentumForTick(5);
+            Assert.That(emergedMomentum.tick, Is.EqualTo(5));
+            Assert.That(emergedMomentum.force, Is.EqualTo(Vector2.one));
+            Assert.That(emergedMomentum.torque, Is.EqualTo(1f));
 
 
             body.Step();

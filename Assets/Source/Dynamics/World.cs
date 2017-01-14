@@ -202,8 +202,13 @@ namespace CrispyPhysics.Internal
                 futurTick++;
                 
                 foreach (Body body in bodies)
-                    if(body.futur.tick < futurTick)
+                {
+                    if (body.futur.tick < futurTick)
                         body.Foresee(futurTick - body.futur.tick);
+                    if (body.futur.enduringContact)
+                        body.futur.changeEnduringContactState(false);
+                }
+                    
 
                 foreach (Contact contact in contacts)
                     if(contact.futur.tick < futurTick)
@@ -369,6 +374,7 @@ namespace CrispyPhysics.Internal
 
             foreach (Body body in bodies)
                 body.islandBound = false;
+                
 
             foreach (Contact contact in contacts)
                 contact.islandBound = false;

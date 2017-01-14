@@ -134,11 +134,15 @@ namespace CrispyPhysics
             Assert.That(contacts[0].futur.manifold != null);
             Assert.That(contacts[0].futur.tangentSpeed, Is.EqualTo(0f).Within(0.001f));
             Assert.That(contacts[0].futur.isTouching == true);
+            Assert.That(contacts[0].bodyA.futur.enduringContact == true);
+            Assert.That(contacts[0].bodyB.futur.enduringContact == true);
 
             Assert.That(contacts[1].futur.tick, Is.EqualTo(0u));
             Assert.That(contacts[1].futur.manifold == null);
             Assert.That(contacts[1].futur.tangentSpeed, Is.EqualTo(0f).Within(0.001f));
             Assert.That(contacts[1].futur.isTouching == true);
+            Assert.That(contacts[1].bodyA.futur.enduringContact == true);
+            Assert.That(contacts[1].bodyB.futur.enduringContact == true);
 
             circleBody.ChangeSituation(new Vector2(-10f, -10f), 0f);
 
@@ -150,11 +154,15 @@ namespace CrispyPhysics
             Assert.That(contacts[0].futur.manifold == null);
             Assert.That(contacts[0].futur.tangentSpeed, Is.EqualTo(0f).Within(0.001f));
             Assert.That(contacts[0].futur.isTouching == false);
+            Assert.That(contacts[0].bodyA.futur.enduringContact == false);
+            Assert.That(contacts[0].bodyB.futur.enduringContact == false);
 
             Assert.That(contacts[1].futur.tick, Is.EqualTo(0u));
             Assert.That(contacts[1].futur.manifold == null);
             Assert.That(contacts[1].futur.tangentSpeed, Is.EqualTo(0f).Within(0.001f));
             Assert.That(contacts[1].futur.isTouching == false);
+            Assert.That(contacts[1].bodyA.futur.enduringContact == false);
+            Assert.That(contacts[1].bodyB.futur.enduringContact == false);
         }
     }
 }

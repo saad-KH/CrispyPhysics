@@ -89,6 +89,7 @@ namespace CrispyPhysics
             Assert.That(
                 body.position,
                 OwnNUnit.Is.EqualTo(new Vector2(-0.457f, -0.457f)).Within(0.001f));
+            Assert.That(body.enduringContact == false);
 
             Assert.That(body.past.tick, Is.EqualTo(world.pastTick));
             Assert.That(
@@ -97,6 +98,7 @@ namespace CrispyPhysics
             Assert.That(
                 body.past.position,
                 OwnNUnit.Is.EqualTo(new Vector2(-1.231f, -1.231f)).Within(0.001f));
+            Assert.That(body.past.enduringContact == false);
 
             Assert.That(body.futur.tick, Is.EqualTo(world.futurTick));
             Assert.That(
@@ -105,6 +107,9 @@ namespace CrispyPhysics
             Assert.That(
                 body.futur.position,
                 OwnNUnit.Is.EqualTo(new Vector2(-0.988f, -0.988f)).Within(0.001f));
+            Assert.That(body.futur.enduringContact == false);
+
+            Assert.That(body.MomentumForTick(62).enduringContact == true);
 
             Assert.That(colliderBody.current.tick, Is.EqualTo(100));
             Assert.That(
@@ -113,6 +118,7 @@ namespace CrispyPhysics
             Assert.That(
                 colliderBody.position,
                 OwnNUnit.Is.EqualTo(new Vector2(-2.5f, -2.5f)).Within(0.001f));
+            Assert.That(colliderBody.enduringContact == false);
 
             Assert.That(colliderBody.past.tick, Is.EqualTo(world.pastTick));
             Assert.That(
@@ -121,6 +127,7 @@ namespace CrispyPhysics
             Assert.That(
                 colliderBody.past.position,
                 OwnNUnit.Is.EqualTo(new Vector2(-2.5f, -2.5f)).Within(0.001f));
+            Assert.That(colliderBody.past.enduringContact == false);
 
             Assert.That(colliderBody.futur.tick, Is.EqualTo(world.futurTick));
             Assert.That(
@@ -129,6 +136,9 @@ namespace CrispyPhysics
             Assert.That(
                 colliderBody.futur.position,
                 OwnNUnit.Is.EqualTo(new Vector2(-2.5f, -2.5f)).Within(0.001f));
+            Assert.That(colliderBody.futur.enduringContact == false);
+
+            Assert.That(colliderBody.MomentumForTick(62).enduringContact == true);
 
             world.RollBack(50);
             Assert.That(world.tick, Is.EqualTo(50));
@@ -171,6 +181,7 @@ namespace CrispyPhysics
             Assert.That(
                 body.current.position,
                 OwnNUnit.Is.EqualTo(new Vector2(-0.988f, -0.988f)).Within(0.001f));
+            Assert.That(body.current.enduringContact == false);
 
             Assert.That(body.past.tick, Is.EqualTo(150));
             Assert.That(
@@ -179,6 +190,7 @@ namespace CrispyPhysics
             Assert.That(
                 body.past.position,
                 OwnNUnit.Is.EqualTo(new Vector2(-0.988f, -0.988f)).Within(0.001f));
+            Assert.That(body.past.enduringContact == false);
 
             Assert.That(body.futur.tick, Is.EqualTo(150));
             Assert.That(
@@ -187,6 +199,7 @@ namespace CrispyPhysics
             Assert.That(
                 body.futur.position,
                 OwnNUnit.Is.EqualTo(new Vector2(-0.988f, -0.988f)).Within(0.001f));
+            Assert.That(body.futur.enduringContact == false);
 
 
             while (world.tick < 200)
@@ -199,6 +212,7 @@ namespace CrispyPhysics
             Assert.That(
                 body.current.position,
                 OwnNUnit.Is.EqualTo(new Vector2(-0.768f, -0.768f)).Within(0.001f));
+            Assert.That(body.current.enduringContact == false);
 
             Assert.That(body.past.tick, Is.EqualTo(150));
             Assert.That(
@@ -207,6 +221,7 @@ namespace CrispyPhysics
             Assert.That(
                 body.past.position,
                 OwnNUnit.Is.EqualTo(new Vector2(-0.988f, -0.988f)).Within(0.001f));
+            Assert.That(body.past.enduringContact == false);
 
             Assert.That(body.futur.tick, Is.EqualTo(250));
             Assert.That(
@@ -215,6 +230,9 @@ namespace CrispyPhysics
             Assert.That(
                 body.futur.position,
                 OwnNUnit.Is.EqualTo(new Vector2(-1.153f, -1.153f)).Within(0.001f));
+            Assert.That(body.futur.enduringContact == false);
+
+            Assert.That(body.MomentumForTick(170).enduringContact == true);
 
             body.ChangeSituation(Vector2.zero, 0f);
             Assert.That(world.tick, Is.EqualTo(200));

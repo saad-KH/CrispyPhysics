@@ -41,7 +41,7 @@ namespace CrispyPhysics.Internal
                 currentTick,
                 Vector2.zero, 0f,
                 Vector2.zero, 0f,
-                position, angle));
+                position, angle, false));
 
 
             currentIndex = 0;
@@ -183,6 +183,7 @@ namespace CrispyPhysics.Internal
         public float angularVelocity { get { return current.angularVelocity; } }
         public Vector2 force { get { return current.force; } }
         public float torque { get { return current.torque; } }
+        public bool enduringContact {  get { return current.enduringContact; } }
         public Transformation transform { get { return current.transform; } }
 
         public void ChangeImpulse(Vector2 force, float torque)
@@ -475,6 +476,36 @@ namespace CrispyPhysics.Internal
             return -1;
         }
 
+        public IMomentum MomentumForTick(uint tick)
+        {
+            for (int i = (tick >= currentTick) ? currentIndex : 0; i < momentums.Count; i++)
+                if (momentums[i].tick == tick) return momentums[i];
+                else if (momentums[i].tick > tick)
+                {
+                    if (i > 0)
+                        return momentums[i - 1];
+                    else
+                        return null;
+                }
+
+
+            return null;
+        } 
+
+        public Momentum EmergeMomentumForTick(uint tick)
+        {
+            int index = IndexForTick(tick);
+
+            if (index < 0) return null;
+            if (momentums[index].tick == tick)
+                return momentums[index];
+
+            Momentum momentum = new Momentum(tick, momentums[index]);
+            momentums.Insert(index + 1, momentum);
+
+            return momentum;
+        }
+
         public IEnumerable<IMomentum> MomentumIterator(uint startingTick = 0, uint endingTick = 0)
         {
             if (endingTick == 0)
@@ -495,6 +526,15 @@ namespace CrispyPhysics.Internal
                     else if (momentums[i].tick < endingTick) break;
             }
                 
+        }
+
+        public Vector2 ConvergeAtTick(uint tick, Vector2 divergence)
+        {
+            if (tick < currentTick)
+                throw new ArgumentOutOfRangeException("Tick to be converged should be above or equal to the current tick");
+
+            int indexForTick = IndexForTick(tick);
+            return Vector2.zero;
         }
 
         #endregion

@@ -97,6 +97,9 @@ namespace CrispyPhysics.Internal
                         touching = true;
                 }
 
+                bodyA.futur.changeEnduringContactState(touching);
+                bodyB.futur.changeEnduringContactState(touching);
+
                 futur.Change(nextManifold, 0f, touching);
 
                 if (wasTouching == false && touching == true && contactStartForeseen != null)

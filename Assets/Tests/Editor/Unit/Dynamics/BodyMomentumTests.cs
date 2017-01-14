@@ -14,7 +14,8 @@ namespace CrispyPhysics
                  0,
                  Vector2.zero, 0f,
                  Vector2.zero, 0f,
-                 Vector2.zero, 0f);
+                 Vector2.zero, 0f,
+                 false);
         }
 
         [Test]
@@ -29,6 +30,7 @@ namespace CrispyPhysics
             Assert.That(bodyMomentum.angularVelocity, Is.EqualTo(0f));
             Assert.That(bodyMomentum.position, Is.EqualTo(Vector2.zero));
             Assert.That(bodyMomentum.angle, Is.EqualTo(0f));
+            Assert.That(bodyMomentum.enduringContact == false);
 
             Momentum newBodyMomentum = new Momentum(1, bodyMomentum);
 
@@ -39,6 +41,7 @@ namespace CrispyPhysics
             Assert.That(newBodyMomentum.angularVelocity, Is.EqualTo(bodyMomentum.angularVelocity));
             Assert.That(newBodyMomentum.position, Is.EqualTo(bodyMomentum.position));
             Assert.That(newBodyMomentum.angle, Is.EqualTo(bodyMomentum.angle));
+            Assert.That(newBodyMomentum.enduringContact == false);
         }
 
         
@@ -69,6 +72,9 @@ namespace CrispyPhysics
             bodyMomentum.ChangeImpulse(Vector2.zero, 0f);
             Assert.That(bodyMomentum.force, Is.EqualTo(Vector2.zero));
             Assert.That(bodyMomentum.torque, Is.EqualTo(0f));
+
+            bodyMomentum.changeEnduringContactState(true);
+            Assert.That(bodyMomentum.enduringContact == true);
         }
 
         [Test]

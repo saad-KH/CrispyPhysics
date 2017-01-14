@@ -15,13 +15,14 @@ namespace CrispyPhysics.Internal
         public Vector2 position { get { return transform.position; } }
         public float angle { get { return transform.rotation.GetAngle(); } }
 
- 
+        public bool enduringContact { get; private set; }
 
         public Momentum(
             uint tick,
             Vector2 force, float torque,
             Vector2 linearVelocity, float angularVelocity,
-            Vector2 position, float angle)
+            Vector2 position, float angle,
+            bool enduringContact)
         {
             this.tick = tick;
             this.force = force;
@@ -29,6 +30,7 @@ namespace CrispyPhysics.Internal
             this.linearVelocity = linearVelocity;
             this.angularVelocity = angularVelocity;
             transform = new Transformation(position, new Rotation(angle));
+            this.enduringContact = enduringContact;
         }
 
         public Momentum(uint tick, Momentum source)
@@ -39,6 +41,7 @@ namespace CrispyPhysics.Internal
             linearVelocity = source.linearVelocity;
             angularVelocity = source.angularVelocity;
             transform = new Transformation(source.position, new Rotation(source.angle));
+            enduringContact = source.enduringContact;
         }
 
         public void ChangeImpulse(Vector2 force, float torque)
@@ -58,6 +61,11 @@ namespace CrispyPhysics.Internal
             transform = new Transformation(position, new Rotation(angle));
         }
 
+        public void changeEnduringContactState(bool enduringContact)
+        {
+            this.enduringContact = enduringContact;
+        }
+
         public bool Same(Momentum other, float tolerance = 0)
         {
             if  (   !Calculus.Approximately(force, other.force, tolerance)
@@ -65,7 +73,8 @@ namespace CrispyPhysics.Internal
                 ||  !Calculus.Approximately(linearVelocity, other.linearVelocity, tolerance)
                 ||  !Calculus.Approximately(angularVelocity, other.angularVelocity, tolerance)
                 ||  !Calculus.Approximately(position, other.position, tolerance)
-                ||  !Calculus.Approximately(angle, other.angle, tolerance))
+                ||  !Calculus.Approximately(angle, other.angle, tolerance)
+                ||  enduringContact != other.enduringContact)
                 return false;
 
             return true;
