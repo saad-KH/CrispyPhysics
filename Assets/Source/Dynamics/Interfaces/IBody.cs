@@ -96,7 +96,10 @@ namespace CrispyPhysics
         #region Track
         IMomentum MomentumForTick(uint tick);
         IEnumerable<IMomentum> MomentumIterator(uint startingTick = 0, uint endingTick = 0);
-        Vector2 ConvergeAtTick(uint tick, Vector2 divergence);
+        bool CrispAtTick(
+            uint tick, 
+            Vector2 position, float angle,
+            float maxDivergencePerTick = 0.25f);
         #endregion
     }
     #endregion

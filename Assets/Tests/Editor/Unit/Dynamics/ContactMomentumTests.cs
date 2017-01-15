@@ -47,7 +47,6 @@ namespace CrispyPhysics
             Assert.That(contactMomentum.manifold, Is.EqualTo(mf));
             Assert.That(contactMomentum.tangentSpeed, Is.EqualTo(1f));
             Assert.That(contactMomentum.isTouching);
-
         }
 
         [Test]

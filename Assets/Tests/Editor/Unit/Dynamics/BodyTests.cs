@@ -363,6 +363,7 @@ namespace CrispyPhysics
         public void Tracking()
         {
             Body body = new Body(0, 0, Vector2.zero, 0f, BodyType.Dynamic, null);
+            body.current.ChangeTickDt(0.01f);
 
             body.Step();
             Assert.That(body.current.tick, Is.EqualTo(1));
@@ -572,12 +573,6 @@ namespace CrispyPhysics
             Assert.That(fetchedMomentum.force, Is.EqualTo(Vector2.one));
             Assert.That(fetchedMomentum.torque, Is.EqualTo(1f));
 
-            Momentum emergedMomentum = body.EmergeMomentumForTick(5);
-            Assert.That(emergedMomentum.tick, Is.EqualTo(5));
-            Assert.That(emergedMomentum.force, Is.EqualTo(Vector2.one));
-            Assert.That(emergedMomentum.torque, Is.EqualTo(1f));
-
-
             body.Step();
             Assert.That(body.current.tick, Is.EqualTo(5));
             Assert.That(body.force, Is.EqualTo(Vector2.one));
@@ -668,6 +663,51 @@ namespace CrispyPhysics
             Assert.That(body.futur.tick, Is.EqualTo(4));
             Assert.That(body.futur.force, Is.EqualTo(Vector2.down));
             Assert.That(body.futur.torque, Is.EqualTo(-1f));
+
+
+            Assert.Throws<ArgumentOutOfRangeException>(
+                delegate { body.CrispAtTick(0, Vector2.up, 1f); });
+
+            Assert.That(body.CrispAtTick(3, Vector2.up, 1f, 0.25f) == false);
+
+            Assert.That(body.current.tick, Is.EqualTo(0));
+            Assert.That(body.position, Is.EqualTo(Vector2.zero));
+            Assert.That(body.angle, Is.EqualTo(0f));
+
+            Assert.That(body.futur.tick, Is.EqualTo(4));
+            Assert.That(body.futur.position, Is.EqualTo(Vector2.zero));
+            Assert.That(body.futur.angle, Is.EqualTo(0f));
+
+            Assert.That(body.CrispAtTick(4, Vector2.up, 1f, 1f) == true);
+
+            Assert.That(body.current.tick, Is.EqualTo(0));
+            Assert.That(body.position, Is.EqualTo(Vector2.zero));
+            Assert.That(body.angle, Is.EqualTo(0f));
+
+            Assert.That(body.MomentumForTick(1).tick, Is.EqualTo(1));
+            Assert.That(body.MomentumForTick(1).position, Is.EqualTo(new Vector2(0f,0.25f)));
+            Assert.That(body.MomentumForTick(1).angle, Is.EqualTo(0.25f));
+            Assert.That(body.MomentumForTick(1).linearVelocity, Is.EqualTo(new Vector2(0f, 25f)));
+            Assert.That(body.MomentumForTick(1).angularVelocity, Is.EqualTo(25f));
+
+            Assert.That(body.MomentumForTick(2).tick, Is.EqualTo(2));
+            Assert.That(body.MomentumForTick(2).position, Is.EqualTo(new Vector2(0f, 0.5f)));
+            Assert.That(body.MomentumForTick(2).angle, Is.EqualTo(0.5f));
+            Assert.That(body.MomentumForTick(2).linearVelocity, Is.EqualTo(new Vector2(0f, 50f)));
+            Assert.That(body.MomentumForTick(2).angularVelocity, Is.EqualTo(50f));
+
+            Assert.That(body.MomentumForTick(3).tick, Is.EqualTo(3));
+            Assert.That(body.MomentumForTick(3).position, Is.EqualTo(new Vector2(0f, 0.75f)));
+            Assert.That(body.MomentumForTick(3).angle, Is.EqualTo(0.75f));
+            Assert.That(body.MomentumForTick(3).linearVelocity, Is.EqualTo(new Vector2(0f, 75f)));
+            Assert.That(body.MomentumForTick(3).angularVelocity, Is.EqualTo(75f));
+
+            Assert.That(body.MomentumForTick(4).tick, Is.EqualTo(4));
+            Assert.That(body.MomentumForTick(4).position, Is.EqualTo(new Vector2(0f, 1f)));
+            Assert.That(body.MomentumForTick(4).angle, Is.EqualTo(1f));
+            Assert.That(body.MomentumForTick(4).linearVelocity, Is.EqualTo(new Vector2(0f, 100f)));
+            Assert.That(body.MomentumForTick(4).angularVelocity, Is.EqualTo(100f));
+
         }
     }
 }

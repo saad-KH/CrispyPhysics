@@ -12,6 +12,7 @@ namespace CrispyPhysics
         {
             return new Momentum(
                  0,
+                 0f,
                  Vector2.zero, 0f,
                  Vector2.zero, 0f,
                  Vector2.zero, 0f,
@@ -24,6 +25,7 @@ namespace CrispyPhysics
             Momentum bodyMomentum = CreateBodyMomentum();
 
             Assert.That(bodyMomentum.tick, Is.EqualTo(0));
+            Assert.That(bodyMomentum.tickDt, Is.EqualTo(0f));
             Assert.That(bodyMomentum.force, Is.EqualTo(Vector2.zero));
             Assert.That(bodyMomentum.torque, Is.EqualTo(0f));
             Assert.That(bodyMomentum.linearVelocity, Is.EqualTo(Vector2.zero));
@@ -35,6 +37,7 @@ namespace CrispyPhysics
             Momentum newBodyMomentum = new Momentum(1, bodyMomentum);
 
             Assert.That(newBodyMomentum.tick, Is.EqualTo(1));
+            Assert.That(newBodyMomentum.tickDt, Is.EqualTo(0f));
             Assert.That(newBodyMomentum.force, Is.EqualTo(bodyMomentum.force));
             Assert.That(newBodyMomentum.torque, Is.EqualTo(bodyMomentum.torque));
             Assert.That(newBodyMomentum.linearVelocity, Is.EqualTo(bodyMomentum.linearVelocity));
@@ -75,6 +78,9 @@ namespace CrispyPhysics
 
             bodyMomentum.changeEnduringContactState(true);
             Assert.That(bodyMomentum.enduringContact == true);
+
+            bodyMomentum.ChangeTickDt(0.01f);
+            Assert.That(bodyMomentum.tickDt, Is.EqualTo(0.01f));
         }
 
         [Test]

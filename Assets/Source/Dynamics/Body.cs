@@ -39,6 +39,7 @@ namespace CrispyPhysics.Internal
             momentums = new List<Momentum>();
             momentums.Add(new Momentum(
                 currentTick,
+                0f,
                 Vector2.zero, 0f,
                 Vector2.zero, 0f,
                 position, angle, false));
@@ -490,20 +491,6 @@ namespace CrispyPhysics.Internal
 
 
             return null;
-        } 
-
-        public Momentum EmergeMomentumForTick(uint tick)
-        {
-            int index = IndexForTick(tick);
-
-            if (index < 0) return null;
-            if (momentums[index].tick == tick)
-                return momentums[index];
-
-            Momentum momentum = new Momentum(tick, momentums[index]);
-            momentums.Insert(index + 1, momentum);
-
-            return momentum;
         }
 
         public IEnumerable<IMomentum> MomentumIterator(uint startingTick = 0, uint endingTick = 0)
@@ -528,13 +515,98 @@ namespace CrispyPhysics.Internal
                 
         }
 
-        public Vector2 ConvergeAtTick(uint tick, Vector2 divergence)
+        public bool CrispAtTick(
+            uint crispedTick, 
+            Vector2 position, float angle,
+            float maxDivergencePerTick = 0.25f)
         {
-            if (tick < currentTick)
-                throw new ArgumentOutOfRangeException("Tick to be converged should be above or equal to the current tick");
+            if (crispedTick <= currentTick)
+                throw new ArgumentOutOfRangeException("Tick to be converged should be above the current tick");
 
-            int indexForTick = IndexForTick(tick);
-            return Vector2.zero;
+            int crispedIndex = IndexForTick(crispedTick);
+            if (momentums[crispedIndex].enduringContact)
+                return false;
+
+            Momentum crispedMomentum = null;
+            if (momentums[crispedIndex].tick == crispedTick)
+                crispedMomentum = momentums[crispedIndex];
+            else
+            {
+                crispedMomentum = new Momentum(crispedTick, momentums[crispedIndex]);
+                momentums.Insert(++crispedIndex, crispedMomentum);
+            }
+
+            Vector2 divergence = position - crispedMomentum.position;
+
+            int lockedIndex = crispedIndex - 1;
+            bool done = false;
+            while (!done && lockedIndex > 0)
+                if (    momentums[lockedIndex].tick <= currentTick
+                    ||  momentums[lockedIndex].enduringContact)
+                    done = true;
+                else
+                    lockedIndex--;
+
+            uint startingTick = momentums[lockedIndex].tick + 1;
+            uint convergenceTickCount = crispedMomentum.tick - startingTick + 1;
+
+            if (divergence.magnitude / convergenceTickCount > maxDivergencePerTick)
+                return false;
+
+            Vector2 convergencePerTick = divergence / convergenceTickCount;
+            Vector2 convergence = Vector2.zero;
+            float angleConvergencePerTick = (angle - crispedMomentum.angle) / convergenceTickCount;
+            float angleConvergence = 0f;
+
+            float tickDt = 0f;
+
+            uint tick = startingTick;
+            int index = lockedIndex;
+            while(tick <= crispedTick)
+            {
+                while ( index + 1 < momentums.Count
+                     && momentums[index + 1].tick <= tick)
+                    index++;
+
+                Momentum momentum = null;
+                if (momentums[index].tick == tick)
+                {
+                    momentum = momentums[index];
+                    momentum.ChangeSituation(
+                        momentum.position + convergence,
+                        momentum.angle + angleConvergence);
+
+                    if (!Calculus.Approximately(momentum.tickDt, 0f))
+                        momentum.ChangeVelocity(
+                            momentum.linearVelocity + convergence / momentum.tickDt,
+                            momentum.angularVelocity + angleConvergence / momentum.tickDt);
+                } 
+                else
+                {
+                    momentum = new Momentum(tick, momentums[index]);
+                    momentums.Insert(++index, momentum);
+                }
+
+                momentum.ChangeSituation(
+                    momentum.position + convergencePerTick,
+                    momentum.angle + angleConvergencePerTick);
+
+                if (!Calculus.Approximately(momentum.tickDt, 0f))
+                    momentum.ChangeVelocity(
+                        momentum.linearVelocity + convergencePerTick / momentum.tickDt,
+                        momentum.angularVelocity + angleConvergencePerTick / momentum.tickDt);
+
+                convergence += convergencePerTick;
+                angleConvergence += angleConvergencePerTick;
+                tickDt += momentum.tickDt;
+
+                tick++;
+            }
+
+            if (ExternalChange != null)
+                ExternalChange(this, crispedTick);
+
+            return true;
         }
 
         #endregion

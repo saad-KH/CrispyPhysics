@@ -205,14 +205,16 @@ namespace CrispyPhysics.Internal
                 {
                     if (body.futur.tick < futurTick)
                         body.Foresee(futurTick - body.futur.tick);
+                    body.futur.ChangeTickDt(step.dt);
                     if (body.futur.enduringContact)
                         body.futur.changeEnduringContactState(false);
                 }
                     
 
                 foreach (Contact contact in contacts)
-                    if(contact.futur.tick < futurTick)
+                    if (contact.futur.tick < futurTick)
                         contact.Foresee(futurTick - contact.futur.tick);
+                    
 
                 if (lookForContact)
                 {
