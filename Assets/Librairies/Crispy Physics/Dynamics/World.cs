@@ -501,6 +501,11 @@ namespace CrispyPhysics.Internal
             if (bodyA == bodyB)
                 return;
 
+            Debug.Assert(bodyA.futur.tick == bodyB.futur.tick);
+            Contact newContact = ContactFactory.CreateContact(bodyA.futur.tick, bodyA, bodyB);
+            if (newContact == null)
+                return;
+
             HashSet<Contact> bodyAContacts = null;
             HashSet<Contact> bodyBContacts = null;
 
@@ -525,8 +530,6 @@ namespace CrispyPhysics.Internal
                 bodyContacts.Add(bodyB, bodyBContacts);
             }
 
-            Debug.Assert(bodyA.futur.tick == bodyB.futur.tick);
-            Contact newContact = ContactFactory.CreateContact(bodyA.futur.tick, bodyA, bodyB);
             bodyAContacts.Add(newContact);
             bodyBContacts.Add(newContact);
             contacts.Add(newContact);
