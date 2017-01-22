@@ -196,7 +196,6 @@ namespace CrispyPhysics.Internal
                         tick + foreseeTicks - futurTick,
                         bufferingTicks);
 
-            bool lookForContact = externalChange;
             for (int i = 0; i < iterationsToSolve; i++)
             {
                 futurTick++;
@@ -216,12 +215,7 @@ namespace CrispyPhysics.Internal
                         contact.Foresee(futurTick - contact.futur.tick);
                     
 
-                if (lookForContact)
-                {
-                    contactManager.FindNewContacts();
-                    lookForContact = false;
-                }
-
+                contactManager.FindNewContacts();
                 contactManager.Collide();
 
                 Solve(step);
@@ -436,8 +430,6 @@ namespace CrispyPhysics.Internal
                     if (islandBody.type == BodyType.Static)
                         islandBody.islandBound = false;
             }
-
-            contactManager.FindNewContacts();
         }
         #endregion
 
