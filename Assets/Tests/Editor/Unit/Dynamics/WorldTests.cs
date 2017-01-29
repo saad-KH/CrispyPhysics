@@ -75,6 +75,36 @@ namespace CrispyPhysics
             Assert.That(world.pastTick, Is.EqualTo(4));
             Assert.That(world.futurTick, Is.EqualTo(17));
 
+            bool firstRound = true;
+            world.ContactStartForeseen += (contact, momentum) =>
+            {
+                Assert.That(contact.firstBody, Is.EqualTo(colliderBody));
+                Assert.That(contact.secondBody, Is.EqualTo(body));
+                Assert.That(momentum.tick, Is.EqualTo(firstRound ? 62 : 170));
+            };
+
+            world.ContactEndForeseen += (contact, momentum) =>
+            {
+                Assert.That(contact.firstBody, Is.EqualTo(colliderBody));
+                Assert.That(contact.secondBody, Is.EqualTo(body));
+                Assert.That(momentum.tick, Is.EqualTo(firstRound ? 63 : 171));
+            };
+
+            world.ContactStarted += (contact, momentum) =>
+            {
+                Assert.That(contact.firstBody, Is.EqualTo(colliderBody));
+                Assert.That(contact.secondBody, Is.EqualTo(body));
+                Assert.That(momentum.tick, Is.EqualTo(firstRound ? 62 : 170));
+            };
+
+            world.ContactEnded += (contact, momentum) =>
+            {
+                Assert.That(contact.firstBody, Is.EqualTo(colliderBody));
+                Assert.That(contact.secondBody, Is.EqualTo(body));
+                Assert.That(momentum.tick, Is.EqualTo(firstRound ? 63 : 171));
+                firstRound = false;
+            };
+
             while (world.tick < 100)
                 world.Step(1, 50, 10, 50);
 
@@ -236,6 +266,13 @@ namespace CrispyPhysics
             Assert.That(body.futur.enduringContact == false);
 
             Assert.That(body.MomentumForTick(170).enduringContact == true);
+
+
+            world.FuturCleared += (receivedWorld, fromTick) =>
+            {
+                Assert.That(receivedWorld, Is.EqualTo(world));
+                Assert.That(fromTick, Is.EqualTo(200));
+            };
 
             body.ChangeSituation(Vector2.zero, 0f);
             Assert.That(world.tick, Is.EqualTo(200));

@@ -104,49 +104,69 @@ namespace CrispyPhysics
             Body body = new Body(0, 0, Vector2.zero, 0f, BodyType.Dynamic, null);
 
             IContact sentContact = Substitute.For<IContact>();
-            IContactMomentum contactMomentum = Substitute.For<IContactMomentum>();
+            IContactMomentum sentContactMomentum = Substitute.For<IContactMomentum>();
             IContact receivedContact = null;
-            IContactHandlerDelegate contactDelegate = (sender, args) => receivedContact = sentContact;
+            IContactMomentum receivedMomentum = null;
+            IContactHandlerDelegate contactDelegate = (contact, momentum) =>
+            {
+                receivedContact = sentContact;
+                receivedMomentum = momentum;
+            };
 
             receivedContact = null;
             body.ContactStartForeseen += contactDelegate;
-            body.NotifyContactStartForeseen(sentContact, contactMomentum);
+            body.NotifyContactStartForeseen(sentContact, sentContactMomentum);
             Assert.That(receivedContact, Is.EqualTo(sentContact));
+            Assert.That(receivedMomentum, Is.EqualTo(receivedMomentum));
 
             receivedContact = null;
+            receivedMomentum = null;
             body.ContactStartForeseen -= contactDelegate;
-            body.NotifyContactStartForeseen(sentContact, contactMomentum);
+            body.NotifyContactStartForeseen(sentContact, sentContactMomentum);
             Assert.That(receivedContact, Is.EqualTo(null));
+            Assert.That(receivedMomentum, Is.EqualTo(null));
 
             receivedContact = null;
+            receivedMomentum = null;
             body.ContactEndForeseen += contactDelegate;
-            body.NotifyContactEndForeseen(sentContact, contactMomentum);
+            body.NotifyContactEndForeseen(sentContact, sentContactMomentum);
             Assert.That(receivedContact, Is.EqualTo(sentContact));
+            Assert.That(receivedMomentum, Is.EqualTo(receivedMomentum));
 
             receivedContact = null;
+            receivedMomentum = null;
             body.ContactEndForeseen -= contactDelegate;
-            body.NotifyContactEndForeseen(sentContact, contactMomentum);
+            body.NotifyContactEndForeseen(sentContact, sentContactMomentum);
             Assert.That(receivedContact, Is.EqualTo(null));
+            Assert.That(receivedMomentum, Is.EqualTo(null));
 
             receivedContact = null;
+            receivedMomentum = null;
             body.ContactStarted += contactDelegate;
-            body.NotifyContactStarted(sentContact, contactMomentum);
+            body.NotifyContactStarted(sentContact, sentContactMomentum);
             Assert.That(receivedContact, Is.EqualTo(sentContact));
+            Assert.That(receivedMomentum, Is.EqualTo(receivedMomentum));
 
             receivedContact = null;
+            receivedMomentum = null;
             body.ContactStarted -= contactDelegate;
-            body.NotifyContactStarted(sentContact, contactMomentum);
+            body.NotifyContactStarted(sentContact, sentContactMomentum);
             Assert.That(receivedContact, Is.EqualTo(null));
+            Assert.That(receivedMomentum, Is.EqualTo(null));
 
             receivedContact = null;
+            receivedMomentum = null;
             body.ContactEnded += contactDelegate;
-            body.NotifyContactEnded(sentContact, contactMomentum);
+            body.NotifyContactEnded(sentContact, sentContactMomentum);
             Assert.That(receivedContact, Is.EqualTo(sentContact));
+            Assert.That(receivedMomentum, Is.EqualTo(sentContactMomentum));
 
             receivedContact = null;
+            receivedMomentum = null;
             body.ContactEnded -= contactDelegate;
-            body.NotifyContactEnded(sentContact, contactMomentum);
+            body.NotifyContactEnded(sentContact, sentContactMomentum);
             Assert.That(receivedContact, Is.EqualTo(null));
+            Assert.That(receivedMomentum, Is.EqualTo(null));
 
         }
 

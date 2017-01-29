@@ -28,10 +28,15 @@ namespace CrispyPhysics
     }
     #endregion
 
+    #region Events Definition
+    public delegate void IWorldHandlerDelegate(IWorld world, uint atTick);
+    #endregion
+
     #region Interface Defintion
     public interface IWorld
     {
         #region Events
+        event IWorldHandlerDelegate FuturCleared;
         event IContactHandlerDelegate ContactStartForeseen;
         event IContactHandlerDelegate ContactEndForeseen;
         event IContactHandlerDelegate ContactStarted;

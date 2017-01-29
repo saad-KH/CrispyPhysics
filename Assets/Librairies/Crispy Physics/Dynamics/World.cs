@@ -78,6 +78,7 @@ namespace CrispyPhysics.Internal
         #endregion
 
         #region Events
+        public event IWorldHandlerDelegate FuturCleared;
         public event IContactHandlerDelegate ContactStartForeseen;
         public event IContactHandlerDelegate ContactEndForeseen;
         public event IContactHandlerDelegate ContactStarted;
@@ -439,8 +440,13 @@ namespace CrispyPhysics.Internal
         {
             if ((opFlags & World.OperationFlag.ExternalChange) == 0)
             {
+                uint oldFuturTick = futurTick;
                 futurTick = (uint)Mathf.Max(tick, Mathf.Min(futurTick, fromTick));
                 opFlags |= World.OperationFlag.ExternalChange;
+
+                if (futurTick != oldFuturTick && FuturCleared != null)
+                    FuturCleared(this, futurTick);
+
             }
         }
 
