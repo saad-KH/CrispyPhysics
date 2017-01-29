@@ -103,10 +103,10 @@ namespace CrispyPhysics.Internal
                 futur.Change(nextManifold, 0f, touching);
 
                 if (wasTouching == false && touching == true && contactStartForeseen != null)
-                    contactStartForeseen(contact, EventArgs.Empty);
+                    contactStartForeseen(contact, futur);
 
                 if (wasTouching == true && touching == false && contactEndForeseen != null)
-                    contactEndForeseen(contact, EventArgs.Empty);
+                    contactEndForeseen(contact, futur);
             }
         }
 

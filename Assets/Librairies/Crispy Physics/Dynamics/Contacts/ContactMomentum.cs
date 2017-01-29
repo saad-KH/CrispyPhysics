@@ -1,11 +1,14 @@
+using UnityEngine;
 namespace CrispyPhysics.Internal
 {
-    public class ContactMomentum
+    public class ContactMomentum : IContactMomentum
     {
         public uint tick { get; private set; }
         public Manifold manifold { get; private set; }
         public float tangentSpeed { get; private set; }
         public bool isTouching { get; private set; }
+        public Vector2 point { get { return (manifold != null) ? manifold.point : Vector2.zero;} }
+        public Vector2 normal { get { return (manifold != null) ? manifold.normal : Vector2.zero; } }
 
         public ContactMomentum(uint tick)
         {

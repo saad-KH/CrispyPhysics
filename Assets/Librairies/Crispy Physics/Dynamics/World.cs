@@ -247,20 +247,20 @@ namespace CrispyPhysics.Internal
 
                 if(wasTouching == false && contact.current.isTouching == true)
                 {
-                    contact.bodyA.NotifyContactStarted(contact, EventArgs.Empty);
-                    contact.bodyB.NotifyContactStarted(contact, EventArgs.Empty);
+                    contact.bodyA.NotifyContactStarted(contact, contact.current);
+                    contact.bodyB.NotifyContactStarted(contact, contact.current);
 
                     if (ContactStarted != null)
-                        ContactStarted(contact, EventArgs.Empty);
+                        ContactStarted(contact, contact.current);
                 }
 
                 if(wasTouching == true && contact.current.isTouching == false)
                 {
-                    contact.bodyA.NotifyContactEnded(contact, EventArgs.Empty);
-                    contact.bodyB.NotifyContactEnded(contact, EventArgs.Empty);
+                    contact.bodyA.NotifyContactEnded(contact, contact.current);
+                    contact.bodyB.NotifyContactEnded(contact, contact.current);
 
                     if (ContactEnded != null)
-                        ContactEnded(contact, EventArgs.Empty);
+                        ContactEnded(contact, contact.current);
                 }
 
                 if(contact.IsDroppable())
@@ -321,20 +321,20 @@ namespace CrispyPhysics.Internal
 
                 if (wasTouching == false && contact.current.isTouching == true)
                 {
-                    contact.bodyA.NotifyContactStarted(contact, EventArgs.Empty);
-                    contact.bodyB.NotifyContactStarted(contact, EventArgs.Empty);
+                    contact.bodyA.NotifyContactStarted(contact, contact.current);
+                    contact.bodyB.NotifyContactStarted(contact, contact.current);
 
                     if (ContactStarted != null)
-                        ContactStarted(contact, EventArgs.Empty);
+                        ContactStarted(contact, contact.current);
                 }
 
                 if (wasTouching == true && contact.current.isTouching == false)
                 {
-                    contact.bodyA.NotifyContactEnded(contact, EventArgs.Empty);
-                    contact.bodyB.NotifyContactEnded(contact, EventArgs.Empty);
+                    contact.bodyA.NotifyContactEnded(contact, contact.current);
+                    contact.bodyB.NotifyContactEnded(contact, contact.current);
 
                     if (ContactEnded != null)
-                        ContactEnded(contact, EventArgs.Empty);
+                        ContactEnded(contact, contact.current);
                 }
 
                 if (contact.IsDroppable())
@@ -433,41 +433,6 @@ namespace CrispyPhysics.Internal
         }
         #endregion
 
-        #region Crisp
-        private void Crisp()
-        {
-            /*if(tick >= actionTick)
-            {
-                tick = tick - actionTick;
-                opFlags |= OperationFlag.Crisped;
-                foreach (IBody body in bodies)
-                {
-                    Vector2 crispedPosition;
-
-                    if (Mathf.Sign(body.position.x * body.linearVelocity.x) >= 0)
-                        crispedPosition.x = 
-                                Mathf.Ceil(Mathf.Abs(body.position.x / crispSize)) 
-                            *   crispSize * Mathf.Sign(body.position.x);
-                    else
-                        crispedPosition.x = 
-                                Mathf.Floor(Mathf.Abs(body.position.x / crispSize)) 
-                            *   crispSize * Mathf.Sign(body.position.x);
-
-                    if (Mathf.Sign(body.position.y * body.linearVelocity.y) >= 0)
-                        crispedPosition.y = 
-                                Mathf.Ceil(Mathf.Abs(body.position.y / crispSize)) 
-                            *   crispSize * Mathf.Sign(body.position.y);
-                    else
-                        crispedPosition.y = 
-                                Mathf.Floor(Mathf.Abs(body.position.y / crispSize)) 
-                            *   crispSize * Mathf.Sign(body.position.y);
-
-                    body.ChangeSituation(crispedPosition, body.angle);
-                }
-            }*/
-        }
-        #endregion
-
         #region Event Handlers & Delegates
 
         private void ExternalChange(IBody body, uint fromTick)
@@ -533,22 +498,22 @@ namespace CrispyPhysics.Internal
                 yield return contact;
         }
 
-        private void NotifyContactStartForeseen(Contact contact, EventArgs args)
+        private void NotifyContactStartForeseen(Contact contact, ContactMomentum momentum)
         {
-            contact.bodyA.NotifyContactStartForeseen(contact, args);
-            contact.bodyB.NotifyContactStartForeseen(contact, args);
+            contact.bodyA.NotifyContactStartForeseen(contact, momentum);
+            contact.bodyB.NotifyContactStartForeseen(contact, momentum);
 
             if (ContactStartForeseen != null)
-                ContactStartForeseen(contact, args);
+                ContactStartForeseen(contact, momentum);
         }
 
-        private void NotifyContactEndForeseen(Contact contact, EventArgs args)
+        private void NotifyContactEndForeseen(Contact contact, ContactMomentum momentum)
         {
-            contact.bodyA.NotifyContactStartForeseen(contact, EventArgs.Empty);
-            contact.bodyB.NotifyContactStartForeseen(contact, EventArgs.Empty);
+            contact.bodyA.NotifyContactStartForeseen(contact, momentum);
+            contact.bodyB.NotifyContactStartForeseen(contact, momentum);
 
             if (ContactEndForeseen != null)
-                ContactEndForeseen(contact, args);
+                ContactEndForeseen(contact, momentum);
         }
         #endregion
     }

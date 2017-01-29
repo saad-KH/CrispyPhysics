@@ -5,7 +5,7 @@ using System.Collections.Generic;
 namespace CrispyPhysics.Internal
 {
     #region Delegate Definition
-    public delegate void ContactHandlerDelegate(Contact contact, EventArgs args);
+    public delegate void ContactHandlerDelegate(Contact contact, ContactMomentum momentum);
     public delegate void NewPairDelegate(Body bodyA, Body bodyB);
     public delegate IEnumerable<Contact> ContactIteratorDelegate();
     #endregion

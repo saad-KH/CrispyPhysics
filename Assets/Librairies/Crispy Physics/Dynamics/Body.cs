@@ -67,28 +67,28 @@ namespace CrispyPhysics.Internal
         public event IContactHandlerDelegate ContactStarted;
         public event IContactHandlerDelegate ContactEnded;
 
-        public void NotifyContactStartForeseen(IContact contact, EventArgs args)
+        public void NotifyContactStartForeseen(IContact contact, IContactMomentum momentum)
         {
             if (ContactStartForeseen != null)
-                ContactStartForeseen(contact, args);
+                ContactStartForeseen(contact, momentum);
         }
 
-        public void NotifyContactEndForeseen(IContact contact, EventArgs args)
+        public void NotifyContactEndForeseen(IContact contact, IContactMomentum momentum)
         {
             if (ContactEndForeseen != null)
-                ContactEndForeseen(contact, args);
+                ContactEndForeseen(contact, momentum);
         }
 
-        public void NotifyContactStarted(IContact contact, EventArgs args)
+        public void NotifyContactStarted(IContact contact, IContactMomentum momentum)
         {
             if (ContactStarted != null)
-                ContactStarted(contact, args);
+                ContactStarted(contact, momentum);
         }
 
-        public void NotifyContactEnded(IContact contact, EventArgs args)
+        public void NotifyContactEnded(IContact contact, IContactMomentum momentum)
         {
             if (ContactEnded != null)
-                ContactEnded(contact, args);
+                ContactEnded(contact, momentum);
         }
         #endregion
 
@@ -516,29 +516,29 @@ namespace CrispyPhysics.Internal
         }
 
         public bool CrispAtTick(
-            uint crispedTick, 
+            uint crispTick, 
             Vector2 position, float angle,
             float maxDivergencePerTick = 0.25f)
         {
-            if (crispedTick <= currentTick)
+            if (crispTick <= currentTick)
                 throw new ArgumentOutOfRangeException("Tick to be converged should be above the current tick");
 
-            int crispedIndex = IndexForTick(crispedTick);
-            if (momentums[crispedIndex].enduringContact)
+            int crispIndex = IndexForTick(crispTick);
+            if (momentums[crispIndex].enduringContact)
                 return false;
 
-            Momentum crispedMomentum = null;
-            if (momentums[crispedIndex].tick == crispedTick)
-                crispedMomentum = momentums[crispedIndex];
+            Momentum crispMomentum = null;
+            if (momentums[crispIndex].tick == crispTick)
+                crispMomentum = momentums[crispIndex];
             else
             {
-                crispedMomentum = new Momentum(crispedTick, momentums[crispedIndex]);
-                momentums.Insert(++crispedIndex, crispedMomentum);
+                crispMomentum = new Momentum(crispTick, momentums[crispIndex]);
+                momentums.Insert(++crispIndex, crispMomentum);
             }
 
-            Vector2 divergence = position - crispedMomentum.position;
+            Vector2 divergence = position - crispMomentum.position;
 
-            int lockedIndex = crispedIndex - 1;
+            int lockedIndex = crispIndex - 1;
             bool done = false;
             while (!done && lockedIndex > 0)
                 if (    momentums[lockedIndex].tick <= currentTick
@@ -548,21 +548,21 @@ namespace CrispyPhysics.Internal
                     lockedIndex--;
 
             uint startingTick = momentums[lockedIndex].tick + 1;
-            uint convergenceTickCount = crispedMomentum.tick - startingTick + 1;
+            uint convergenceTickCount = crispMomentum.tick - startingTick + 1;
 
             if (divergence.magnitude / convergenceTickCount > maxDivergencePerTick)
                 return false;
 
             Vector2 convergencePerTick = divergence / convergenceTickCount;
             Vector2 convergence = Vector2.zero;
-            float angleConvergencePerTick = (angle - crispedMomentum.angle) / convergenceTickCount;
+            float angleConvergencePerTick = (angle - crispMomentum.angle) / convergenceTickCount;
             float angleConvergence = 0f;
 
             float tickDt = 0f;
 
             uint tick = startingTick;
             int index = lockedIndex;
-            while(tick <= crispedTick)
+            while(tick <= crispTick)
             {
                 while ( index + 1 < momentums.Count
                      && momentums[index + 1].tick <= tick)
@@ -604,7 +604,7 @@ namespace CrispyPhysics.Internal
             }
 
             if (ExternalChange != null)
-                ExternalChange(this, crispedTick);
+                ExternalChange(this, crispTick);
 
             return true;
         }
