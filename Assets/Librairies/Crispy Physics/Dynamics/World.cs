@@ -238,15 +238,19 @@ namespace CrispyPhysics.Internal
             {
                 bool wasTouching = contact.current.isTouching;
 
-                if(contact.current.tick < tick)
+                if (contact.current.tick < tick)
                     contact.Step(tick - contact.current.tick);
-                
+
                 contact.ForgetPast(pastTick);
 
                 Debug.Assert(contact.current.tick >= tick);
                 Debug.Assert(contact.futur.tick >= futurTick);
 
-                if(wasTouching == false && contact.current.isTouching == true)
+                if (contact.current.tick > tick)
+                    continue;
+
+                if ((wasTouching == false || (contact.current.tick == contact.past.tick))
+                    && contact.current.isTouching == true)
                 {
                     contact.bodyA.NotifyContactStarted(contact, contact.current);
                     contact.bodyB.NotifyContactStarted(contact, contact.current);
@@ -313,7 +317,7 @@ namespace CrispyPhysics.Internal
             HashSet<Contact> contactsToRemove = new HashSet<Contact>();
             foreach (Contact contact in contacts)
             {
-                bool wasTouching = contact.current.isTouching;
+                bool wasTouching = contact.current.isTouching && contact.current != contact.past;
                 contact.RollBack(tick);
                 contact.ForgetPast(pastTick);
 
@@ -515,8 +519,8 @@ namespace CrispyPhysics.Internal
 
         private void NotifyContactEndForeseen(Contact contact, ContactMomentum momentum)
         {
-            contact.bodyA.NotifyContactStartForeseen(contact, momentum);
-            contact.bodyB.NotifyContactStartForeseen(contact, momentum);
+            contact.bodyA.NotifyContactEndForeseen(contact, momentum);
+            contact.bodyB.NotifyContactEndForeseen(contact, momentum);
 
             if (ContactEndForeseen != null)
                 ContactEndForeseen(contact, momentum);
