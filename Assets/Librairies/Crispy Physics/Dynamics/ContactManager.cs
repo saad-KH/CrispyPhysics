@@ -95,12 +95,15 @@ namespace CrispyPhysics.Internal
 
                     if (nextManifold != null && nextManifold.pointCount > 0)
                         touching = true;
+                        
                 }
 
                 firstBody.internalFutur.changeEnduringContactState(touching);
                 secondBody.internalFutur.changeEnduringContactState(touching);
 
-                futur.Change(nextManifold, 0f, touching);
+                futur.Change(nextManifold, 0f, touching, 
+                    contact.internalFirstBody.internalFutur.position,
+                    contact.internalSecondBody.internalFutur.position);
 
                 if (wasTouching == false && touching == true && contactStartForeseen != null)
                     contactStartForeseen(contact, futur);

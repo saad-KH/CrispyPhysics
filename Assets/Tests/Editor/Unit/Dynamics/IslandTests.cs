@@ -82,7 +82,9 @@ namespace CrispyPhysics
             Manifold mf = contact.Evaluate(
                 contact.internalFirstBody.internalFutur.transform, 
                 contact.internalSecondBody.internalFutur.transform);
-            contact.futur.Change(mf, 0f, true);
+            contact.futur.Change(mf, 0f, true,
+                contact.internalFirstBody.internalFutur.position,
+                contact.internalSecondBody.internalFutur.position);
 
             island.Add(contact);
 

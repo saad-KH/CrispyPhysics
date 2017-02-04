@@ -99,10 +99,14 @@ namespace CrispyPhysics
             Assert.That(contact.current.manifold, Is.EqualTo(null));
             Assert.That(contact.current.tangentSpeed, Is.EqualTo(0f));
             Assert.That(contact.current.isTouching == false);
+            Assert.That(contact.current.firstBodyPosition, Is.EqualTo(Vector2.zero));
+            Assert.That(contact.current.secondBodyPosition, Is.EqualTo(Vector2.zero));
             Assert.That(contact.past.tick, Is.EqualTo(0f));
             Assert.That(contact.past.manifold, Is.EqualTo(null));
             Assert.That(contact.past.tangentSpeed, Is.EqualTo(0f));
             Assert.That(contact.past.isTouching == false);
+            Assert.That(contact.past.firstBodyPosition, Is.EqualTo(Vector2.zero));
+            Assert.That(contact.past.secondBodyPosition, Is.EqualTo(Vector2.zero));
             Assert.That(contact.IsForeseen() == false);
             Assert.That(contact.IsDroppable() == true);
 
@@ -111,43 +115,55 @@ namespace CrispyPhysics
             Assert.That(contact.current.manifold, Is.EqualTo(null));
             Assert.That(contact.current.tangentSpeed, Is.EqualTo(0f));
             Assert.That(contact.current.isTouching == false);
+            Assert.That(contact.current.firstBodyPosition, Is.EqualTo(Vector2.zero));
+            Assert.That(contact.current.secondBodyPosition, Is.EqualTo(Vector2.zero));
             Assert.That(contact.past.tick, Is.EqualTo(0f));
             Assert.That(contact.past.manifold, Is.EqualTo(null));
             Assert.That(contact.past.tangentSpeed, Is.EqualTo(0f));
             Assert.That(contact.past.isTouching == false);
+            Assert.That(contact.past.firstBodyPosition, Is.EqualTo(Vector2.zero));
+            Assert.That(contact.past.secondBodyPosition, Is.EqualTo(Vector2.zero));
             Assert.That(contact.IsForeseen());
             Assert.That(contact.futur.tick, Is.EqualTo(2f));
             Assert.That(contact.futur.manifold, Is.EqualTo(null));
             Assert.That(contact.futur.tangentSpeed, Is.EqualTo(0f));
             Assert.That(contact.futur.isTouching == false);
+            Assert.That(contact.futur.firstBodyPosition, Is.EqualTo(Vector2.zero));
+            Assert.That(contact.futur.secondBodyPosition, Is.EqualTo(Vector2.zero));
             Assert.That(contact.IsDroppable() == true);
 
             Manifold mf = new Manifold(Manifold.Type.Circles, Vector2.zero, Vector2.up);
             contact.Foresee();
-            contact.futur.Change(mf, 1f, true);
+            contact.futur.Change(mf, 1f, true, Vector2.zero, Vector2.zero);
             Assert.That(contact.IsForeseen());
             Assert.That(contact.futur.tick, Is.EqualTo(3));
             Assert.That(contact.futur.manifold, Is.EqualTo(mf));
             Assert.That(contact.futur.tangentSpeed, Is.EqualTo(1f));
             Assert.That(contact.futur.isTouching == true);
+            Assert.That(contact.futur.firstBodyPosition, Is.EqualTo(Vector2.zero));
+            Assert.That(contact.futur.secondBodyPosition, Is.EqualTo(Vector2.zero));
             Assert.That(contact.IsDroppable() == false);
 
             contact.Foresee(2);
-            contact.futur.Change(mf, 2f, true);
+            contact.futur.Change(mf, 2f, true, Vector2.up, Vector2.down);
             Assert.That(contact.IsForeseen());
             Assert.That(contact.futur.tick, Is.EqualTo(5));
             Assert.That(contact.futur.manifold, Is.EqualTo(mf));
             Assert.That(contact.futur.tangentSpeed, Is.EqualTo(2f));
             Assert.That(contact.futur.isTouching == true);
+            Assert.That(contact.futur.firstBodyPosition, Is.EqualTo(Vector2.up));
+            Assert.That(contact.futur.secondBodyPosition, Is.EqualTo(Vector2.down));
             Assert.That(contact.IsDroppable() == false);
 
             contact.Foresee();
-            contact.futur.Change(null, 0f, false);
+            contact.futur.Change(null, 0f, false, Vector2.up, Vector2.down);
             Assert.That(contact.IsForeseen());
             Assert.That(contact.futur.tick, Is.EqualTo(6));
             Assert.That(contact.futur.manifold, Is.EqualTo(null));
             Assert.That(contact.futur.tangentSpeed, Is.EqualTo(0f));
             Assert.That(contact.futur.isTouching == false);
+            Assert.That(contact.futur.firstBodyPosition, Is.EqualTo(Vector2.up));
+            Assert.That(contact.futur.secondBodyPosition, Is.EqualTo(Vector2.down));
             Assert.That(contact.IsDroppable() == false);
 
             contact.Step(2);
@@ -155,15 +171,21 @@ namespace CrispyPhysics
             Assert.That(contact.current.manifold, Is.EqualTo(mf));
             Assert.That(contact.current.tangentSpeed, Is.EqualTo(1f));
             Assert.That(contact.current.isTouching == true);
+            Assert.That(contact.current.firstBodyPosition, Is.EqualTo(Vector2.zero));
+            Assert.That(contact.current.secondBodyPosition, Is.EqualTo(Vector2.zero));
             Assert.That(contact.past.tick, Is.EqualTo(0f));
             Assert.That(contact.past.manifold, Is.EqualTo(null));
             Assert.That(contact.past.tangentSpeed, Is.EqualTo(0f));
             Assert.That(contact.past.isTouching == false);
+            Assert.That(contact.past.firstBodyPosition, Is.EqualTo(Vector2.zero));
+            Assert.That(contact.past.secondBodyPosition, Is.EqualTo(Vector2.zero));
             Assert.That(contact.IsForeseen());
             Assert.That(contact.futur.tick, Is.EqualTo(6));
             Assert.That(contact.futur.manifold, Is.EqualTo(null));
             Assert.That(contact.futur.tangentSpeed, Is.EqualTo(0f));
             Assert.That(contact.futur.isTouching == false);
+            Assert.That(contact.futur.firstBodyPosition, Is.EqualTo(Vector2.up));
+            Assert.That(contact.futur.secondBodyPosition, Is.EqualTo(Vector2.down));
             Assert.That(contact.IsDroppable() == false);
 
             contact.Step();
@@ -171,6 +193,8 @@ namespace CrispyPhysics
             Assert.That(contact.current.manifold, Is.EqualTo(mf));
             Assert.That(contact.current.tangentSpeed, Is.EqualTo(1f));
             Assert.That(contact.current.isTouching == true);
+            Assert.That(contact.current.firstBodyPosition, Is.EqualTo(Vector2.zero));
+            Assert.That(contact.current.secondBodyPosition, Is.EqualTo(Vector2.zero));
             Assert.That(contact.IsForeseen() == true);
             Assert.That(contact.IsDroppable() == false);
 
@@ -179,6 +203,8 @@ namespace CrispyPhysics
             Assert.That(contact.current.manifold, Is.EqualTo(mf));
             Assert.That(contact.current.tangentSpeed, Is.EqualTo(2f));
             Assert.That(contact.current.isTouching == true);
+            Assert.That(contact.current.firstBodyPosition, Is.EqualTo(Vector2.up));
+            Assert.That(contact.current.secondBodyPosition, Is.EqualTo(Vector2.down));
             Assert.That(contact.IsForeseen() == true);
             Assert.That(contact.IsDroppable() == false);
 
@@ -187,24 +213,32 @@ namespace CrispyPhysics
             Assert.That(contact.current.manifold, Is.EqualTo(null));
             Assert.That(contact.current.tangentSpeed, Is.EqualTo(0f));
             Assert.That(contact.current.isTouching == false);
+            Assert.That(contact.current.firstBodyPosition, Is.EqualTo(Vector2.up));
+            Assert.That(contact.current.secondBodyPosition, Is.EqualTo(Vector2.down));
             Assert.That(contact.IsForeseen() == false);
             Assert.That(contact.IsDroppable() == false);
 
             contact.Foresee();
-            contact.futur.Change(mf, 3f, true);
+            contact.futur.Change(mf, 3f, true, Vector2.zero, Vector2.zero);
             Assert.That(contact.current.tick, Is.EqualTo(6));
             Assert.That(contact.current.manifold, Is.EqualTo(null));
             Assert.That(contact.current.tangentSpeed, Is.EqualTo(0f));
             Assert.That(contact.current.isTouching == false);
+            Assert.That(contact.current.firstBodyPosition, Is.EqualTo(Vector2.up));
+            Assert.That(contact.current.secondBodyPosition, Is.EqualTo(Vector2.down));
             Assert.That(contact.past.tick, Is.EqualTo(0f));
             Assert.That(contact.past.manifold, Is.EqualTo(null));
             Assert.That(contact.past.tangentSpeed, Is.EqualTo(0f));
             Assert.That(contact.past.isTouching == false);
+            Assert.That(contact.past.firstBodyPosition, Is.EqualTo(Vector2.zero));
+            Assert.That(contact.past.secondBodyPosition, Is.EqualTo(Vector2.zero));
             Assert.That(contact.IsForeseen());
             Assert.That(contact.futur.tick, Is.EqualTo(7));
             Assert.That(contact.futur.manifold, Is.EqualTo(mf));
             Assert.That(contact.futur.tangentSpeed, Is.EqualTo(3f));
             Assert.That(contact.futur.isTouching == true);
+            Assert.That(contact.futur.firstBodyPosition, Is.EqualTo(Vector2.zero));
+            Assert.That(contact.futur.secondBodyPosition, Is.EqualTo(Vector2.zero));
             Assert.That(contact.IsDroppable() == false);
 
             contact.Step();
@@ -212,6 +246,8 @@ namespace CrispyPhysics
             Assert.That(contact.current.manifold, Is.EqualTo(mf));
             Assert.That(contact.current.tangentSpeed, Is.EqualTo(3f));
             Assert.That(contact.current.isTouching == true);
+            Assert.That(contact.current.firstBodyPosition, Is.EqualTo(Vector2.zero));
+            Assert.That(contact.current.secondBodyPosition, Is.EqualTo(Vector2.zero));
             Assert.That(contact.IsForeseen() == false);
             Assert.That(contact.IsDroppable() == false);
 
@@ -220,15 +256,21 @@ namespace CrispyPhysics
             Assert.That(contact.current.manifold, Is.EqualTo(mf));
             Assert.That(contact.current.tangentSpeed, Is.EqualTo(1f));
             Assert.That(contact.current.isTouching == true);
+            Assert.That(contact.current.firstBodyPosition, Is.EqualTo(Vector2.zero));
+            Assert.That(contact.current.secondBodyPosition, Is.EqualTo(Vector2.zero));
             Assert.That(contact.past.tick, Is.EqualTo(0f));
             Assert.That(contact.past.manifold, Is.EqualTo(null));
             Assert.That(contact.past.tangentSpeed, Is.EqualTo(0f));
             Assert.That(contact.past.isTouching == false);
+            Assert.That(contact.past.firstBodyPosition, Is.EqualTo(Vector2.zero));
+            Assert.That(contact.past.secondBodyPosition, Is.EqualTo(Vector2.zero));
             Assert.That(contact.IsForeseen());
             Assert.That(contact.futur.tick, Is.EqualTo(7));
             Assert.That(contact.futur.manifold, Is.EqualTo(mf));
             Assert.That(contact.futur.tangentSpeed, Is.EqualTo(3f));
             Assert.That(contact.futur.isTouching == true);
+            Assert.That(contact.futur.firstBodyPosition, Is.EqualTo(Vector2.zero));
+            Assert.That(contact.futur.secondBodyPosition, Is.EqualTo(Vector2.zero));
             Assert.That(contact.IsDroppable() == false);
 
             contact.ClearFutur();
@@ -236,10 +278,14 @@ namespace CrispyPhysics
             Assert.That(contact.current.manifold, Is.EqualTo(mf));
             Assert.That(contact.current.tangentSpeed, Is.EqualTo(1f));
             Assert.That(contact.current.isTouching == true);
+            Assert.That(contact.current.firstBodyPosition, Is.EqualTo(Vector2.zero));
+            Assert.That(contact.current.secondBodyPosition, Is.EqualTo(Vector2.zero));
             Assert.That(contact.past.tick, Is.EqualTo(0f));
             Assert.That(contact.past.manifold, Is.EqualTo(null));
             Assert.That(contact.past.tangentSpeed, Is.EqualTo(0f));
             Assert.That(contact.past.isTouching == false);
+            Assert.That(contact.past.firstBodyPosition, Is.EqualTo(Vector2.zero));
+            Assert.That(contact.past.secondBodyPosition, Is.EqualTo(Vector2.zero));
             Assert.That(contact.IsForeseen() == false);
             Assert.That(contact.IsDroppable() == false);
 
@@ -248,15 +294,21 @@ namespace CrispyPhysics
             Assert.That(contact.current.manifold, Is.EqualTo(null));
             Assert.That(contact.current.tangentSpeed, Is.EqualTo(0f));
             Assert.That(contact.current.isTouching == false);
+            Assert.That(contact.current.firstBodyPosition, Is.EqualTo(Vector2.zero));
+            Assert.That(contact.current.secondBodyPosition, Is.EqualTo(Vector2.zero));
             Assert.That(contact.past.tick, Is.EqualTo(0f));
             Assert.That(contact.past.manifold, Is.EqualTo(null));
             Assert.That(contact.past.tangentSpeed, Is.EqualTo(0f));
             Assert.That(contact.past.isTouching == false);
+            Assert.That(contact.past.firstBodyPosition, Is.EqualTo(Vector2.zero));
+            Assert.That(contact.past.secondBodyPosition, Is.EqualTo(Vector2.zero));
             Assert.That(contact.IsForeseen() == true);
             Assert.That(contact.futur.tick, Is.EqualTo(3));
             Assert.That(contact.futur.manifold, Is.EqualTo(mf));
             Assert.That(contact.futur.tangentSpeed, Is.EqualTo(1f));
             Assert.That(contact.futur.isTouching == true);
+            Assert.That(contact.futur.firstBodyPosition, Is.EqualTo(Vector2.zero));
+            Assert.That(contact.futur.secondBodyPosition, Is.EqualTo(Vector2.zero));
             Assert.That(contact.IsDroppable() == false);
 
             contact.RollBack(1);
@@ -264,15 +316,21 @@ namespace CrispyPhysics
             Assert.That(contact.current.manifold, Is.EqualTo(null));
             Assert.That(contact.current.tangentSpeed, Is.EqualTo(0f));
             Assert.That(contact.current.isTouching == false);
+            Assert.That(contact.current.firstBodyPosition, Is.EqualTo(Vector2.zero));
+            Assert.That(contact.current.secondBodyPosition, Is.EqualTo(Vector2.zero));
             Assert.That(contact.past.tick, Is.EqualTo(0f));
             Assert.That(contact.past.manifold, Is.EqualTo(null));
             Assert.That(contact.past.tangentSpeed, Is.EqualTo(0f));
             Assert.That(contact.past.isTouching == false);
+            Assert.That(contact.past.firstBodyPosition, Is.EqualTo(Vector2.zero));
+            Assert.That(contact.past.secondBodyPosition, Is.EqualTo(Vector2.zero));
             Assert.That(contact.IsForeseen() == true);
             Assert.That(contact.futur.tick, Is.EqualTo(3));
             Assert.That(contact.futur.manifold, Is.EqualTo(mf));
             Assert.That(contact.futur.tangentSpeed, Is.EqualTo(1f));
             Assert.That(contact.futur.isTouching == true);
+            Assert.That(contact.futur.firstBodyPosition, Is.EqualTo(Vector2.zero));
+            Assert.That(contact.futur.secondBodyPosition, Is.EqualTo(Vector2.zero));
             Assert.That(contact.IsDroppable() == false);
 
             contact.Step(2);
@@ -281,24 +339,32 @@ namespace CrispyPhysics
             Assert.That(contact.current.manifold, Is.EqualTo(mf));
             Assert.That(contact.current.tangentSpeed, Is.EqualTo(1f));
             Assert.That(contact.current.isTouching == true);
+            Assert.That(contact.current.firstBodyPosition, Is.EqualTo(Vector2.zero));
+            Assert.That(contact.current.secondBodyPosition, Is.EqualTo(Vector2.zero));
             Assert.That(contact.past.tick, Is.EqualTo(3));
             Assert.That(contact.past.manifold, Is.EqualTo(mf));
             Assert.That(contact.past.tangentSpeed, Is.EqualTo(1f));
             Assert.That(contact.past.isTouching == true);
+            Assert.That(contact.past.firstBodyPosition, Is.EqualTo(Vector2.zero));
+            Assert.That(contact.past.secondBodyPosition, Is.EqualTo(Vector2.zero));
             Assert.That(contact.IsForeseen() == false);
             Assert.That(contact.IsDroppable() == false);
 
             contact.Step();
-            contact.current.Change(null, 0f, false);
+            contact.current.Change(null, 0f, false, Vector2.right, Vector2.left);
             contact.ForgetPast(contact.current.tick);
             Assert.That(contact.current.tick, Is.EqualTo(4));
             Assert.That(contact.current.manifold, Is.EqualTo(null));
             Assert.That(contact.current.tangentSpeed, Is.EqualTo(0f));
             Assert.That(contact.current.isTouching == false);
+            Assert.That(contact.current.firstBodyPosition, Is.EqualTo(Vector2.right));
+            Assert.That(contact.current.secondBodyPosition, Is.EqualTo(Vector2.left));
             Assert.That(contact.past.tick, Is.EqualTo(4));
             Assert.That(contact.past.manifold, Is.EqualTo(null));
             Assert.That(contact.past.tangentSpeed, Is.EqualTo(0f));
             Assert.That(contact.past.isTouching == false);
+            Assert.That(contact.past.firstBodyPosition, Is.EqualTo(Vector2.right));
+            Assert.That(contact.past.secondBodyPosition, Is.EqualTo(Vector2.left));
             Assert.That(contact.IsForeseen() == false);
             Assert.That(contact.IsDroppable() == true);
             contact.RollBack(0);
@@ -306,14 +372,20 @@ namespace CrispyPhysics
             Assert.That(contact.current.manifold, Is.EqualTo(null));
             Assert.That(contact.current.tangentSpeed, Is.EqualTo(0f));
             Assert.That(contact.current.isTouching == false);
+            Assert.That(contact.current.firstBodyPosition, Is.EqualTo(Vector2.right));
+            Assert.That(contact.current.secondBodyPosition, Is.EqualTo(Vector2.left));
             Assert.That(contact.past.tick, Is.EqualTo(0));
             Assert.That(contact.past.manifold, Is.EqualTo(null));
             Assert.That(contact.past.tangentSpeed, Is.EqualTo(0f));
             Assert.That(contact.past.isTouching == false);
+            Assert.That(contact.past.firstBodyPosition, Is.EqualTo(Vector2.right));
+            Assert.That(contact.past.secondBodyPosition, Is.EqualTo(Vector2.left));
             Assert.That(contact.IsForeseen() == true);
             Assert.That(contact.futur.tick, Is.EqualTo(4));
             Assert.That(contact.futur.manifold, Is.EqualTo(null));
             Assert.That(contact.futur.tangentSpeed, Is.EqualTo(0f));
+            Assert.That(contact.futur.firstBodyPosition, Is.EqualTo(Vector2.right));
+            Assert.That(contact.futur.secondBodyPosition, Is.EqualTo(Vector2.left));
             Assert.That(contact.futur.isTouching == false);
             Assert.That(contact.IsDroppable() == true);
         }
