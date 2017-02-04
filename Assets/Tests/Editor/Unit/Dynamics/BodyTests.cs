@@ -384,7 +384,7 @@ namespace CrispyPhysics
         public void Tracking()
         {
             Body body = new Body(0, 0, Vector2.zero, 0f, BodyType.Dynamic, null);
-            body.current.ChangeTickDt(0.01f);
+            body.internalCurrent.ChangeTickDt(0.01f);
 
             body.Step();
             Assert.That(body.current.tick, Is.EqualTo(1));
@@ -408,14 +408,14 @@ namespace CrispyPhysics
             Assert.That(body.futur.torque, Is.EqualTo(0f));
 
             body.Foresee();
-            body.futur.ChangeImpulse(Vector2.one, 1f);
+            body.internalFutur.ChangeImpulse(Vector2.one, 1f);
             Assert.That(body.IsForeseen());
             Assert.That(body.futur.tick, Is.EqualTo(3));
             Assert.That(body.futur.force, Is.EqualTo(Vector2.one));
             Assert.That(body.futur.torque, Is.EqualTo(1f));
 
             body.Foresee();
-            body.futur.ChangeImpulse(Vector2.up, -1f);
+            body.internalFutur.ChangeImpulse(Vector2.up, -1f);
             Assert.That(body.IsForeseen());
             Assert.That(body.futur.tick, Is.EqualTo(4));
             Assert.That(body.futur.force, Is.EqualTo(Vector2.up));
@@ -428,14 +428,14 @@ namespace CrispyPhysics
             Assert.That(body.futur.torque, Is.EqualTo(1f));
 
             body.Foresee();
-            body.futur.ChangeImpulse(Vector2.up, -1f);
+            body.internalFutur.ChangeImpulse(Vector2.up, -1f);
             Assert.That(body.IsForeseen());
             Assert.That(body.futur.tick, Is.EqualTo(4));
             Assert.That(body.futur.force, Is.EqualTo(Vector2.up));
             Assert.That(body.futur.torque, Is.EqualTo(-1f));
 
             body.Foresee();
-            body.futur.ChangeImpulse(Vector2.left, -2f);
+            body.internalFutur.ChangeImpulse(Vector2.left, -2f);
             Assert.That(body.IsForeseen());
             Assert.That(body.futur.tick, Is.EqualTo(5));
             Assert.That(body.futur.force, Is.EqualTo(Vector2.left));
@@ -448,14 +448,14 @@ namespace CrispyPhysics
             Assert.That(body.futur.torque, Is.EqualTo(1f));
 
             body.Foresee(2);
-            body.futur.ChangeImpulse(Vector2.one, 1f);
+            body.internalFutur.ChangeImpulse(Vector2.one, 1f);
             Assert.That(body.IsForeseen());
             Assert.That(body.futur.tick, Is.EqualTo(5));
             Assert.That(body.futur.force, Is.EqualTo(Vector2.one));
             Assert.That(body.futur.torque, Is.EqualTo(1f));
 
             body.Foresee();
-            body.futur.ChangeImpulse(Vector2.down, -1f);
+            body.internalFutur.ChangeImpulse(Vector2.down, -1f);
             Assert.That(body.IsForeseen());
             Assert.That(body.futur.tick, Is.EqualTo(6));
             Assert.That(body.futur.force, Is.EqualTo(Vector2.down));
@@ -607,7 +607,7 @@ namespace CrispyPhysics
             Assert.That(body.IsForeseen() == false);
 
             body.Foresee();
-            body.futur.ChangeImpulse(Vector2.up, 2f);
+            body.internalFutur.ChangeImpulse(Vector2.up, 2f);
             Assert.That(body.current.tick, Is.EqualTo(6));
             Assert.That(body.force, Is.EqualTo(Vector2.down));
             Assert.That(body.torque, Is.EqualTo(-1f));

@@ -78,7 +78,7 @@ namespace CrispyPhysics.Internal
             for(uint i=0; i < bodyCount; i++)
             {
                 Body body = bodies[i];
-                Momentum momentum = body.futur;
+                Momentum momentum = body.internalFutur;
                 
                 Vector2 linearVelocity = momentum.linearVelocity;
                 float angularVelocity = momentum.angularVelocity;
@@ -141,7 +141,7 @@ namespace CrispyPhysics.Internal
 
             for (uint i = 0; i < bodyCount; ++i)
             {
-                Momentum momentum = bodies[i].futur;
+                Momentum momentum = bodies[i].internalFutur;
                 momentum.ChangeSituation(positions[i].center, positions[i].angle);
                 momentum.ChangeVelocity(velocities[i].linearVelocity, velocities[i].angularVelocity);
             }

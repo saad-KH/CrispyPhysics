@@ -79,7 +79,9 @@ namespace CrispyPhysics
             island.Add(colliderBody);
 
             Contact contact = ContactFactory.CreateContact(0, body, colliderBody);
-            Manifold mf = contact.Evaluate(contact.bodyA.futur.transform, contact.bodyB.futur.transform);
+            Manifold mf = contact.Evaluate(
+                contact.internalFirstBody.internalFutur.transform, 
+                contact.internalSecondBody.internalFutur.transform);
             contact.futur.Change(mf, 0f, true);
 
             island.Add(contact);

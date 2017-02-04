@@ -139,14 +139,16 @@ namespace CrispyPhysics
                 0, 0, new Vector2(0.5f, 1f), 0f, BodyType.Dynamic, circleShape,
                 1f, 0f, 0f, 1f, 0.2f, 0.8f, false);
 
-            circleBody.futur.ChangeVelocity(Vector2.one * -1, 0.5f);
+            circleBody.internalFutur.ChangeVelocity(Vector2.one * -1, 0.5f);
 
             Body edgeBody = new Body(
                0, 0, Vector2.zero, 0f, BodyType.Static, edgeShape,
                1f, 0f, 0f, 1f, 0.4f, 0.6f, false);
 
             Contact contact = ContactFactory.CreateContact(0, circleBody, edgeBody);
-            Manifold mf = contact.Evaluate(contact.bodyA.futur.transform, contact.bodyB.futur.transform);
+            Manifold mf = contact.Evaluate(
+                contact.internalFirstBody.internalFutur.transform, 
+                contact.internalSecondBody.internalFutur.transform);
             contact.futur.Change(mf, 0f, true);
 
             contacts[0] = contact;
@@ -243,14 +245,16 @@ namespace CrispyPhysics
                 0, 0, new Vector2(0.5f, 1f), 0f, BodyType.Dynamic, circleShape,
                 1f, 0f, 0f, 1f, 0.2f, 0.8f, false);
 
-            circleBody.futur.ChangeVelocity(Vector2.one * -10, 0.5f);
+            circleBody.internalFutur.ChangeVelocity(Vector2.one * -10, 0.5f);
 
             Body edgeBody = new Body(
                0, 0, Vector2.zero, 0f, BodyType.Static, edgeShape,
                1f, 0f, 0f, 1f, 0.4f, 0.6f, false);
 
             Contact contact = ContactFactory.CreateContact(0, circleBody, edgeBody);
-            Manifold mf = contact.Evaluate(contact.bodyA.futur.transform, contact.bodyB.futur.transform);
+            Manifold mf = contact.Evaluate(
+                contact.internalFirstBody.internalFutur.transform, 
+                contact.internalSecondBody.internalFutur.transform);
             contact.futur.Change(mf, 0f, true);
 
             contacts[0] = contact;

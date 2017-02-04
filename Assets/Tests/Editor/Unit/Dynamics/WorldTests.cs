@@ -113,7 +113,7 @@ namespace CrispyPhysics
             Assert.That(world.futurTick, Is.EqualTo(150));
 
             Assert.That(body.current.tick, Is.EqualTo(100));
-            Assert.That(body.current.tickDt, Is.EqualTo(0.01f));
+            Assert.That(body.internalCurrent.tickDt, Is.EqualTo(0.01f));
             Assert.That(
                 body.linearVelocity,
                 OwnNUnit.Is.EqualTo(new Vector2(1.473f, 1.473f)).Within(0.001f));
@@ -123,7 +123,7 @@ namespace CrispyPhysics
             Assert.That(body.enduringContact == false);
 
             Assert.That(body.past.tick, Is.EqualTo(world.pastTick));
-            Assert.That(body.past.tickDt, Is.EqualTo(0.01f));
+            Assert.That(body.internalPast.tickDt, Is.EqualTo(0.01f));
             Assert.That(
                 body.past.linearVelocity,
                 OwnNUnit.Is.EqualTo(new Vector2(-4.753f, -4.753f)).Within(0.001f));
@@ -133,7 +133,7 @@ namespace CrispyPhysics
             Assert.That(body.past.enduringContact == false);
 
             Assert.That(body.futur.tick, Is.EqualTo(world.futurTick));
-            Assert.That(body.futur.tickDt, Is.EqualTo(0.01f));
+            Assert.That(body.internalFutur.tickDt, Is.EqualTo(0.01f));
             Assert.That(
                 body.futur.linearVelocity,
                 OwnNUnit.Is.EqualTo(new Vector2(-3.419f, -3.419f)).Within(0.001f));

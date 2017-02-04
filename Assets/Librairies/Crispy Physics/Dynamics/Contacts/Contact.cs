@@ -6,41 +6,41 @@ namespace CrispyPhysics.Internal
 {
     #region Delegate Definition
     public delegate void ContactHandlerDelegate(Contact contact, ContactMomentum momentum);
-    public delegate void NewPairDelegate(Body bodyA, Body bodyB);
+    public delegate void NewPairDelegate(Body firstBody, Body secondBody);
     public delegate IEnumerable<Contact> ContactIteratorDelegate();
     #endregion
 
     #region Contact Factory
     public class ContactFactory
     {
-        public static Contact CreateContact(uint tick, Body bodyA, Body bodyB)
+        public static Contact CreateContact(uint tick, Body firstBody, Body secondBody)
         {
-            if (bodyA == null)
-                throw new ArgumentNullException("bodyA should not be null");
-            if (bodyB == null)
-                throw new ArgumentNullException("bodyB should not be null");
-            if (bodyA.shape == null)
-                throw new ArgumentException("Shape of bodyA should not be null");
-            if (bodyB.shape == null)
-                throw new ArgumentException("Shape of bodyB should not be null");
+            if (firstBody == null)
+                throw new ArgumentNullException("internalFirstBody should not be null");
+            if (secondBody == null)
+                throw new ArgumentNullException("internalSecondBody should not be null");
+            if (firstBody.shape == null)
+                throw new ArgumentException("Shape of internalFirstBody should not be null");
+            if (secondBody.shape == null)
+                throw new ArgumentException("Shape of internalSecondBody should not be null");
 
-            IShape shapeA = bodyA.shape;
-            IShape shapeB = bodyB.shape;
+            IShape shapeA = firstBody.shape;
+            IShape shapeB = secondBody.shape;
 
             if (shapeA is CircleShape && shapeB is CircleShape)
-                return new CircleContact(tick, bodyA, bodyB);
+                return new CircleContact(tick, firstBody, secondBody);
 
             if (shapeA is EdgeShape && shapeB is CircleShape)
-                return new EdgeAndCircleContact(tick, bodyA, bodyB);
+                return new EdgeAndCircleContact(tick, firstBody, secondBody);
 
             if (shapeA is CircleShape && shapeB is EdgeShape)
-                return new EdgeAndCircleContact(tick, bodyB, bodyA);
+                return new EdgeAndCircleContact(tick, secondBody, firstBody);
 
             if (shapeA is PolygonShape && shapeB is CircleShape)
-                return new PolygonAndCircleContact(tick, bodyA, bodyB);
+                return new PolygonAndCircleContact(tick, firstBody, secondBody);
 
             if (shapeA is CircleShape && shapeB is PolygonShape)
-                return new PolygonAndCircleContact(tick, bodyB, bodyA);
+                return new PolygonAndCircleContact(tick, secondBody, firstBody);
 
             return null;
         }
@@ -50,24 +50,24 @@ namespace CrispyPhysics.Internal
     public abstract class Contact : IContact
     {
         #region Constructors
-        public Contact(uint tick, Body bodyA, Body bodyB)
+        public Contact(uint tick, Body firstBody, Body secondBody)
         {
-            if (bodyA == null)
-                throw new ArgumentNullException("bodyA should not be null");
-            if (bodyB == null)
-                throw new ArgumentNullException("bodyB should not be null");
+            if (firstBody == null)
+                throw new ArgumentNullException("internalFirstBody should not be null");
+            if (secondBody == null)
+                throw new ArgumentNullException("internalSecondBody should not be null");
 
-            if (bodyA.shape == null)
-                throw new ArgumentException("Shape of bodyA should not be null");
-            if (bodyB.shape == null)
-                throw new ArgumentException("Shape of bodyB should not be null");
+            if (firstBody.shape == null)
+                throw new ArgumentException("Shape of internalFirstBody should not be null");
+            if (secondBody.shape == null)
+                throw new ArgumentException("Shape of internalSecondBody should not be null");
 
             currentTick = tick;
-            this.bodyA = bodyA;
-            this.bodyB = bodyB;
+            internalFirstBody = firstBody;
+            internalSecondBody = secondBody;
 
-            friction = MixFriction(bodyA.friction, bodyB.friction);
-            restitution = MixRestitution(bodyA.restitution, bodyB.restitution);
+            friction = MixFriction(firstBody.friction, secondBody.friction);
+            restitution = MixRestitution(firstBody.restitution, secondBody.restitution);
 
             momentums = new List<ContactMomentum>();
             momentums.Add(new ContactMomentum(currentTick));
@@ -78,10 +78,10 @@ namespace CrispyPhysics.Internal
         #endregion
 
         #region Nature
-        public Body bodyA { get; private set; }
-        public IBody firstBody { get { return bodyA as IBody; } }
-        public Body bodyB { get; private set; }
-        public IBody secondBody { get { return bodyB as IBody; } }
+        public Body internalFirstBody { get; private set; }
+        public IBody firstBody { get { return internalFirstBody; } }
+        public Body internalSecondBody { get; private set; }
+        public IBody secondBody { get { return internalSecondBody; } }
         public float friction { get; private set; }
         public float restitution { get; private set; }
 
@@ -92,8 +92,8 @@ namespace CrispyPhysics.Internal
 
             return new WorldManifold(
                 current.manifold,
-                bodyA.transform, bodyA.shape.radius,
-                bodyB.transform, bodyB.shape.radius);
+                internalFirstBody.transform, internalFirstBody.shape.radius,
+                internalSecondBody.transform, internalSecondBody.shape.radius);
         }
 
         public static float MixFriction(float frictionA, float frictionB)

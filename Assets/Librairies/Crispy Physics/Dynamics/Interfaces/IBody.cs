@@ -94,6 +94,9 @@ namespace CrispyPhysics
         #endregion
 
         #region Track
+        IMomentum past { get; }
+        IMomentum current { get; }
+        IMomentum futur { get; }
         IMomentum MomentumForTick(uint tick);
         IEnumerable<IMomentum> MomentumIterator(uint startingTick = 0, uint endingTick = 0);
         bool CrispAtTick(

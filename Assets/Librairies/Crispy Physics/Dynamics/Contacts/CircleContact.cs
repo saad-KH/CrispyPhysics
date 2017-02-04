@@ -7,21 +7,21 @@ namespace CrispyPhysics.Internal
     public class CircleContact : Contact
     {
         #region Constructors
-        public CircleContact(uint tick, Body bodyA, Body bodyB) : base(tick, bodyA, bodyB)
+        public CircleContact(uint tick, Body firstBody, Body secondBody) : base(tick, firstBody, secondBody)
         {
-            if (!(bodyA.shape is CircleShape))
-                throw new ArgumentException("Shape of bodyA should be of CircleShape type");
-            if (!(bodyB.shape is CircleShape))
-                throw new ArgumentException("Shape of bodyB should be of CircleShape type");
+            if (!(internalFirstBody.shape is CircleShape))
+                throw new ArgumentException("Shape of internalFirstBody should be of CircleShape type");
+            if (!(internalSecondBody.shape is CircleShape))
+                throw new ArgumentException("Shape of internalSecondBody should be of CircleShape type");
         }
         #endregion
 
         override public Manifold Evaluate(Transformation transformA, Transformation transformB)
         {
-            Debug.Assert(bodyA.shape is CircleShape && bodyB.shape is CircleShape);
+            Debug.Assert(internalFirstBody.shape is CircleShape && internalSecondBody.shape is CircleShape);
             return Collision.CollideCircles(
-                (CircleShape)bodyA.shape, transformA,
-                (CircleShape)bodyB.shape, transformB);
+                (CircleShape)internalFirstBody.shape, transformA,
+                (CircleShape)internalSecondBody.shape, transformB);
         }
     }
     #endregion

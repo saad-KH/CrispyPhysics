@@ -47,7 +47,7 @@ namespace CrispyPhysics
                 0, 0, new Vector2(0.5f, 1f), 0f, BodyType.Dynamic, circleShape,
                 1f, 0f, 0f, 1f, 0.2f, 0.8f, false);
 
-            circleBody.futur.ChangeVelocity(Vector2.one * -10, 0.5f);
+            circleBody.internalFutur.ChangeVelocity(Vector2.one * -10, 0.5f);
 
             Body edgeBody = new Body(
                1, 0, Vector2.zero, 0f, BodyType.Static, edgeShape,
@@ -73,8 +73,8 @@ namespace CrispyPhysics
 
             InitContactContainer();
 
-            NewPairDelegate pairDel = (bodyA, bodyB) => contacts.Add(
-                ContactFactory.CreateContact(bodyA.futur.tick, bodyA, bodyB));
+            NewPairDelegate pairDel = (internalFirstBody, internalSecondBody) => contacts.Add(
+                ContactFactory.CreateContact(internalFirstBody.futur.tick, internalFirstBody, internalSecondBody));
 
             bool contactStartForeseen = false;
             ContactHandlerDelegate contactStartForeseenDel = (contact, args) => contactStartForeseen = true;
@@ -106,8 +106,8 @@ namespace CrispyPhysics
 
             Assert.That(contacts.Count == 2);
 
-            Assert.That(contacts[0].bodyA, Is.EqualTo(edgeBody));
-            Assert.That(contacts[0].bodyB, Is.EqualTo(circleBody));
+            Assert.That(contacts[0].internalFirstBody, Is.EqualTo(edgeBody));
+            Assert.That(contacts[0].internalSecondBody, Is.EqualTo(circleBody));
             Assert.That(contacts[0].friction, Is.EqualTo(0.282f).Within(0.001f));
             Assert.That(contacts[0].restitution, Is.EqualTo(0.8f).Within(0.001f));
             Assert.That(contacts[0].restitution, Is.EqualTo(0.8f).Within(0.001f));
@@ -116,8 +116,8 @@ namespace CrispyPhysics
             Assert.That(contacts[0].futur.tangentSpeed, Is.EqualTo(0f).Within(0.001f));
             Assert.That(contacts[0].futur.isTouching == false);
 
-            Assert.That(contacts[1].bodyA, Is.EqualTo(sensorEdgeBody));
-            Assert.That(contacts[1].bodyB, Is.EqualTo(circleBody));
+            Assert.That(contacts[1].internalFirstBody, Is.EqualTo(sensorEdgeBody));
+            Assert.That(contacts[1].internalSecondBody, Is.EqualTo(circleBody));
             Assert.That(contacts[1].friction, Is.EqualTo(0.282f).Within(0.001f));
             Assert.That(contacts[1].restitution, Is.EqualTo(0.8f).Within(0.001f));
             Assert.That(contacts[1].restitution, Is.EqualTo(0.8f).Within(0.001f));
@@ -134,15 +134,15 @@ namespace CrispyPhysics
             Assert.That(contacts[0].futur.manifold != null);
             Assert.That(contacts[0].futur.tangentSpeed, Is.EqualTo(0f).Within(0.001f));
             Assert.That(contacts[0].futur.isTouching == true);
-            Assert.That(contacts[0].bodyA.futur.enduringContact == true);
-            Assert.That(contacts[0].bodyB.futur.enduringContact == true);
+            Assert.That(contacts[0].internalFirstBody.futur.enduringContact == true);
+            Assert.That(contacts[0].internalSecondBody.futur.enduringContact == true);
 
             Assert.That(contacts[1].futur.tick, Is.EqualTo(0u));
             Assert.That(contacts[1].futur.manifold == null);
             Assert.That(contacts[1].futur.tangentSpeed, Is.EqualTo(0f).Within(0.001f));
             Assert.That(contacts[1].futur.isTouching == true);
-            Assert.That(contacts[1].bodyA.futur.enduringContact == true);
-            Assert.That(contacts[1].bodyB.futur.enduringContact == true);
+            Assert.That(contacts[1].internalFirstBody.futur.enduringContact == true);
+            Assert.That(contacts[1].internalSecondBody.futur.enduringContact == true);
 
             circleBody.ChangeSituation(new Vector2(-10f, -10f), 0f);
 
@@ -154,15 +154,15 @@ namespace CrispyPhysics
             Assert.That(contacts[0].futur.manifold == null);
             Assert.That(contacts[0].futur.tangentSpeed, Is.EqualTo(0f).Within(0.001f));
             Assert.That(contacts[0].futur.isTouching == false);
-            Assert.That(contacts[0].bodyA.futur.enduringContact == false);
-            Assert.That(contacts[0].bodyB.futur.enduringContact == false);
+            Assert.That(contacts[0].internalFirstBody.futur.enduringContact == false);
+            Assert.That(contacts[0].internalSecondBody.futur.enduringContact == false);
 
             Assert.That(contacts[1].futur.tick, Is.EqualTo(0u));
             Assert.That(contacts[1].futur.manifold == null);
             Assert.That(contacts[1].futur.tangentSpeed, Is.EqualTo(0f).Within(0.001f));
             Assert.That(contacts[1].futur.isTouching == false);
-            Assert.That(contacts[1].bodyA.futur.enduringContact == false);
-            Assert.That(contacts[1].bodyB.futur.enduringContact == false);
+            Assert.That(contacts[1].internalFirstBody.futur.enduringContact == false);
+            Assert.That(contacts[1].internalSecondBody.futur.enduringContact == false);
         }
     }
 }

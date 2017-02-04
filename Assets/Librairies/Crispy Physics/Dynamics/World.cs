@@ -205,9 +205,9 @@ namespace CrispyPhysics.Internal
                 {
                     if (body.futur.tick < futurTick)
                         body.Foresee(futurTick - body.futur.tick);
-                    body.futur.ChangeTickDt(step.dt);
-                    if (body.futur.enduringContact)
-                        body.futur.changeEnduringContactState(false);
+                    body.internalFutur.ChangeTickDt(step.dt);
+                    if (body.internalFutur.enduringContact)
+                        body.internalFutur.changeEnduringContactState(false);
                 }
                     
 
@@ -252,8 +252,8 @@ namespace CrispyPhysics.Internal
                 if ((wasTouching == false || (contact.current.tick == contact.past.tick))
                     && contact.current.isTouching == true)
                 {
-                    contact.bodyA.NotifyContactStarted(contact, contact.current);
-                    contact.bodyB.NotifyContactStarted(contact, contact.current);
+                    contact.internalFirstBody.NotifyContactStarted(contact, contact.current);
+                    contact.internalSecondBody.NotifyContactStarted(contact, contact.current);
 
                     if (ContactStarted != null)
                         ContactStarted(contact, contact.current);
@@ -261,8 +261,8 @@ namespace CrispyPhysics.Internal
 
                 if(wasTouching == true && contact.current.isTouching == false)
                 {
-                    contact.bodyA.NotifyContactEnded(contact, contact.current);
-                    contact.bodyB.NotifyContactEnded(contact, contact.current);
+                    contact.internalFirstBody.NotifyContactEnded(contact, contact.current);
+                    contact.internalSecondBody.NotifyContactEnded(contact, contact.current);
 
                     if (ContactEnded != null)
                         ContactEnded(contact, contact.current);
@@ -272,19 +272,19 @@ namespace CrispyPhysics.Internal
                 {
                     contactsToRemove.Add(contact);
 
-                    Debug.Assert(bodyContacts.ContainsKey(contact.bodyA));
-                    HashSet<Contact> bodyAContacts = bodyContacts[contact.bodyA];
-                    Debug.Assert(bodyAContacts.Contains(contact));
-                    bodyAContacts.Remove(contact);
-                    if (bodyAContacts.Count == 0)
-                        bodyContacts.Remove(contact.bodyA);
+                    Debug.Assert(bodyContacts.ContainsKey(contact.internalFirstBody));
+                    HashSet<Contact> internalFirstBodyContacts = bodyContacts[contact.internalFirstBody];
+                    Debug.Assert(internalFirstBodyContacts.Contains(contact));
+                    internalFirstBodyContacts.Remove(contact);
+                    if (internalFirstBodyContacts.Count == 0)
+                        bodyContacts.Remove(contact.internalFirstBody);
 
-                    Debug.Assert(bodyContacts.ContainsKey(contact.bodyB));
-                    HashSet<Contact> bodyBContacts = bodyContacts[contact.bodyB];
-                    Debug.Assert(bodyBContacts.Contains(contact));
-                    bodyBContacts.Remove(contact);
-                    if (bodyBContacts.Count == 0)
-                        bodyContacts.Remove(contact.bodyB);
+                    Debug.Assert(bodyContacts.ContainsKey(contact.internalSecondBody));
+                    HashSet<Contact> internalSecondBodyContacts = bodyContacts[contact.internalSecondBody];
+                    Debug.Assert(internalSecondBodyContacts.Contains(contact));
+                    internalSecondBodyContacts.Remove(contact);
+                    if (internalSecondBodyContacts.Count == 0)
+                        bodyContacts.Remove(contact.internalSecondBody);
                 }
 
             }
@@ -326,8 +326,8 @@ namespace CrispyPhysics.Internal
 
                 if (wasTouching == false && contact.current.isTouching == true)
                 {
-                    contact.bodyA.NotifyContactStarted(contact, contact.current);
-                    contact.bodyB.NotifyContactStarted(contact, contact.current);
+                    contact.internalFirstBody.NotifyContactStarted(contact, contact.current);
+                    contact.internalSecondBody.NotifyContactStarted(contact, contact.current);
 
                     if (ContactStarted != null)
                         ContactStarted(contact, contact.current);
@@ -335,8 +335,8 @@ namespace CrispyPhysics.Internal
 
                 if (wasTouching == true && contact.current.isTouching == false)
                 {
-                    contact.bodyA.NotifyContactEnded(contact, contact.current);
-                    contact.bodyB.NotifyContactEnded(contact, contact.current);
+                    contact.internalFirstBody.NotifyContactEnded(contact, contact.current);
+                    contact.internalSecondBody.NotifyContactEnded(contact, contact.current);
 
                     if (ContactEnded != null)
                         ContactEnded(contact, contact.current);
@@ -346,19 +346,19 @@ namespace CrispyPhysics.Internal
                 {
                     contactsToRemove.Add(contact);
 
-                    Debug.Assert(bodyContacts.ContainsKey(contact.bodyA));
-                    HashSet<Contact> bodyAContacts = bodyContacts[contact.bodyA];
-                    Debug.Assert(bodyAContacts.Contains(contact));
-                    bodyAContacts.Remove(contact);
-                    if (bodyAContacts.Count == 0)
-                        bodyContacts.Remove(contact.bodyA);
+                    Debug.Assert(bodyContacts.ContainsKey(contact.internalFirstBody));
+                    HashSet<Contact> internalFirstBodyContacts = bodyContacts[contact.internalFirstBody];
+                    Debug.Assert(internalFirstBodyContacts.Contains(contact));
+                    internalFirstBodyContacts.Remove(contact);
+                    if (internalFirstBodyContacts.Count == 0)
+                        bodyContacts.Remove(contact.internalFirstBody);
 
-                    Debug.Assert(bodyContacts.ContainsKey(contact.bodyB));
-                    HashSet<Contact> bodyBContacts = bodyContacts[contact.bodyB];
-                    Debug.Assert(bodyBContacts.Contains(contact));
-                    bodyBContacts.Remove(contact);
-                    if (bodyBContacts.Count == 0)
-                        bodyContacts.Remove(contact.bodyB);
+                    Debug.Assert(bodyContacts.ContainsKey(contact.internalSecondBody));
+                    HashSet<Contact> internalSecondBodyContacts = bodyContacts[contact.internalSecondBody];
+                    Debug.Assert(internalSecondBodyContacts.Contains(contact));
+                    internalSecondBodyContacts.Remove(contact);
+                    if (internalSecondBodyContacts.Count == 0)
+                        bodyContacts.Remove(contact.internalSecondBody);
                 }
 
             }
@@ -408,22 +408,22 @@ namespace CrispyPhysics.Internal
                                 continue;
                             if (contact.futur.isTouching == false)
                                 continue;
-                            if (contact.bodyA.sensor || contact.bodyB.sensor)
+                            if (contact.internalFirstBody.sensor || contact.internalSecondBody.sensor)
                                 continue;
 
                             island.Add(contact);
                             contact.islandBound = true;
 
-                            if(contact.bodyA.islandBound == false)
+                            if(contact.internalFirstBody.islandBound == false)
                             {
-                                stack.Push(contact.bodyA);
-                                contact.bodyA.islandBound = true;
+                                stack.Push(contact.internalFirstBody);
+                                contact.internalFirstBody.islandBound = true;
                             }
 
-                            if (contact.bodyB.islandBound == false)
+                            if (contact.internalSecondBody.islandBound == false)
                             {
-                                stack.Push(contact.bodyB);
-                                contact.bodyB.islandBound = true;
+                                stack.Push(contact.internalSecondBody);
+                                contact.internalSecondBody.islandBound = true;
                             }
                         }
                     }
@@ -463,42 +463,44 @@ namespace CrispyPhysics.Internal
                 yield return bodies[i];
         }
 
-        private void NewPair(Body bodyA, Body bodyB)
+        private void NewPair(Body firstBody, Body secondBody)
         {
-            if (bodyA == bodyB)
+            if (firstBody == secondBody)
                 return;
 
-            Debug.Assert(bodyA.futur.tick == bodyB.futur.tick);
-            Contact newContact = ContactFactory.CreateContact(bodyA.futur.tick, bodyA, bodyB);
+            Debug.Assert(firstBody.futur.tick == secondBody.futur.tick);
+            Contact newContact = ContactFactory.CreateContact(
+                firstBody.futur.tick, firstBody, secondBody);
             if (newContact == null)
                 return;
 
-            HashSet<Contact> bodyAContacts = null;
-            HashSet<Contact> bodyBContacts = null;
+            HashSet<Contact> internalFirstBodyContacts = null;
+            HashSet<Contact> internalSecondBodyContacts = null;
 
-            if (bodyContacts.ContainsKey(bodyA))
+            if (bodyContacts.ContainsKey(firstBody))
             {
-                bodyAContacts = bodyContacts[bodyA];
-                foreach (Contact contact in bodyAContacts)
-                    if (contact.bodyA == bodyB || contact.bodyB == bodyB)
+                internalFirstBodyContacts = bodyContacts[firstBody];
+                foreach (Contact contact in internalFirstBodyContacts)
+                    if (    contact.internalFirstBody == secondBody
+                        ||  contact.internalSecondBody == secondBody)
                         return;
             }
             else
             {
-                bodyAContacts = new HashSet<Contact>();
-                bodyContacts.Add(bodyA, bodyAContacts);
+                internalFirstBodyContacts = new HashSet<Contact>();
+                bodyContacts.Add(firstBody, internalFirstBodyContacts);
             }
 
-            if (bodyContacts.ContainsKey(bodyB))
-                bodyBContacts = bodyContacts[bodyB];
+            if (bodyContacts.ContainsKey(secondBody))
+                internalSecondBodyContacts = bodyContacts[secondBody];
             else
             {
-                bodyBContacts = new HashSet<Contact>();
-                bodyContacts.Add(bodyB, bodyBContacts);
+                internalSecondBodyContacts = new HashSet<Contact>();
+                bodyContacts.Add(secondBody, internalSecondBodyContacts);
             }
 
-            bodyAContacts.Add(newContact);
-            bodyBContacts.Add(newContact);
+            internalFirstBodyContacts.Add(newContact);
+            internalSecondBodyContacts.Add(newContact);
             contacts.Add(newContact);
         }
 
@@ -510,8 +512,8 @@ namespace CrispyPhysics.Internal
 
         private void NotifyContactStartForeseen(Contact contact, ContactMomentum momentum)
         {
-            contact.bodyA.NotifyContactStartForeseen(contact, momentum);
-            contact.bodyB.NotifyContactStartForeseen(contact, momentum);
+            contact.internalFirstBody.NotifyContactStartForeseen(contact, momentum);
+            contact.internalSecondBody.NotifyContactStartForeseen(contact, momentum);
 
             if (ContactStartForeseen != null)
                 ContactStartForeseen(contact, momentum);
@@ -519,8 +521,8 @@ namespace CrispyPhysics.Internal
 
         private void NotifyContactEndForeseen(Contact contact, ContactMomentum momentum)
         {
-            contact.bodyA.NotifyContactEndForeseen(contact, momentum);
-            contact.bodyB.NotifyContactEndForeseen(contact, momentum);
+            contact.internalFirstBody.NotifyContactEndForeseen(contact, momentum);
+            contact.internalSecondBody.NotifyContactEndForeseen(contact, momentum);
 
             if (ContactEndForeseen != null)
                 ContactEndForeseen(contact, momentum);

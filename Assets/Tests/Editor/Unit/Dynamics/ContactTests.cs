@@ -14,85 +14,85 @@ namespace CrispyPhysics
             Assert.Throws<ArgumentNullException>(
                 delegate { ContactFactory.CreateContact(0, null, null); });
 
-            Body bodyA = new Body(0, 0, Vector2.zero, 0f, BodyType.Dynamic, null);
+            Body firstBody = new Body(0, 0, Vector2.zero, 0f, BodyType.Dynamic, null);
 
             Assert.Throws<ArgumentNullException>(
-                delegate { ContactFactory.CreateContact(0, bodyA, null); });
+                delegate { ContactFactory.CreateContact(0, firstBody, null); });
 
-            Body bodyB = new Body(1, 0, Vector2.zero, 0f, BodyType.Dynamic, null);
+            Body secondBody = new Body(1, 0, Vector2.zero, 0f, BodyType.Dynamic, null);
 
             Assert.Throws<ArgumentException>(
-                delegate { ContactFactory.CreateContact(0, bodyA, bodyB); });
+                delegate { ContactFactory.CreateContact(0, firstBody, secondBody); });
 
             IShape shapeA = ShapeFactory.CreateCircle(1f);
-            bodyA = new Body(
+            firstBody = new Body(
                 3, 0, Vector2.zero, 0f, BodyType.Dynamic, shapeA,
                 1f, 0f, 0f, 1f, 0.2f, 0.8f, false);
 
             Assert.Throws<ArgumentException>(
-                delegate { ContactFactory.CreateContact(0, bodyA, bodyB); });
+                delegate { ContactFactory.CreateContact(0, firstBody, secondBody); });
 
             IShape shapeB = ShapeFactory.CreateCircle(1f);
-            bodyB = new Body(
+            secondBody = new Body(
                 4, 0, Vector2.zero, 0f, BodyType.Dynamic, shapeB,
                 1f, 0f, 0f, 1f, 0.4f, 0.6f, false);
 
-            Contact contact = ContactFactory.CreateContact(0, bodyA, bodyB);
+            Contact contact = ContactFactory.CreateContact(0, firstBody, secondBody);
 
             Assert.That(contact is CircleContact);
-            Assert.That(contact.bodyA, Is.EqualTo(bodyA));
-            Assert.That(contact.firstBody, Is.EqualTo(bodyA));
-            Assert.That(contact.bodyB, Is.EqualTo(bodyB));
-            Assert.That(contact.secondBody, Is.EqualTo(bodyB));
+            Assert.That(contact.internalFirstBody, Is.EqualTo(firstBody));
+            Assert.That(contact.firstBody, Is.EqualTo(firstBody));
+            Assert.That(contact.internalSecondBody, Is.EqualTo(secondBody));
+            Assert.That(contact.secondBody, Is.EqualTo(secondBody));
             Assert.That(
                 contact.friction, 
-                Is.EqualTo(Mathf.Sqrt(bodyA.friction * bodyB.friction)));
+                Is.EqualTo(Mathf.Sqrt(firstBody.friction * secondBody.friction)));
             Assert.That(contact.restitution, Is.EqualTo(0.8f));
             Assert.That(contact.islandBound == false);
 
 
             shapeB = ShapeFactory.CreateEdge(Vector2.left, Vector2.right);
-            bodyB = new Body( 5, 0, Vector2.zero, 0f, BodyType.Dynamic, shapeB);
-            contact = ContactFactory.CreateContact(0, bodyA, bodyB);
+            secondBody = new Body( 5, 0, Vector2.zero, 0f, BodyType.Dynamic, shapeB);
+            contact = ContactFactory.CreateContact(0, firstBody, secondBody);
             Assert.That(contact is EdgeAndCircleContact);
-            Assert.That(contact.bodyA, Is.EqualTo(bodyB));
-            Assert.That(contact.firstBody, Is.EqualTo(bodyB));
-            Assert.That(contact.bodyB, Is.EqualTo(bodyA));
-            Assert.That(contact.secondBody, Is.EqualTo(bodyA));
+            Assert.That(contact.internalFirstBody, Is.EqualTo(secondBody));
+            Assert.That(contact.firstBody, Is.EqualTo(secondBody));
+            Assert.That(contact.internalSecondBody, Is.EqualTo(firstBody));
+            Assert.That(contact.secondBody, Is.EqualTo(firstBody));
 
-            contact = ContactFactory.CreateContact(0, bodyB, bodyA);
+            contact = ContactFactory.CreateContact(0, secondBody, firstBody);
             Assert.That(contact is EdgeAndCircleContact);
-            Assert.That(contact.bodyA, Is.EqualTo(bodyB));
-            Assert.That(contact.firstBody, Is.EqualTo(bodyB));
-            Assert.That(contact.bodyB, Is.EqualTo(bodyA));
-            Assert.That(contact.secondBody, Is.EqualTo(bodyA));
+            Assert.That(contact.internalFirstBody, Is.EqualTo(secondBody));
+            Assert.That(contact.firstBody, Is.EqualTo(secondBody));
+            Assert.That(contact.internalSecondBody, Is.EqualTo(firstBody));
+            Assert.That(contact.secondBody, Is.EqualTo(firstBody));
 
             shapeB = ShapeFactory.CreateBox(1f, 1f);
-            bodyB = new Body(6, 0, Vector2.zero, 0f, BodyType.Dynamic, shapeB);
-            contact = ContactFactory.CreateContact(0, bodyA, bodyB);
+            secondBody = new Body(6, 0, Vector2.zero, 0f, BodyType.Dynamic, shapeB);
+            contact = ContactFactory.CreateContact(0, firstBody, secondBody);
             Assert.That(contact is PolygonAndCircleContact);
-            Assert.That(contact.bodyA, Is.EqualTo(bodyB));
-            Assert.That(contact.firstBody, Is.EqualTo(bodyB));
-            Assert.That(contact.bodyB, Is.EqualTo(bodyA));
-            Assert.That(contact.secondBody, Is.EqualTo(bodyA));
+            Assert.That(contact.internalFirstBody, Is.EqualTo(secondBody));
+            Assert.That(contact.firstBody, Is.EqualTo(secondBody));
+            Assert.That(contact.internalSecondBody, Is.EqualTo(firstBody));
+            Assert.That(contact.secondBody, Is.EqualTo(firstBody));
 
-            contact = ContactFactory.CreateContact(0, bodyB, bodyA);
+            contact = ContactFactory.CreateContact(0, secondBody, firstBody);
             Assert.That(contact is PolygonAndCircleContact);
-            Assert.That(contact.bodyA, Is.EqualTo(bodyB));
-            Assert.That(contact.firstBody, Is.EqualTo(bodyB));
-            Assert.That(contact.bodyB, Is.EqualTo(bodyA));
-            Assert.That(contact.secondBody, Is.EqualTo(bodyA));
+            Assert.That(contact.internalFirstBody, Is.EqualTo(secondBody));
+            Assert.That(contact.firstBody, Is.EqualTo(secondBody));
+            Assert.That(contact.internalSecondBody, Is.EqualTo(firstBody));
+            Assert.That(contact.secondBody, Is.EqualTo(firstBody));
         }
 
         [Test]
         public void Tracking()
         {
             IShape shapeA = ShapeFactory.CreateCircle(1f);
-            Body bodyA = new Body(0, 0, Vector2.zero, 0f, BodyType.Dynamic, shapeA);
+            Body internalFirstBody = new Body(0, 0, Vector2.zero, 0f, BodyType.Dynamic, shapeA);
 
             IShape shapeB = ShapeFactory.CreateCircle(1f);
-            Body bodyB = new Body(0, 0, Vector2.zero, 0f, BodyType.Dynamic, shapeB);
-            Contact contact = ContactFactory.CreateContact(0, bodyA, bodyB);
+            Body internalSecondBody = new Body(0, 0, Vector2.zero, 0f, BodyType.Dynamic, shapeB);
+            Contact contact = ContactFactory.CreateContact(0, internalFirstBody, internalSecondBody);
 
             contact.Step();
             Assert.That(contact.current.tick, Is.EqualTo(1));
@@ -326,14 +326,14 @@ namespace CrispyPhysics
             CircleShape circle = new CircleShape(Vector2.zero, 1f);
             CircleShape otherCircle = new CircleShape(Vector2.zero, 1f);
 
-            Body bodyA = new Body(
+            Body internalFirstBody = new Body(
                 0, 0, Vector2.zero, 0f, BodyType.Dynamic, circle,
                 1f, 0f, 0f, 1f, 0.2f, 0.8f, false);
-            Body bodyB = new Body(
+            Body internalSecondBody = new Body(
                 1, 0, Vector2.zero, 0f, BodyType.Dynamic, otherCircle,
                 1f, 0f, 0f, 1f, 0.4f, 0.6f, false);
 
-            Contact contact = ContactFactory.CreateContact(0, bodyA, bodyB);
+            Contact contact = ContactFactory.CreateContact(0, internalFirstBody, internalSecondBody);
 
             Manifold mf = contact.Evaluate(
                 new Transformation(new Vector2(1f, 1f), 0f),
@@ -356,11 +356,11 @@ namespace CrispyPhysics
             PolygonShape polygon = new PolygonShape();
             polygon.SetAsBox(1f, 1f);
 
-            bodyB = new Body(
+            internalSecondBody = new Body(
                 0, 0, Vector2.zero, 0f, BodyType.Dynamic, polygon,
                 1f, 0f, 0f, 1f, 0.4f, 0.6f, false);
 
-            contact = ContactFactory.CreateContact(0, bodyA, bodyB);
+            contact = ContactFactory.CreateContact(0, internalFirstBody, internalSecondBody);
 
             mf = contact.Evaluate(
                 new Transformation(new Vector2(-1f, 1f), 0f),
@@ -381,11 +381,11 @@ namespace CrispyPhysics
 
             //Circle With Edge
             EdgeShape edge = new EdgeShape(new Vector2(0f, -1f), new Vector2(0f, 1f));
-            bodyB = new Body(
+            internalSecondBody = new Body(
                 0, 0, Vector2.zero, 0f, BodyType.Dynamic, edge,
                 1f, 0f, 0f, 1f, 0.4f, 0.6f, false);
 
-            contact = ContactFactory.CreateContact(0, bodyA, bodyB);
+            contact = ContactFactory.CreateContact(0, internalFirstBody, internalSecondBody);
 
             mf = contact.Evaluate(
                 new Transformation(new Vector2(0f, 1f), 0f),

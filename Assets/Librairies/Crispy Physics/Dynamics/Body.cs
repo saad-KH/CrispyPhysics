@@ -185,7 +185,7 @@ namespace CrispyPhysics.Internal
         public Vector2 force { get { return current.force; } }
         public float torque { get { return current.torque; } }
         public bool enduringContact {  get { return current.enduringContact; } }
-        public Transformation transform { get { return current.transform; } }
+        public Transformation transform { get { return internalCurrent.transform; } }
 
         public void ChangeImpulse(Vector2 force, float torque)
         {
@@ -290,9 +290,12 @@ namespace CrispyPhysics.Internal
         #region Track
         private uint currentTick;
         private int currentIndex;
-        public Momentum past { get { return momentums[0]; } }
-        public Momentum  current{ get { return momentums[currentIndex]; } }
-        public Momentum futur { get { return momentums[momentums.Count - 1]; } }
+        public Momentum internalPast { get { return momentums[0]; } }
+        public Momentum internalCurrent { get { return momentums[currentIndex]; } }
+        public Momentum internalFutur { get { return momentums[momentums.Count - 1]; } }
+        public IMomentum past { get { return internalPast; } }
+        public IMomentum  current{ get { return internalCurrent; } }
+        public IMomentum futur { get { return internalFutur; } }
         private List<Momentum> momentums;
         public bool islandBound { get; set; }
         public uint islandIndex { get; set; }
