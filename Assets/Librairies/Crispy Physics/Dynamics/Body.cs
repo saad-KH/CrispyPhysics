@@ -475,7 +475,7 @@ namespace CrispyPhysics.Internal
         {
             for (int i = (tick >= currentTick) ? currentIndex : 0; i < momentums.Count; i++)
                 if (momentums[i].tick == tick) return i;
-                else if (momentums[i].tick > tick) return i - 1;
+                else if (momentums[i].tick > tick) return i > 0 ? i - 1 : i;
 
             return -1;
         }

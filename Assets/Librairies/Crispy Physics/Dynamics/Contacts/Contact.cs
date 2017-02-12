@@ -280,24 +280,22 @@ namespace CrispyPhysics.Internal
 
         public void ClearFutur(uint fromTick)
         {
-            if (fromTick <= currentTick)
-                throw new ArgumentOutOfRangeException("Tick to be cleared should be above the current tick");
-
             int indexForTick = IndexForTick(fromTick);
             if (indexForTick == currentIndex)
                 indexForTick++;
 
             if (indexForTick < momentums.Count)
                 momentums.RemoveRange(indexForTick, momentums.Count - indexForTick);
+
+            if (momentums.Count == 0)
+                momentums.Add(new ContactMomentum(fromTick));
         }
 
         public int IndexForTick(uint tick)
         {
-            int index = (tick >= currentTick) ? currentIndex : 0;
-            while (index < momentums.Count)
-                if (momentums[index].tick == tick) return index;
-                else if (momentums[index].tick > tick) return index - 1;
-                else index++;
+            for (int i = (tick >= currentTick) ? currentIndex : 0; i < momentums.Count; i++)
+                if (momentums[i].tick == tick) return i;
+                else if (momentums[i].tick > tick) return i > 0 ? i - 1 : i;
 
             return -1;
         }
