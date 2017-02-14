@@ -5,7 +5,7 @@ using System.Collections.Generic;
 namespace CrispyPhysics.Internal
 {
     #region Delegate Definition
-    public delegate void BodyHandlerDelegate(Body body, EventArgs args);
+    public delegate void BodyHandlerDelegate(Body body, uint fromTick);
     public delegate IEnumerable<Body> BodyIteratorDelegate(uint start = 0, uint end = 0);
     #endregion
 
@@ -39,9 +39,10 @@ namespace CrispyPhysics.Internal
             momentums = new List<Momentum>();
             momentums.Add(new Momentum(
                 currentTick,
+                0f,
                 Vector2.zero, 0f,
                 Vector2.zero, 0f,
-                position, angle));
+                position, angle, false));
 
 
             currentIndex = 0;
@@ -60,35 +61,34 @@ namespace CrispyPhysics.Internal
         #endregion
 
         #region Events
-        public event BodyHandlerDelegate FuturCleared;
-        public event BodyHandlerDelegate UserChangedSituation;
+        public event BodyHandlerDelegate ExternalChange;
         public event IContactHandlerDelegate ContactStartForeseen;
         public event IContactHandlerDelegate ContactEndForeseen;
         public event IContactHandlerDelegate ContactStarted;
         public event IContactHandlerDelegate ContactEnded;
 
-        public void NotifyContactStartForeseen(IContact contact, EventArgs args)
+        public void NotifyContactStartForeseen(IContact contact, IContactMomentum momentum)
         {
             if (ContactStartForeseen != null)
-                ContactStartForeseen(contact, args);
+                ContactStartForeseen(contact, momentum);
         }
 
-        public void NotifyContactEndForeseen(IContact contact, EventArgs args)
+        public void NotifyContactEndForeseen(IContact contact, IContactMomentum momentum)
         {
             if (ContactEndForeseen != null)
-                ContactEndForeseen(contact, args);
+                ContactEndForeseen(contact, momentum);
         }
 
-        public void NotifyContactStarted(IContact contact, EventArgs args)
+        public void NotifyContactStarted(IContact contact, IContactMomentum momentum)
         {
             if (ContactStarted != null)
-                ContactStarted(contact, args);
+                ContactStarted(contact, momentum);
         }
 
-        public void NotifyContactEnded(IContact contact, EventArgs args)
+        public void NotifyContactEnded(IContact contact, IContactMomentum momentum)
         {
             if (ContactEnded != null)
-                ContactEnded(contact, args);
+                ContactEnded(contact, momentum);
         }
         #endregion
 
@@ -184,80 +184,93 @@ namespace CrispyPhysics.Internal
         public float angularVelocity { get { return current.angularVelocity; } }
         public Vector2 force { get { return current.force; } }
         public float torque { get { return current.torque; } }
-        public Transformation transform { get { return current.transform; } }
+        public bool enduringContact {  get { return current.enduringContact; } }
+        public Transformation transform { get { return internalCurrent.transform; } }
 
         public void ChangeImpulse(Vector2 force, float torque)
         {
             if (type == BodyType.Static) return;
-
-            ClearFutur();
+            
             momentums[currentIndex].ChangeImpulse(force, torque);
+
+            if (ExternalChange != null)
+                ExternalChange(this, currentTick);
         }
 
         public void ChangeVelocity(Vector2 linearVelocity, float angularVelocity)
         {
             if (type == BodyType.Static) return;
 
-            ClearFutur();
             momentums[currentIndex].ChangeVelocity(linearVelocity, angularVelocity);
+
+            if (ExternalChange != null)
+                ExternalChange(this, currentTick);
         }
 
         public void ChangeSituation(Vector2 position, float angle)
         {
-            ClearFutur();
             momentums[currentIndex].ChangeSituation(position, angle);
-            if (UserChangedSituation != null)
-                UserChangedSituation(this, EventArgs.Empty);
+
+            if (ExternalChange != null)
+                ExternalChange(this, currentTick);
         }
 
         public void ApplyForce(Vector2 force, Vector2 point)
         {
             if (type != BodyType.Dynamic) return;
 
-            ClearFutur();
-
             momentums[currentIndex].ChangeImpulse(
                 current.force + force,
                 current.torque + Calculus.Cross(point - current.position, force));
+
+            if (ExternalChange != null)
+                ExternalChange(this, currentTick);
         }
 
         public void ApplyForceToCenter(Vector2 force)
         {
             if (type != BodyType.Dynamic) return;
 
-            ClearFutur();
             momentums[currentIndex].ChangeImpulse(current.force + force, current.torque);
+
+            if (ExternalChange != null)
+                ExternalChange(this, currentTick);
         }
 
         public void ApplyTorque(float torque)
         {
             if (type != BodyType.Dynamic) return;
 
-            ClearFutur();
             momentums[currentIndex].ChangeImpulse(current.force, current.torque + torque);
+
+            if (ExternalChange != null)
+                ExternalChange(this, currentTick);
         }
 
         public void ApplyLinearImpulse(Vector2 impulse, Vector2 point)
         {
             if (type != BodyType.Dynamic) return;
-            ClearFutur();
 
             momentums[currentIndex].ChangeVelocity(
                 current.linearVelocity + invMass * impulse,
                 current.angularVelocity +
                     (invRotationalInertia
                     * Calculus.Cross(point - current.position, impulse)));
+
+            if (ExternalChange != null)
+                ExternalChange(this, currentTick);
         }
 
         public void ApplyLinearImpulseToCenter(Vector2 impulse)
         {
             if (type != BodyType.Dynamic) return;
 
-            ClearFutur();
-
             momentums[currentIndex].ChangeVelocity(
                 current.linearVelocity + invMass * impulse,
                 current.angularVelocity);
+
+            if (ExternalChange != null)
+                ExternalChange(this, currentTick);
 
         }
 
@@ -265,20 +278,24 @@ namespace CrispyPhysics.Internal
         {
             if (type != BodyType.Dynamic) return;
 
-            ClearFutur();
-
             momentums[currentIndex].ChangeVelocity(
                 current.linearVelocity,
                 current.angularVelocity + invRotationalInertia * impulse);
+
+            if (ExternalChange != null)
+                ExternalChange(this, currentTick);
         }
         #endregion
 
         #region Track
         private uint currentTick;
         private int currentIndex;
-        public Momentum past { get { return momentums[0]; } }
-        public Momentum  current{ get { return momentums[currentIndex]; } }
-        public Momentum futur { get { return momentums[momentums.Count - 1]; } }
+        public Momentum internalPast { get { return momentums[0]; } }
+        public Momentum internalCurrent { get { return momentums[currentIndex]; } }
+        public Momentum internalFutur { get { return momentums[momentums.Count - 1]; } }
+        public IMomentum past { get { return internalPast; } }
+        public IMomentum  current{ get { return internalCurrent; } }
+        public IMomentum futur { get { return internalFutur; } }
         private List<Momentum> momentums;
         public bool islandBound { get; set; }
         public uint islandIndex { get; set; }
@@ -438,12 +455,161 @@ namespace CrispyPhysics.Internal
 
         public void ClearFutur()
         {
-            if (currentIndex < momentums.Count)
+            ClearFutur(currentTick + 1);
+        }
+
+        public void ClearFutur(uint fromTick)
+        {
+            if(fromTick <= currentTick)
+                throw new ArgumentOutOfRangeException("Tick to be cleared should be above the current tick");
+
+            int indexForTick = IndexForTick(fromTick);
+            if (indexForTick == currentIndex)
+                indexForTick++;
+
+            if (indexForTick >= 0 && indexForTick < momentums.Count)
+                momentums.RemoveRange(indexForTick, momentums.Count - indexForTick);
+        }
+
+        public int IndexForTick(uint tick)
+        {
+            for (int i = (tick >= currentTick) ? currentIndex : 0; i < momentums.Count; i++)
+                if (momentums[i].tick == tick) return i;
+                else if (momentums[i].tick > tick) return i > 0 ? i - 1 : i;
+
+            return -1;
+        }
+
+        public IMomentum MomentumForTick(uint tick)
+        {
+            for (int i = (tick >= currentTick) ? currentIndex : 0; i < momentums.Count; i++)
+                if (momentums[i].tick == tick) return momentums[i];
+                else if (momentums[i].tick > tick)
+                {
+                    if (i > 0)
+                        return momentums[i - 1];
+                    else
+                        return null;
+                }
+
+
+            return null;
+        }
+
+        public IEnumerable<IMomentum> MomentumIterator(uint startingTick = 0, uint endingTick = 0)
+        {
+            if (endingTick == 0)
+                endingTick = futur.tick;
+
+            if(startingTick <= endingTick)
             {
-                momentums.RemoveRange(currentIndex + 1, momentums.Count - (currentIndex + 1));
-                if (FuturCleared != null)
-                    FuturCleared(this, EventArgs.Empty);
+                for (int i = (startingTick >= currentTick) ? currentIndex : 0; i < momentums.Count; i++)
+                    if (momentums[i].tick >= startingTick && momentums[i].tick <= endingTick)
+                        yield return momentums[i];
+                    else if (momentums[i].tick > endingTick) break;
             }
+            else
+            {
+                for (int i = (startingTick >= currentTick) ? momentums.Count - 1 : currentIndex; i >= 0; i--)
+                    if (momentums[i].tick <= startingTick && momentums[i].tick >= endingTick)
+                        yield return momentums[i];
+                    else if (momentums[i].tick < endingTick) break;
+            }
+                
+        }
+
+        public bool CrispAtTick(
+            uint crispTick, 
+            Vector2 position, float angle,
+            float maxDivergencePerTick = 0.25f)
+        {
+            if (crispTick <= currentTick)
+                throw new ArgumentOutOfRangeException("Tick to be converged should be above the current tick");
+
+            int crispIndex = IndexForTick(crispTick);
+            if (momentums[crispIndex].enduringContact)
+                return false;
+
+            Momentum crispMomentum = null;
+            if (momentums[crispIndex].tick == crispTick)
+                crispMomentum = momentums[crispIndex];
+            else
+            {
+                crispMomentum = new Momentum(crispTick, momentums[crispIndex]);
+                momentums.Insert(++crispIndex, crispMomentum);
+            }
+
+            Vector2 divergence = position - crispMomentum.position;
+
+            int lockedIndex = crispIndex - 1;
+            bool done = false;
+            while (!done && lockedIndex > 0)
+                if (    momentums[lockedIndex].tick <= currentTick
+                    ||  momentums[lockedIndex].enduringContact)
+                    done = true;
+                else
+                    lockedIndex--;
+
+            uint startingTick = momentums[lockedIndex].tick + 1;
+            uint convergenceTickCount = crispMomentum.tick - startingTick + 1;
+
+            if (divergence.magnitude / convergenceTickCount > maxDivergencePerTick)
+                return false;
+
+            Vector2 convergencePerTick = divergence / convergenceTickCount;
+            Vector2 convergence = Vector2.zero;
+            float angleConvergencePerTick = (angle - crispMomentum.angle) / convergenceTickCount;
+            float angleConvergence = 0f;
+
+            float tickDt = 0f;
+
+            uint tick = startingTick;
+            int index = lockedIndex;
+            while(tick <= crispTick)
+            {
+                while ( index + 1 < momentums.Count
+                     && momentums[index + 1].tick <= tick)
+                    index++;
+
+                Momentum momentum = null;
+                if (momentums[index].tick == tick)
+                {
+                    momentum = momentums[index];
+                    momentum.ChangeSituation(
+                        momentum.position + convergence,
+                        momentum.angle + angleConvergence);
+
+                    if (!Calculus.Approximately(momentum.tickDt, 0f))
+                        momentum.ChangeVelocity(
+                            momentum.linearVelocity + convergence / momentum.tickDt,
+                            momentum.angularVelocity + angleConvergence / momentum.tickDt);
+                } 
+                else
+                {
+                    momentum = new Momentum(tick, momentums[index]);
+                    momentums.Insert(++index, momentum);
+                }
+
+                momentum.ChangeSituation(
+                    momentum.position + convergencePerTick,
+                    momentum.angle + angleConvergencePerTick);
+
+                if (!Calculus.Approximately(momentum.tickDt, 0f))
+                    momentum.ChangeVelocity(
+                        momentum.linearVelocity + convergencePerTick / momentum.tickDt,
+                        momentum.angularVelocity + angleConvergencePerTick / momentum.tickDt);
+
+                convergence += convergencePerTick;
+                angleConvergence += angleConvergencePerTick;
+                tickDt += momentum.tickDt;
+
+                tick++;
+            }
+
+            if (ExternalChange != null)
+                ExternalChange(this, crispTick);
+
+            return true;
         }
 
         #endregion

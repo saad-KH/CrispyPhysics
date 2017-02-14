@@ -42,11 +42,11 @@ namespace CrispyPhysics
         {
             Island island = new Island(2, 1);
 
-            IShape circleShape = ShapeFactory.CreateCircle(1f);
             Body body = new Body(
                 0, 0, 
                 Vector2.zero, 0f, 
-                BodyType.Dynamic, circleShape,
+                BodyType.Dynamic,
+                ShapeFactory.CreateCircle(1f),
                 1f, 0.2f, 0.2f, 1f);
             body.ChangeImpulse(Vector2.one, 1f);
             island.Add(body);
@@ -70,17 +70,21 @@ namespace CrispyPhysics
 
             body.ChangeSituation(Vector2.up, 0f);
 
-            IShape edgeShape = ShapeFactory.CreateEdge(Vector2.left, Vector2.right);
             Body colliderBody = new Body(
                 1, 0,
                 Vector2.zero, 0f,
-                BodyType.Static, edgeShape);
+                BodyType.Static,
+                ShapeFactory.CreateEdge(Vector2.left, Vector2.right));
 
             island.Add(colliderBody);
 
             Contact contact = ContactFactory.CreateContact(0, body, colliderBody);
-            Manifold mf = contact.Evaluate(contact.bodyA.futur.transform, contact.bodyB.futur.transform);
-            contact.futur.Change(mf, 0f, true);
+            Manifold mf = contact.Evaluate(
+                contact.internalFirstBody.internalFutur.transform, 
+                contact.internalSecondBody.internalFutur.transform);
+            contact.futur.Change(mf, 0f, true,
+                contact.internalFirstBody.internalFutur.position,
+                contact.internalSecondBody.internalFutur.position);
 
             island.Add(contact);
 

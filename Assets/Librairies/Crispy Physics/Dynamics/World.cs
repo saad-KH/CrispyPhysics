@@ -9,12 +9,12 @@ namespace CrispyPhysics
     public class WorldFactory
     {
         public static IWorld CreateWorld(
-            float fixedStep, float crispyStep, float crispySize,
+            float fixedStep,
             Vector2 gravity, uint velocityIterations = 8, uint positionIterations = 3,
             float maxTranslationSpeed = 100f, float maxRotationSpeed = 360f)
         {
             return new World(
-                fixedStep, crispyStep, crispySize,
+                fixedStep,
                 gravity, velocityIterations, positionIterations,
                 maxTranslationSpeed, maxRotationSpeed);
         }
@@ -33,7 +33,7 @@ namespace CrispyPhysics.Internal
     {
         #region Constructors
         public World(
-            float fixedStep, float crispyStep, float crispySize,
+            float fixedStep,
             Vector2 gravity, uint velocityIterations = 8, uint positionIterations = 3,
             float maxTranslationSpeed = 100f, float maxRotationSpeed = 360f)
         {
@@ -42,8 +42,6 @@ namespace CrispyPhysics.Internal
                 throw new ArgumentOutOfRangeException("Fixed Step should be stricly greater than 0");
             
             this.fixedStep = fixedStep;
-            this.crispyStep = Mathf.Max(crispyStep, this.fixedStep);
-            this.crispySize = Mathf.Max(crispySize, 0f);
 
             this.gravity = gravity;
             this.velocityIterations = velocityIterations;
@@ -73,13 +71,14 @@ namespace CrispyPhysics.Internal
         }
 
         public World(WorldDefinition worldDef) : this(
-            worldDef.fixedStep, worldDef.crispyStep, worldDef.crispySize,
+            worldDef.fixedStep,
             worldDef.gravity, worldDef.velocityIterations, worldDef.positionIterations,
             worldDef.maxTranslationSpeed, worldDef.maxRotationSpeed)
         {}
         #endregion
 
         #region Events
+        public event IWorldHandlerDelegate FuturCleared;
         public event IContactHandlerDelegate ContactStartForeseen;
         public event IContactHandlerDelegate ContactEndForeseen;
         public event IContactHandlerDelegate ContactStarted;
@@ -97,7 +96,9 @@ namespace CrispyPhysics.Internal
             Vector2 position, float angle,
             BodyType type, IShape shape, float mass = 1f,
             float linearDamping = 0f, float angularDamping = 0f,
-            float gravityScale = 1f)
+            float gravityScale = 1f,
+            float friction = 0f, float restitution = 1f,
+            bool sensor = false)
         {
             if (bodyCount >= uint.MaxValue)
                 throw new SystemException("Maximum Body Possible to create reached");
@@ -107,15 +108,15 @@ namespace CrispyPhysics.Internal
                 position, angle,
                 type, shape, mass,
                 linearDamping, angularDamping,
-                gravityScale
+                gravityScale,
+                friction, restitution,
+                sensor
             );
 
             bodies.Add(newBody);
-            opFlags |= OperationFlag.BodyListUpdated;
+            opFlags |= OperationFlag.ExternalChange;
             futurTick = tick;
-            opFlags &= OperationFlag.FuturForeseen;
-            newBody.FuturCleared += FuturCleared;
-            newBody.UserChangedSituation += UserChangedSituation;
+            newBody.ExternalChange += ExternalChange;
 
             return newBody;
         }
@@ -128,14 +129,14 @@ namespace CrispyPhysics.Internal
                 position, angle,
                 bodyDef.type, bodyDef.shape, bodyDef.mass,
                 bodyDef.linearDamping, bodyDef.angularDamping,
-                bodyDef.gravityScale);
+                bodyDef.gravityScale, 
+                bodyDef.friction, bodyDef.restitution, 
+                bodyDef.sensor);
         }
         #endregion
 
         #region Nature
         public float fixedStep { get; private set; }
-        public float crispyStep { get; private set; }
-        public float crispySize { get; private set; }
 
         public Vector2 gravity { get; private set; }
         public uint velocityIterations { get; private set; }
@@ -152,10 +153,7 @@ namespace CrispyPhysics.Internal
         private enum OperationFlag
         {
             Locked = 0x0001,
-            BodyListUpdated = 0x0002,
-            UserChangedBody = 0x0004,
-            FuturForeseen = 0x0008,
-            Crisped = 0x00010
+            ExternalChange = 0x0002
         }
 
         private OperationFlag opFlags;
@@ -173,20 +171,15 @@ namespace CrispyPhysics.Internal
             if (tick >= uint.MaxValue)
                 throw new SystemException("Maximum system steps reached");
 
-            bool clearFutur = 
-                    (opFlags & OperationFlag.FuturForeseen) != OperationFlag.FuturForeseen;
+            bool externalChange = (opFlags & OperationFlag.ExternalChange) == OperationFlag.ExternalChange;
 
-            bool lookForContacts = 
-                    (opFlags & OperationFlag.BodyListUpdated) == OperationFlag.BodyListUpdated
-                ||  (opFlags & OperationFlag.UserChangedBody) == OperationFlag.UserChangedBody;
-
-            if (clearFutur)
+            if (externalChange)
             {
                 foreach (Body body in bodies)
-                    body.ClearFutur();
+                    body.ClearFutur(futurTick + 1);
 
                 foreach (Contact contact in contacts)
-                    contact.ClearFutur();
+                    contact.ClearFutur(futurTick + 1);
             }
 
             if (keepTicks > tick) keepTicks = tick;
@@ -194,35 +187,36 @@ namespace CrispyPhysics.Internal
 
             uint iterationsToSolve = 0;
             if (futurTick < tick)
-            {
-                iterationsToSolve = steps;
-                futurTick = tick;
-            }
-
-            uint iterationsToForesee = 0;
-            if (tick + foreseeTicks > futurTick)
-                iterationsToForesee = (uint) 
+                iterationsToSolve =  
+                        tick 
+                    -   futurTick
+                    +   (uint) Mathf.Min(foreseeTicks, bufferingTicks);
+            else
+                iterationsToSolve = (uint) 
                     Mathf.Min(
                         tick + foreseeTicks - futurTick,
                         bufferingTicks);
 
-            futurTick  += iterationsToForesee;
-            iterationsToSolve += iterationsToForesee;
-
             for (int i = 0; i < iterationsToSolve; i++)
             {
+                futurTick++;
+                
                 foreach (Body body in bodies)
-                    body.Foresee();
+                {
+                    if (body.futur.tick < futurTick)
+                        body.Foresee(futurTick - body.futur.tick);
+                    body.internalFutur.ChangeTickDt(step.dt);
+                    if (body.internalFutur.enduringContact)
+                        body.internalFutur.changeEnduringContactState(false);
+                }
+                    
 
                 foreach (Contact contact in contacts)
-                    contact.Foresee();
+                    if (contact.futur.tick < futurTick)
+                        contact.Foresee(futurTick - contact.futur.tick);
+                    
 
-                if (lookForContacts)
-                {
-                    contactManager.FindNewContacts();
-                    lookForContacts = false;
-                }
-
+                contactManager.FindNewContacts();
                 contactManager.Collide();
 
                 Solve(step);
@@ -230,69 +224,74 @@ namespace CrispyPhysics.Internal
 
             foreach (Body body in bodies)
             {
-                body.Step(steps);
+                if(body.current.tick < tick)
+                    body.Step(tick - body.current.tick);
+
                 body.ForgetPast(pastTick);
 
-                Debug.Assert(body.current.tick == tick);
-                Debug.Assert(body.futur.tick == futurTick);
+                Debug.Assert(body.current.tick >= tick);
+                Debug.Assert(body.futur.tick >= futurTick);
             }
 
             HashSet<Contact> contactsToRemove = new HashSet<Contact>();
             foreach (Contact contact in contacts)
             {
                 bool wasTouching = contact.current.isTouching;
-                contact.Step(steps);
+
+                if (contact.current.tick < tick)
+                    contact.Step(tick - contact.current.tick);
+
                 contact.ForgetPast(pastTick);
 
-                Debug.Assert(contact.current.tick == tick);
-                Debug.Assert(contact.futur.tick == futurTick);
+                Debug.Assert(contact.current.tick >= tick);
+                Debug.Assert(contact.futur.tick >= futurTick);
 
-                if(wasTouching == false && contact.current.isTouching == true)
+                if (contact.current.tick > tick)
+                    continue;
+
+                if ((wasTouching == false || (contact.current.tick == contact.past.tick))
+                    && contact.current.isTouching == true)
                 {
-                    contact.bodyA.NotifyContactStarted(contact, EventArgs.Empty);
-                    contact.bodyB.NotifyContactStarted(contact, EventArgs.Empty);
+                    contact.internalFirstBody.NotifyContactStarted(contact, contact.current);
+                    contact.internalSecondBody.NotifyContactStarted(contact, contact.current);
 
                     if (ContactStarted != null)
-                        ContactStarted(contact, EventArgs.Empty);
+                        ContactStarted(contact, contact.current);
                 }
 
                 if(wasTouching == true && contact.current.isTouching == false)
                 {
-                    contact.bodyA.NotifyContactEnded(contact, EventArgs.Empty);
-                    contact.bodyB.NotifyContactEnded(contact, EventArgs.Empty);
+                    contact.internalFirstBody.NotifyContactEnded(contact, contact.current);
+                    contact.internalSecondBody.NotifyContactEnded(contact, contact.current);
 
                     if (ContactEnded != null)
-                        ContactEnded(contact, EventArgs.Empty);
+                        ContactEnded(contact, contact.current);
                 }
 
                 if(contact.IsDroppable())
                 {
                     contactsToRemove.Add(contact);
 
-                    Debug.Assert(bodyContacts.ContainsKey(contact.bodyA));
-                    HashSet<Contact> bodyAContacts = bodyContacts[contact.bodyA];
-                    Debug.Assert(bodyAContacts.Contains(contact));
-                    bodyAContacts.Remove(contact);
-                    if (bodyAContacts.Count == 0)
-                        bodyContacts.Remove(contact.bodyA);
+                    Debug.Assert(bodyContacts.ContainsKey(contact.internalFirstBody));
+                    HashSet<Contact> internalFirstBodyContacts = bodyContacts[contact.internalFirstBody];
+                    Debug.Assert(internalFirstBodyContacts.Contains(contact));
+                    internalFirstBodyContacts.Remove(contact);
+                    if (internalFirstBodyContacts.Count == 0)
+                        bodyContacts.Remove(contact.internalFirstBody);
 
-                    Debug.Assert(bodyContacts.ContainsKey(contact.bodyB));
-                    HashSet<Contact> bodyBContacts = bodyContacts[contact.bodyB];
-                    Debug.Assert(bodyBContacts.Contains(contact));
-                    bodyBContacts.Remove(contact);
-                    if (bodyBContacts.Count == 0)
-                        bodyContacts.Remove(contact.bodyB);
+                    Debug.Assert(bodyContacts.ContainsKey(contact.internalSecondBody));
+                    HashSet<Contact> internalSecondBodyContacts = bodyContacts[contact.internalSecondBody];
+                    Debug.Assert(internalSecondBodyContacts.Contains(contact));
+                    internalSecondBodyContacts.Remove(contact);
+                    if (internalSecondBodyContacts.Count == 0)
+                        bodyContacts.Remove(contact.internalSecondBody);
                 }
 
             }
             contacts.RemoveWhere(contact => contactsToRemove.Contains(contact));
 
             opFlags &= ~OperationFlag.Locked;
-            //opFlags &= ~OperationFlag.Crisped;
-            opFlags &= ~OperationFlag.BodyListUpdated;
-            opFlags &= ~OperationFlag.UserChangedBody;
-            opFlags |= OperationFlag.FuturForeseen;
-
+            opFlags &= ~OperationFlag.ExternalChange;
         }
 
         public void RollBack(uint toTick, uint keepTicks = 0)
@@ -318,7 +317,7 @@ namespace CrispyPhysics.Internal
             HashSet<Contact> contactsToRemove = new HashSet<Contact>();
             foreach (Contact contact in contacts)
             {
-                bool wasTouching = contact.current.isTouching;
+                bool wasTouching = contact.current.isTouching && contact.current != contact.past;
                 contact.RollBack(tick);
                 contact.ForgetPast(pastTick);
 
@@ -327,39 +326,39 @@ namespace CrispyPhysics.Internal
 
                 if (wasTouching == false && contact.current.isTouching == true)
                 {
-                    contact.bodyA.NotifyContactStarted(contact, EventArgs.Empty);
-                    contact.bodyB.NotifyContactStarted(contact, EventArgs.Empty);
+                    contact.internalFirstBody.NotifyContactStarted(contact, contact.current);
+                    contact.internalSecondBody.NotifyContactStarted(contact, contact.current);
 
                     if (ContactStarted != null)
-                        ContactStarted(contact, EventArgs.Empty);
+                        ContactStarted(contact, contact.current);
                 }
 
                 if (wasTouching == true && contact.current.isTouching == false)
                 {
-                    contact.bodyA.NotifyContactEnded(contact, EventArgs.Empty);
-                    contact.bodyB.NotifyContactEnded(contact, EventArgs.Empty);
+                    contact.internalFirstBody.NotifyContactEnded(contact, contact.current);
+                    contact.internalSecondBody.NotifyContactEnded(contact, contact.current);
 
                     if (ContactEnded != null)
-                        ContactEnded(contact, EventArgs.Empty);
+                        ContactEnded(contact, contact.current);
                 }
 
                 if (contact.IsDroppable())
                 {
                     contactsToRemove.Add(contact);
 
-                    Debug.Assert(bodyContacts.ContainsKey(contact.bodyA));
-                    HashSet<Contact> bodyAContacts = bodyContacts[contact.bodyA];
-                    Debug.Assert(bodyAContacts.Contains(contact));
-                    bodyAContacts.Remove(contact);
-                    if (bodyAContacts.Count == 0)
-                        bodyContacts.Remove(contact.bodyA);
+                    Debug.Assert(bodyContacts.ContainsKey(contact.internalFirstBody));
+                    HashSet<Contact> internalFirstBodyContacts = bodyContacts[contact.internalFirstBody];
+                    Debug.Assert(internalFirstBodyContacts.Contains(contact));
+                    internalFirstBodyContacts.Remove(contact);
+                    if (internalFirstBodyContacts.Count == 0)
+                        bodyContacts.Remove(contact.internalFirstBody);
 
-                    Debug.Assert(bodyContacts.ContainsKey(contact.bodyB));
-                    HashSet<Contact> bodyBContacts = bodyContacts[contact.bodyB];
-                    Debug.Assert(bodyBContacts.Contains(contact));
-                    bodyBContacts.Remove(contact);
-                    if (bodyBContacts.Count == 0)
-                        bodyContacts.Remove(contact.bodyB);
+                    Debug.Assert(bodyContacts.ContainsKey(contact.internalSecondBody));
+                    HashSet<Contact> internalSecondBodyContacts = bodyContacts[contact.internalSecondBody];
+                    Debug.Assert(internalSecondBodyContacts.Contains(contact));
+                    internalSecondBodyContacts.Remove(contact);
+                    if (internalSecondBodyContacts.Count == 0)
+                        bodyContacts.Remove(contact.internalSecondBody);
                 }
 
             }
@@ -376,8 +375,8 @@ namespace CrispyPhysics.Internal
 
             foreach (Body body in bodies)
                 body.islandBound = false;
+                
 
-            //Debug.Assert(false, "Clear Contacts Island Flags");
             foreach (Contact contact in contacts)
                 contact.islandBound = false;
 
@@ -409,22 +408,22 @@ namespace CrispyPhysics.Internal
                                 continue;
                             if (contact.futur.isTouching == false)
                                 continue;
-                            if (contact.bodyA.sensor || contact.bodyB.sensor)
+                            if (contact.internalFirstBody.sensor || contact.internalSecondBody.sensor)
                                 continue;
 
                             island.Add(contact);
                             contact.islandBound = true;
 
-                            if(contact.bodyA.islandBound == false)
+                            if(contact.internalFirstBody.islandBound == false)
                             {
-                                stack.Push(contact.bodyA);
-                                contact.bodyA.islandBound = true;
+                                stack.Push(contact.internalFirstBody);
+                                contact.internalFirstBody.islandBound = true;
                             }
 
-                            if (contact.bodyB.islandBound == false)
+                            if (contact.internalSecondBody.islandBound == false)
                             {
-                                stack.Push(contact.bodyB);
-                                contact.bodyB.islandBound = true;
+                                stack.Push(contact.internalSecondBody);
+                                contact.internalSecondBody.islandBound = true;
                             }
                         }
                     }
@@ -436,58 +435,23 @@ namespace CrispyPhysics.Internal
                     if (islandBody.type == BodyType.Static)
                         islandBody.islandBound = false;
             }
-
-            contactManager.FindNewContacts();
-        }
-
-        private void Crisp()
-        {
-            /*if(tick >= actionTick)
-            {
-                tick = tick - actionTick;
-                opFlags |= OperationFlag.Crisped;
-                foreach (IBody body in bodies)
-                {
-                    Vector2 crispedPosition;
-
-                    if (Mathf.Sign(body.position.x * body.linearVelocity.x) >= 0)
-                        crispedPosition.x = 
-                                Mathf.Ceil(Mathf.Abs(body.position.x / crispSize)) 
-                            *   crispSize * Mathf.Sign(body.position.x);
-                    else
-                        crispedPosition.x = 
-                                Mathf.Floor(Mathf.Abs(body.position.x / crispSize)) 
-                            *   crispSize * Mathf.Sign(body.position.x);
-
-                    if (Mathf.Sign(body.position.y * body.linearVelocity.y) >= 0)
-                        crispedPosition.y = 
-                                Mathf.Ceil(Mathf.Abs(body.position.y / crispSize)) 
-                            *   crispSize * Mathf.Sign(body.position.y);
-                    else
-                        crispedPosition.y = 
-                                Mathf.Floor(Mathf.Abs(body.position.y / crispSize)) 
-                            *   crispSize * Mathf.Sign(body.position.y);
-
-                    body.ChangeSituation(crispedPosition, body.angle);
-                }
-            }*/
         }
         #endregion
 
         #region Event Handlers & Delegates
-        private void FuturCleared(IBody body, EventArgs args)
-        {
-            if((opFlags & World.OperationFlag.FuturForeseen) == World.OperationFlag.FuturForeseen)
-            {
-                futurTick = tick;
-                opFlags &= ~World.OperationFlag.FuturForeseen;
-            }
-        }
 
-        private void UserChangedSituation(IBody body, EventArgs args)
+        private void ExternalChange(IBody body, uint fromTick)
         {
-            if ((opFlags & World.OperationFlag.UserChangedBody) == 0)
-                opFlags |= World.OperationFlag.UserChangedBody;
+            if ((opFlags & World.OperationFlag.ExternalChange) == 0)
+            {
+                uint oldFuturTick = futurTick;
+                futurTick = (uint)Mathf.Max(tick, Mathf.Min(futurTick, fromTick));
+                opFlags |= World.OperationFlag.ExternalChange;
+
+                if (futurTick != oldFuturTick && FuturCleared != null)
+                    FuturCleared(this, futurTick);
+
+            }
         }
 
 
@@ -499,39 +463,44 @@ namespace CrispyPhysics.Internal
                 yield return bodies[i];
         }
 
-        private void NewPair(Body bodyA, Body bodyB)
+        private void NewPair(Body firstBody, Body secondBody)
         {
-            if (bodyA == bodyB)
+            if (firstBody == secondBody)
                 return;
 
-            HashSet<Contact> bodyAContacts = null;
-            HashSet<Contact> bodyBContacts = null;
+            Debug.Assert(firstBody.futur.tick == secondBody.futur.tick);
+            Contact newContact = ContactFactory.CreateContact(
+                firstBody.futur.tick, firstBody, secondBody);
+            if (newContact == null)
+                return;
 
-            if (bodyContacts.ContainsKey(bodyA))
+            HashSet<Contact> internalFirstBodyContacts = null;
+            HashSet<Contact> internalSecondBodyContacts = null;
+
+            if (bodyContacts.ContainsKey(firstBody))
             {
-                bodyAContacts = bodyContacts[bodyA];
-                foreach (Contact contact in bodyAContacts)
-                    if (contact.bodyA == bodyB || contact.bodyB == bodyB)
+                internalFirstBodyContacts = bodyContacts[firstBody];
+                foreach (Contact contact in internalFirstBodyContacts)
+                    if (    contact.internalFirstBody == secondBody
+                        ||  contact.internalSecondBody == secondBody)
                         return;
             }
             else
             {
-                bodyAContacts = new HashSet<Contact>();
-                bodyContacts.Add(bodyA, bodyAContacts);
+                internalFirstBodyContacts = new HashSet<Contact>();
+                bodyContacts.Add(firstBody, internalFirstBodyContacts);
             }
 
-            if (bodyContacts.ContainsKey(bodyB))
-                bodyBContacts = bodyContacts[bodyB];
+            if (bodyContacts.ContainsKey(secondBody))
+                internalSecondBodyContacts = bodyContacts[secondBody];
             else
             {
-                bodyBContacts = new HashSet<Contact>();
-                bodyContacts.Add(bodyB, bodyBContacts);
+                internalSecondBodyContacts = new HashSet<Contact>();
+                bodyContacts.Add(secondBody, internalSecondBodyContacts);
             }
 
-            Debug.Assert(bodyA.futur.tick == bodyB.futur.tick);
-            Contact newContact = ContactFactory.CreateContact(bodyA.futur.tick, bodyA, bodyB);
-            bodyAContacts.Add(newContact);
-            bodyBContacts.Add(newContact);
+            internalFirstBodyContacts.Add(newContact);
+            internalSecondBodyContacts.Add(newContact);
             contacts.Add(newContact);
         }
 
@@ -541,22 +510,22 @@ namespace CrispyPhysics.Internal
                 yield return contact;
         }
 
-        private void NotifyContactStartForeseen(Contact contact, EventArgs args)
+        private void NotifyContactStartForeseen(Contact contact, ContactMomentum momentum)
         {
-            contact.bodyA.NotifyContactStartForeseen(contact, args);
-            contact.bodyB.NotifyContactStartForeseen(contact, args);
+            contact.internalFirstBody.NotifyContactStartForeseen(contact, momentum);
+            contact.internalSecondBody.NotifyContactStartForeseen(contact, momentum);
 
             if (ContactStartForeseen != null)
-                ContactStartForeseen(contact, args);
+                ContactStartForeseen(contact, momentum);
         }
 
-        private void NotifyContactEndForeseen(Contact contact, EventArgs args)
+        private void NotifyContactEndForeseen(Contact contact, ContactMomentum momentum)
         {
-            contact.bodyA.NotifyContactStartForeseen(contact, EventArgs.Empty);
-            contact.bodyB.NotifyContactStartForeseen(contact, EventArgs.Empty);
+            contact.internalFirstBody.NotifyContactEndForeseen(contact, momentum);
+            contact.internalSecondBody.NotifyContactEndForeseen(contact, momentum);
 
             if (ContactEndForeseen != null)
-                ContactEndForeseen(contact, args);
+                ContactEndForeseen(contact, momentum);
         }
         #endregion
     }

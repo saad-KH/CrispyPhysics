@@ -79,6 +79,7 @@ namespace CrispyPhysics
         float angularVelocity { get; }
         Vector2 force { get; }
         float torque { get; }
+        bool enduringContact { get; }
 
         void ChangeImpulse(Vector2 force, float torque);
         void ChangeVelocity(Vector2 linearVelocity, float angularVelocity);
@@ -90,6 +91,18 @@ namespace CrispyPhysics
         void ApplyLinearImpulse(Vector2 impulse, Vector2 point);
         void ApplyLinearImpulseToCenter(Vector2 impulse);
         void ApplyAngularImpulse(float impulse);
+        #endregion
+
+        #region Track
+        IMomentum past { get; }
+        IMomentum current { get; }
+        IMomentum futur { get; }
+        IMomentum MomentumForTick(uint tick);
+        IEnumerable<IMomentum> MomentumIterator(uint startingTick = 0, uint endingTick = 0);
+        bool CrispAtTick(
+            uint tick, 
+            Vector2 position, float angle,
+            float maxDivergencePerTick = 0.25f);
         #endregion
     }
     #endregion

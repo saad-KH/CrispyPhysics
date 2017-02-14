@@ -47,7 +47,7 @@ namespace CrispyPhysics.Internal
                     continue;
                     
 
-                AABB aabb = body.shape.computeAABB(body.futur.transform);
+                AABB aabb = body.shape.computeAABB(body.internalFutur.transform);
     			foreach(Body pairBody in bodyIterator(i)){
                     if (pairBody == body)
                         continue;
@@ -55,7 +55,7 @@ namespace CrispyPhysics.Internal
                         continue;
 
                     Debug.Assert(body.futur.tick == pairBody.futur.tick);
-                    AABB pairAabb = pairBody.shape.computeAABB(pairBody.futur.transform);
+                    AABB pairAabb = pairBody.shape.computeAABB(pairBody.internalFutur.transform);
                     if(Collision.TestOverlap(aabb, pairAabb))
                         newPair(body, pairBody);
                 }
@@ -73,37 +73,43 @@ namespace CrispyPhysics.Internal
 
                 Manifold nextManifold = null;
                 bool touching = false;
-                bool sensor = contact.bodyA.sensor || contact.bodyB.sensor;
+                bool sensor = contact.internalFirstBody.sensor || contact.internalSecondBody.sensor;
 
-                Body bodyA = contact.bodyA;
-                Body bodyB = contact.bodyB;
+                Body firstBody = contact.internalFirstBody;
+                Body secondBody = contact.internalSecondBody;
 
                 if (sensor)
                 {
-                    IShape shapeA = bodyA.shape;
-                    IShape shapeB = bodyB.shape;
+                    IShape shapeA = firstBody.shape;
+                    IShape shapeB = secondBody.shape;
                     Debug.Assert(shapeA != null && shapeB != null);
 
                     touching = Collision.TestOverlap(
-                        shapeA.computeAABB(bodyA.futur.transform),
-                        shapeB.computeAABB(bodyB.futur.transform));
+                        shapeA.computeAABB(firstBody.internalFutur.transform),
+                        shapeB.computeAABB(secondBody.internalFutur.transform));
                 }
                 else
                 {
                     nextManifold = contact.Evaluate(
-                        bodyA.futur.transform, bodyB.futur.transform);
+                        firstBody.internalFutur.transform, secondBody.internalFutur.transform);
 
                     if (nextManifold != null && nextManifold.pointCount > 0)
                         touching = true;
+                        
                 }
 
-                futur.Change(nextManifold, 0f, touching);
+                firstBody.internalFutur.changeEnduringContactState(touching);
+                secondBody.internalFutur.changeEnduringContactState(touching);
+
+                futur.Change(nextManifold, 0f, touching, 
+                    contact.internalFirstBody.internalFutur.position,
+                    contact.internalSecondBody.internalFutur.position);
 
                 if (wasTouching == false && touching == true && contactStartForeseen != null)
-                    contactStartForeseen(contact, EventArgs.Empty);
+                    contactStartForeseen(contact, futur);
 
                 if (wasTouching == true && touching == false && contactEndForeseen != null)
-                    contactEndForeseen(contact, EventArgs.Empty);
+                    contactEndForeseen(contact, futur);
             }
         }
 

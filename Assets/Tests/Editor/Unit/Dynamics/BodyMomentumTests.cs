@@ -12,9 +12,11 @@ namespace CrispyPhysics
         {
             return new Momentum(
                  0,
+                 0f,
                  Vector2.zero, 0f,
                  Vector2.zero, 0f,
-                 Vector2.zero, 0f);
+                 Vector2.zero, 0f,
+                 false);
         }
 
         [Test]
@@ -23,22 +25,26 @@ namespace CrispyPhysics
             Momentum bodyMomentum = CreateBodyMomentum();
 
             Assert.That(bodyMomentum.tick, Is.EqualTo(0));
+            Assert.That(bodyMomentum.tickDt, Is.EqualTo(0f));
             Assert.That(bodyMomentum.force, Is.EqualTo(Vector2.zero));
             Assert.That(bodyMomentum.torque, Is.EqualTo(0f));
             Assert.That(bodyMomentum.linearVelocity, Is.EqualTo(Vector2.zero));
             Assert.That(bodyMomentum.angularVelocity, Is.EqualTo(0f));
             Assert.That(bodyMomentum.position, Is.EqualTo(Vector2.zero));
             Assert.That(bodyMomentum.angle, Is.EqualTo(0f));
+            Assert.That(bodyMomentum.enduringContact == false);
 
             Momentum newBodyMomentum = new Momentum(1, bodyMomentum);
 
             Assert.That(newBodyMomentum.tick, Is.EqualTo(1));
+            Assert.That(newBodyMomentum.tickDt, Is.EqualTo(0f));
             Assert.That(newBodyMomentum.force, Is.EqualTo(bodyMomentum.force));
             Assert.That(newBodyMomentum.torque, Is.EqualTo(bodyMomentum.torque));
             Assert.That(newBodyMomentum.linearVelocity, Is.EqualTo(bodyMomentum.linearVelocity));
             Assert.That(newBodyMomentum.angularVelocity, Is.EqualTo(bodyMomentum.angularVelocity));
             Assert.That(newBodyMomentum.position, Is.EqualTo(bodyMomentum.position));
             Assert.That(newBodyMomentum.angle, Is.EqualTo(bodyMomentum.angle));
+            Assert.That(newBodyMomentum.enduringContact == false);
         }
 
         
@@ -69,6 +75,12 @@ namespace CrispyPhysics
             bodyMomentum.ChangeImpulse(Vector2.zero, 0f);
             Assert.That(bodyMomentum.force, Is.EqualTo(Vector2.zero));
             Assert.That(bodyMomentum.torque, Is.EqualTo(0f));
+
+            bodyMomentum.changeEnduringContactState(true);
+            Assert.That(bodyMomentum.enduringContact == true);
+
+            bodyMomentum.ChangeTickDt(0.01f);
+            Assert.That(bodyMomentum.tickDt, Is.EqualTo(0.01f));
         }
 
         [Test]
