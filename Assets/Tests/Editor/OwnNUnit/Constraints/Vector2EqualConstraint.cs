@@ -1,11 +1,17 @@
 using UnityEngine;
+using NUnit.Framework.Constraints;
 
 namespace OwnNUnit
 {
-    class Vector2EqualConstraint : NUnit.Framework.Constraints.Constraint
+    class Vector2EqualConstraint : Constraint
     {
         readonly Vector2 expected;
         double tolerance;
+
+		public override string Description
+		{
+            get { return expected + " Expected within tolerance " + tolerance; }
+		}
 
         public Vector2EqualConstraint(Vector2 vector)
         {
@@ -18,28 +24,23 @@ namespace OwnNUnit
             return this;
         }
 
-
-        public override bool Matches(object obj)
+		public override ConstraintResult ApplyTo(object actual)
         {
-            actual = obj;
+            bool result = false;
+            if ((actual is Vector2))
+            {
+                Vector2 other = (Vector2)actual;
+                result = Mathf.Abs(other.x - expected.x) < tolerance && Mathf.Abs(other.y - expected.y) < tolerance;
+            }
+            else
+                result = false;
 
-            if (!(obj is Vector2))
-                return false;
 
-            var other = (Vector2)obj;
-
-            return Mathf.Abs(other.x - expected.x) < tolerance && Mathf.Abs(other.y - expected.y) < tolerance;
-        }
-
-        public override void WriteDescriptionTo(NUnit.Framework.Constraints.MessageWriter writer)
-        {
-            writer.WriteExpectedValue(expected);
-            writer.WriteMessageLine("Expected within tolerance '{0}'.", tolerance);
-        }
-
-        public override void WriteActualValueTo(NUnit.Framework.Constraints.MessageWriter writer)
-        {
-            writer.WriteActualValue(actual);
+            return new ConstraintResult(
+                this,
+                actual,
+                result
+            );
         }
     }
 }
