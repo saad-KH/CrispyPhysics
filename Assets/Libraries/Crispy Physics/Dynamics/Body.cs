@@ -408,7 +408,7 @@ namespace CrispyPhysics.Internal
 
         public void ForgetPast(uint fromTick)
         {
-            if (fromTick == 0)
+            if (fromTick >= currentTick)
             {
                 if (currentIndex > 0)
                 {

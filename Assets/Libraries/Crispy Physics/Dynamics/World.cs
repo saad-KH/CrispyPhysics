@@ -296,8 +296,8 @@ namespace CrispyPhysics.Internal
 
         public void RollBack(uint toTick, uint keepTicks = 0)
         {
-
             opFlags |= OperationFlag.Locked;
+            Debug.Assert(toTick <= tick, "RollBacking to a futur tick is obviously not possible");
             tick = toTick;
 
             if (pastTick > tick) pastTick = tick;
