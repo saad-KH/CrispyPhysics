@@ -50,7 +50,7 @@ public class Ball : MonoBehaviour {
         // Apply the line material
         lineMaterial.SetPass(0);
         // Draw lines
-        GL.Begin(GL.LINES);
+        GL.Begin(GL.LINE_STRIP);
         foreach (IMomentum momentum in body.MomentumIterator())
         {
             if (momentum.enduringContact == true)
