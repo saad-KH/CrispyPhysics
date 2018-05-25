@@ -1,4 +1,4 @@
-# CrispyPhysics
+# Crispy Physics
 Crispy Physics is a 2D Physics Engine written in C# for Unity3D.
 
 It's a close reapropriation of [Box2D](https://github.com/erincatto/Box2D) assuming a similar structure along with heavily borrowed code. 
